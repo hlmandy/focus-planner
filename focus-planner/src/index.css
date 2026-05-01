@@ -1,0 +1,30 @@
+:root {
+  font-family:
+    "HarmonyOS Sans SC", "MiSans", "PingFang SC", "Microsoft YaHei UI",
+    "Noto Sans CJK SC", "Source Han Sans SC", system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #2f4735;
+  background: #eef8e9;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #eef8e9;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  letter-spacing: 0;
+}

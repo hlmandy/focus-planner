@@ -1,0 +1,35 @@
+# Dependencies
+/focus-planner/node_modules/
+
+# Build outputs
+/focus-planner/dist/
+/focus-planner/dist-ssr/
+/focus-planner/*.tsbuildinfo
+
+# Local app data
+/focus-planner/data/*.json
+/focus-planner/data/backups/*.json
+
+# Logs and temporary files
+/focus-planner/logs/
+/focus-planner/*.log
+/focus-planner/.tmp/
+/focus-planner/.playwright-cli/
+
+# Generated verification artifacts
+/focus-planner/output/
+
+# Environment overrides
+/focus-planner/.env
+/focus-planner/.env.*
+!/focus-planner/.env.example
+
+# Editor and OS files
+/.vscode/*
+!/.vscode/extensions.json
+/focus-planner/.vscode/*
+!/focus-planner/.vscode/extensions.json
+/.idea/
+/focus-planner/.idea/
+.DS_Store
+Thumbs.db
