@@ -36,9 +36,19 @@ Avoid adding these until the user explicitly asks for them:
 
 ## Implementation Notes
 
-- Main implementation is in `src/App.tsx`.
-- Styling is in `src/App.css`.
-- State is persisted through the local JSON server when it is running. The server stores `data/focus-planner-state.json`, keeps rolling backups under `data/backups/`, and the browser still writes `localStorage` under `focus-planner-state-v1` as a fallback.
+- Frontend is decomposed into modules under `src/`:
+  - `types.ts` — shared type definitions
+  - `utils.ts` — pure utility functions (date, time, UID, etc.)
+  - `constants.ts` — labels, templates, holiday calendar, defaults
+  - `seed.ts` — seed data, state normalization, legacy migration
+  - `hooks/useAppContext.tsx` — React Context providing shared state and navigation
+  - `pages/` — page components (PlannerPage, ProjectsPage, DiaryPage, LiteraturePage, HabitsPage, SummaryPage, SettingsPage, TodayPage)
+  - `components/` — shared UI components (Sidebar, ToolPanel)
+  - `App.tsx` — thin shell: providers, persistence effects, pomodoro timer, routing
+  - `App.css` — all styling (to be split into per-component CSS later)
+- Backend is a Hono server (`server/index.ts`) backed by SQLite (`better-sqlite3`). The database is at `data/focus-planner-state.db`. The server provides full-state sync (`GET/PUT /api/state`) and granular CRUD routes per entity.
+- State is persisted to SQLite when the server is running, with rolling backups under `data/backups/`. The browser also writes `localStorage` under `focus-planner-state-v1` as a fallback.
+- The legacy JSON-only server (`server/focus-planner-server.mjs`) is superseded but kept for reference.
 - Literature records are `ResearchLogEntry` objects with `kind === "literature"`.
 - HTTP/HTTPS attachment strings are rendered as clickable links; other attachment strings are plain indexed names/paths.
 - Pomodoro sessions are stored as `PomodoroSession` objects linked to a work object. Completed work intervals record 25 minutes.
