@@ -1,8 +1,15 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
-import { getBackupDir, createBackup, rotateBackups } from '../db.js'
-import { readdirSync, existsSync, copyFileSync } from 'node:fs'
+import { getBackupDir, getDbPath, createBackup, rotateBackups } from '../db.js'
+import { readdirSync, existsSync, copyFileSync, statSync } from 'node:fs'
 import path from 'node:path'
+
+function safePath(dir: string, name: string): string | null {
+  if (name.includes('/') || name.includes('\\') || name.includes('..')) return null
+  const resolved = path.resolve(dir, name)
+  if (!resolved.startsWith(dir + path.sep)) return null
+  return resolved
+}
 
 export function backupRoutes(app: Hono, db: Database.Database) {
   app.get('/api/backups', (c) => {
@@ -13,7 +20,11 @@ export function backupRoutes(app: Hono, db: Database.Database) {
       .filter(f => f.endsWith('.db'))
       .sort()
       .reverse()
-      .map(f => ({ name: f, size: 0 }))
+      .map(f => {
+        let size = 0
+        try { size = statSync(path.join(dir, f)).size } catch {}
+        return { name: f, size }
+      })
 
     return c.json({ items: files })
   })
@@ -26,23 +37,17 @@ export function backupRoutes(app: Hono, db: Database.Database) {
 
   app.get('/api/backups/:name', (c) => {
     const name = c.req.param('name')
-    const dir = getBackupDir()
-    const filePath = path.join(dir, name)
-    if (!existsSync(filePath)) return c.json({ error: 'Backup not found' }, 404)
+    const filePath = safePath(getBackupDir(), name)
+    if (!filePath || !existsSync(filePath)) return c.json({ error: 'Backup not found' }, 404)
     return c.json({ ok: true, name })
   })
 
   app.post('/api/backups/:name/restore', (c) => {
     const name = c.req.param('name')
-    const dir = getBackupDir()
-    const filePath = path.join(dir, name)
-    if (!existsSync(filePath)) return c.json({ error: 'Backup not found' }, 404)
+    const filePath = safePath(getBackupDir(), name)
+    if (!filePath || !existsSync(filePath)) return c.json({ error: 'Backup not found' }, 404)
 
-    // Create a backup of current state before restoring
     createBackup()
-
-    // Copy backup db over the live db - will take effect on next server restart
-    const { getDbPath } = require('../db.js') as typeof import('../db.js')
     copyFileSync(filePath, getDbPath())
 
     return c.json({ ok: true, message: 'Backup restored. Restart the server for changes to take effect.' })

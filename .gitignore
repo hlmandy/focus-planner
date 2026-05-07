@@ -1,3 +1,6 @@
+# Claude Code
+.claude/settings.local.json
+
 # Dependencies
 /focus-planner/node_modules/
 
@@ -8,7 +11,11 @@
 
 # Local app data
 /focus-planner/data/*.json
+/focus-planner/data/*.db
+/focus-planner/data/*.db-shm
+/focus-planner/data/*.db-wal
 /focus-planner/data/backups/*.json
+/focus-planner/data/backups/*.db
 
 # Logs and temporary files
 /focus-planner/logs/

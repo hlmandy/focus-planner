@@ -8,7 +8,11 @@ dist-ssr/
 
 # Local app data
 data/*.json
+data/*.db
+data/*.db-shm
+data/*.db-wal
 data/backups/*.json
+data/backups/*.db
 
 # Logs and temporary files
 logs/

@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { existsSync, readFileSync, renameSync, mkdirSync, readdirSync, copyFileSync } from 'node:fs'
+import { existsSync, readFileSync, renameSync, mkdirSync, readdirSync, copyFileSync, unlinkSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AppState } from './types.js'
@@ -236,7 +236,7 @@ export function rotateBackups(maxBackups = 30): void {
     .sort()
   const stale = files.slice(0, Math.max(0, files.length - maxBackups))
   for (const f of stale) {
-    try { require('node:fs').unlinkSync(path.join(backupDir, f)) } catch {}
+    try { unlinkSync(path.join(backupDir, f)) } catch {}
   }
 }
 
