@@ -4,11 +4,12 @@ import { useApp } from '../hooks/useAppContext'
 import { todayKey, uid, durationText, getTaskDescendantIds, isWebLink, researchLogKindLabels, isProjectTask } from '../utils'
 import { colors, projectKindLabels, projectStatusLabels, thesisStageLabels, projectTemplateGoals } from '../constants'
 import { createTasksFromTemplate } from '../seed'
-import type { ProjectKind, ProjectStatus, ThesisStage, Project, Task, ThesisStudent } from '../types'
+import type { ProjectKind, ProjectStatus, ThesisStage, Project, Task, ThesisStudent } from '../../shared/types'
 
 export function ProjectsPage() {
   const {
-    state, setState, date, projectFilterId, setProjectFilterId,
+    state, projects, tasks, thesisStudents,
+    date, projectFilterId, setProjectFilterId,
     projectDetailId, setProjectDetailId, setPage, setPomodoroProjectId, pomodoroProjectId,
   } = useApp()
 
@@ -65,47 +66,49 @@ export function ProjectsPage() {
   const addProject = () => {
     const name = newProjectName.trim()
     if (!name) return
-    const project = { id: uid(), name, color: colors[state.projects.length % colors.length], kind: newProjectKind, status: 'active' as const, goal: projectTemplateGoals[newProjectKind], dueDate: '' }
+    const project: Project = { id: uid(), name, color: colors[state.projects.length % colors.length], kind: newProjectKind, status: 'active', goal: projectTemplateGoals[newProjectKind], dueDate: '' }
     const templateTasks = createTasksFromTemplate(project.id, project.kind)
-    setState(prev => ({ ...prev, projects: [...prev.projects, project], tasks: [...templateTasks, ...prev.tasks] }))
+    // Optimistic: update local immediately, API in background
+    projects.create(project).catch(() => {})
+    templateTasks.forEach(t => tasks.create(t).catch(() => {}))
     setProjectFilterId(project.id); setProjectDetailId(project.id); setPomodoroProjectId(project.id)
     setNewProjectName(''); setNewProjectKind('research')
   }
 
   const updateProject = (projectId: string, patch: Partial<Project>) => {
-    setState(prev => ({ ...prev, projects: prev.projects.map(p => p.id === projectId ? { ...p, ...patch } : p) }))
+    projects.update(projectId, patch).catch(() => {})
   }
 
   const deleteProject = (projectId: string) => {
     const remaining = state.projects.filter(p => p.id !== projectId)
     if (!remaining.length) return
     const nextId = remaining[0]?.id ?? state.projects[0].id
-    setState(prev => ({
-      ...prev,
-      projects: prev.projects.filter(p => p.id !== projectId),
-      tasks: prev.tasks.map(t => t.projectId === projectId ? { ...t, projectId: nextId } : t),
-      thesisStudents: prev.thesisStudents.map(s => s.projectId === projectId ? { ...s, projectId: nextId } : s),
-      researchLogs: prev.researchLogs.map(e => e.projectId === projectId ? { ...e, projectId: nextId } : e),
-      pomodoroSessions: prev.pomodoroSessions.map(s => s.projectId === projectId ? { ...s, projectId: nextId } : s),
-    }))
+    // Delete project + reassign related entities
+    projects.delete(projectId).catch(() => {})
+    // Reassign tasks, students, logs, pomodoros to next project
+    state.tasks.filter(t => t.projectId === projectId).forEach(t => tasks.update(t.id, { projectId: nextId }).catch(() => {}))
+    state.thesisStudents.filter(s => s.projectId === projectId).forEach(s => thesisStudents.update(s.id, { projectId: nextId }).catch(() => {}))
     if (projectFilterId === projectId) setProjectFilterId('all')
     if (pomodoroProjectId === projectId) setPomodoroProjectId(nextId)
     if (projectDetailId === projectId) setProjectDetailId(null)
   }
 
-  const toggleTodo = (id: string) => setState(prev => ({ ...prev, tasks: prev.tasks.map(t => t.id === id ? { ...t, done: !t.done } : t) }))
+  const toggleTodo = (id: string) => {
+    const task = state.tasks.find(t => t.id === id)
+    if (task) tasks.update(id, { done: !task.done }).catch(() => {})
+  }
 
   const deleteTodo = (id: string) => {
     const idsToDelete = new Set([id, ...getTaskDescendantIds(id, state.tasks)])
-    setState(prev => ({ ...prev, tasks: prev.tasks.filter(t => !idsToDelete.has(t.id)), blocks: prev.blocks.filter(b => !idsToDelete.has(b.taskId)) }))
+    idsToDelete.forEach(tid => tasks.delete(tid).catch(() => {}))
   }
 
   const addProjectTask = (parentId?: string) => {
     if (!activeProjectStats) return
     const title = parentId ? subtaskDrafts[parentId]?.trim() : newProjectTaskTitle.trim()
     if (!title) return
-    const task = { id: uid(), title, projectId: activeProjectStats.id, parentId, tags: [], done: false, createdAt: date, source: 'task' as const }
-    setState(prev => ({ ...prev, tasks: [task, ...prev.tasks] }))
+    const task: Task = { id: uid(), title, projectId: activeProjectStats.id, parentId, tags: [], done: false, createdAt: date, source: 'task' }
+    tasks.create(task).catch(() => {})
     if (parentId) setSubtaskDrafts(prev => ({ ...prev, [parentId]: '' }))
     else setNewProjectTaskTitle('')
   }
@@ -114,17 +117,17 @@ export function ProjectsPage() {
     if (!activeProjectStats || activeProjectStats.kind !== 'student') return
     const name = newStudentName.trim()
     if (!name) return
-    const student = { id: uid(), projectId: activeProjectStats.id, name, topic: newStudentTopic.trim(), stage: newStudentStage, nextMilestone: newStudentMilestone.trim(), dueDate: newStudentDueDate, notes: newStudentNotes.trim(), updatedAt: new Date().toISOString() }
-    setState(prev => ({ ...prev, thesisStudents: [student, ...prev.thesisStudents] }))
+    const student: ThesisStudent = { id: uid(), projectId: activeProjectStats.id, name, topic: newStudentTopic.trim(), stage: newStudentStage, nextMilestone: newStudentMilestone.trim(), dueDate: newStudentDueDate, notes: newStudentNotes.trim(), updatedAt: new Date().toISOString() }
+    thesisStudents.create(student).catch(() => {})
     setNewStudentName(''); setNewStudentTopic(''); setNewStudentStage('topic'); setNewStudentMilestone(''); setNewStudentDueDate(todayKey()); setNewStudentNotes('')
   }
 
   const updateThesisStudent = (id: string, patch: Partial<ThesisStudent>) => {
-    setState(prev => ({ ...prev, thesisStudents: prev.thesisStudents.map(s => s.id === id ? { ...s, ...patch, updatedAt: new Date().toISOString() } : s) }))
+    thesisStudents.update(id, { ...patch, updatedAt: new Date().toISOString() }).catch(() => {})
   }
 
   const deleteThesisStudent = (id: string) => {
-    setState(prev => ({ ...prev, thesisStudents: prev.thesisStudents.filter(s => s.id !== id) }))
+    thesisStudents.delete(id).catch(() => {})
   }
 
   const renderProjectTask = (task: Task, depth = 0): ReactNode => {

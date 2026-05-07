@@ -21,8 +21,6 @@ export function SummaryPage() {
     [state.projects],
   )
 
-  const getFallbackProjectId = () => state.projects[0]?.id ?? 'academic-admin'
-
   const selectedDayBlocks = useMemo(
     () => state.blocks.filter((block) => block.date === date),
     [state.blocks, date],
@@ -68,7 +66,7 @@ export function SummaryPage() {
       ...(selectedDayBlocks.length
         ? selectedDayBlocks.map((block) => {
             const task = tasksById[block.taskId]
-            const project = projectsById[task?.projectId ?? getFallbackProjectId()]
+            const project = projectsById[task?.projectId ?? state.projects[0]?.id ?? 'academic-admin']
             const done = task?.done ? '[x]' : '[ ]'
             const tags = task?.tags.length ? ` ${task.tags.map((tag) => `#${tag}`).join(' ')}` : ''
             const note = block.note.trim() ? `：${block.note.trim()}` : ''
@@ -100,7 +98,7 @@ export function SummaryPage() {
         : ['- 无']),
     ]
     return lines.join('\n')
-  }, [visibleTasks, date, state.blocks, state.habits, selectedDayBlocks, selectedDayMinutes, selectedDayLogs, tasksById, projectsById, habitEntryKeys])
+  }, [visibleTasks, date, state.blocks, state.habits, state.projects, selectedDayBlocks, selectedDayMinutes, selectedDayLogs, tasksById, projectsById, habitEntryKeys])
 
   const resetPomodoro = (nextMode = mode) => {
     setMode(nextMode)

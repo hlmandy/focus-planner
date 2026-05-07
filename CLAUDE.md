@@ -38,15 +38,17 @@ focus-planner/
 │   │   ├── LiteraturePage.tsx # 文献库
 │   │   ├── HabitsPage.tsx   # 习惯追踪
 │   │   ├── SummaryPage.tsx  # Markdown 日总结导出
-│   │   └── SettingsPage.tsx # 设置 + 数据管理
+│   │   └── SettingsPage.tsx # 设置 + 数据管理 + CalDAV 同步配置
 │   └── components/          # 共享 UI 组件
 │       ├── Sidebar.tsx      # 左侧导航栏（含项目创建）
 │       └── ToolPanel.tsx    # 右侧工具面板（番茄钟、快速添加、日历）
 ├── server/                  # Hono 后端
 │   ├── index.ts             # 路由注册
 │   ├── db.ts                # SQLite schema + 迁移 + 备份
+│   ├── caldav-client.ts     # CalDAV HTTP 协议层（PROPFIND/PUT/DELETE、ICS 构建）
+│   ├── caldav-sync.ts       # CalDAV 同步引擎（变更检测、创建/更新/删除流程）
 │   ├── types.ts / validate.ts
-│   └── routes/              # 按实体的 CRUD 路由（13 个文件）
+│   └── routes/              # 按实体的 CRUD 路由（14 个文件，含 caldav.ts）
 ├── docs/                    # 文档
 │   ├── TODO.md              # 待办清单（按 P0-P4 优先级排列）
 │   └── RESEARCH_WORKFLOW.md # 研究工作流领域文档
@@ -59,6 +61,16 @@ focus-planner/
 2. `useEffect` 尝试 `GET /api/state`，服务器可用则覆盖
 3. 每次 state 变化 → 写 localStorage + 延迟 500ms `PUT /api/state`
 4. 番茄钟完成 → 自动创建 `PomodoroSession` 记录
+5. 每次 `PUT /api/state` → 后台触发 CalDAV 同步（将 ScheduleBlock 推送到 iCloud 等日历）
+
+## CalDAV 同步
+
+- **协议层**：`server/caldav-client.ts` — 纯 HTTP 封装，使用 Node.js `fetch`，支持 PROPFIND/PUT/DELETE
+- **同步引擎**：`server/caldav-sync.ts` — 读 DB → 比对 content hash → 创建/更新/删除远程事件
+- **映射表**：`caldav_sync_map` 表存储 block_id ↔ event_url/etag 的映射
+- **配置表**：`caldav_config` 单行表存储 CalDAV 凭据（Settings 页面管理）
+- **触发时机**：每次 state PUT 保存后自动后台同步，也可在 Settings 页手动触发
+- **时间转换**：ScheduleBlock 的 date + start/end (分钟) → iCalendar DTSTART/DTEND
 
 ## 编码约定
 

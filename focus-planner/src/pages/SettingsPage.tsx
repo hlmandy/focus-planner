@@ -1,6 +1,6 @@
 import { RotateCcw } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
-import { normalizeState, seedState } from '../seed'
+import { seedState } from '../seed'
 import { useState, useEffect, type FormEvent } from 'react'
 
 interface CalDAVConfigForm {
@@ -23,7 +23,7 @@ interface SyncStatus {
 }
 
 export function SettingsPage() {
-  const { setState, setProjectFilterId, setProjectDetailId, setPage, persistenceStatus } = useApp()
+  const { projects, tasks, blocks, habits, habitEntries, thesisStudents, researchLogs, pomodoroSessions, setProjectFilterId, setProjectDetailId, setPage, persistenceStatus } = useApp()
 
   const [config, setConfig] = useState<CalDAVConfigForm>({
     serverUrl: '', username: '', password: '', calendarUrl: '', syncEnabled: false,
@@ -64,8 +64,9 @@ export function SettingsPage() {
       const data = await res.json()
       setMessage(data.ok ? '设置已保存' : '保存失败')
       refreshStatus()
-    } catch (err: any) {
-      setMessage('保存失败: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setMessage('保存失败: ' + msg)
     }
     setSaving(false)
   }
@@ -77,8 +78,9 @@ export function SettingsPage() {
       const res = await fetch('/api/caldav/test-connection', { method: 'POST' })
       const data = await res.json()
       setMessage(data.ok ? '连接成功' : `连接失败: ${data.message}`)
-    } catch (err: any) {
-      setMessage('测试失败: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setMessage('测试失败: ' + msg)
     }
     setTesting(false)
   }
@@ -93,8 +95,9 @@ export function SettingsPage() {
         ? `同步完成: 新建 ${data.created}, 更新 ${data.updated}, 删除 ${data.deleted}, 失败 ${data.errors}`
         : '同步失败')
       refreshStatus()
-    } catch (err: any) {
-      setMessage('同步失败: ' + err.message)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setMessage('同步失败: ' + msg)
     }
     setSyncing(false)
   }
@@ -124,9 +127,48 @@ export function SettingsPage() {
           <button
             type="button"
             className="outline-action danger"
-            onClick={() => {
+            onClick={async () => {
               if (!window.confirm('确定要清空本地数据并恢复初始示例吗？')) return
-              setState(normalizeState(seedState()))
+              const seeded = seedState()
+              // Snapshot old IDs for API cleanup
+              const oldProjects = projects.items.map(p => p.id)
+              const oldTasks = tasks.items.map(t => t.id)
+              const oldBlocks = blocks.items.map(b => b.id)
+              const oldHabits = habits.items.map(h => h.id)
+              const oldEntries = habitEntries.items.map(e => e.id)
+              const oldStudents = thesisStudents.items.map(s => s.id)
+              const oldLogs = researchLogs.items.map(r => r.id)
+              const oldPomodoros = pomodoroSessions.items.map(p => p.id)
+              // Immediately swap local state to seeded data (no flicker)
+              projects.setItems(seeded.projects)
+              tasks.setItems(seeded.tasks)
+              blocks.setItems(seeded.blocks)
+              habits.setItems(seeded.habits)
+              habitEntries.setItems(seeded.habitEntries)
+              thesisStudents.setItems(seeded.thesisStudents)
+              researchLogs.setItems(seeded.researchLogs)
+              pomodoroSessions.setItems(seeded.pomodoroSessions)
+              // Sync to API in background (best-effort)
+              await Promise.all([
+                ...oldProjects.map(id => projects.delete(id).catch(() => {})),
+                ...oldTasks.map(id => tasks.delete(id).catch(() => {})),
+                ...oldBlocks.map(id => blocks.delete(id).catch(() => {})),
+                ...oldHabits.map(id => habits.delete(id).catch(() => {})),
+                ...oldEntries.map(id => habitEntries.delete(id).catch(() => {})),
+                ...oldStudents.map(id => thesisStudents.delete(id).catch(() => {})),
+                ...oldLogs.map(id => researchLogs.delete(id).catch(() => {})),
+                ...oldPomodoros.map(id => pomodoroSessions.delete(id).catch(() => {})),
+              ])
+              await Promise.all([
+                ...seeded.projects.map(p => projects.create(p).catch(() => {})),
+                ...seeded.tasks.map(t => tasks.create(t).catch(() => {})),
+                ...seeded.blocks.map(b => blocks.create(b).catch(() => {})),
+                ...seeded.habits.map(h => habits.create(h).catch(() => {})),
+                ...seeded.habitEntries.map(e => habitEntries.create(e).catch(() => {})),
+                ...seeded.thesisStudents.map(s => thesisStudents.create(s).catch(() => {})),
+                ...seeded.researchLogs.map(r => researchLogs.create(r).catch(() => {})),
+                ...seeded.pomodoroSessions.map(p => pomodoroSessions.create(p).catch(() => {})),
+              ])
               setProjectFilterId('all')
               setProjectDetailId(null)
               setPage('planner')
