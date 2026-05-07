@@ -70,25 +70,16 @@ This list intentionally excludes Zotero integration, DOI auto-completion, PDF me
 
 ## Done
 
-- [x] 用科研工作台默认值替代通用个人项目模板
-- [x] 添加工作对象类型：research / paper / student supervision / admin
-- [x] 添加导师侧本科论文进度追踪（多学生）
-- [x] 添加项目关联番茄钟和专注时间归属
-- [x] 添加项目管理元数据：status / goal / dueDate / 类型状态筛选
-- [x] 添加多层任务树（`Task.parentId`）和项目详情任务管理
-- [x] 添加类型专属项目模板（默认目标 + 初始任务树）
-- [x] 添加关联日期和项目的研究日记
-- [x] 添加文献库视图（`kind === "literature"`）
-- [x] 添加手动附件/路径/链接索引
-- [x] 添加项目详情聚合：任务、最近日记、文献、附件
-- [x] 添加可点击的 HTTP/HTTPS 附件链接
-- [x] 添加每日 Markdown 总结
-- [x] 添加左右抽屉布局（左侧可折叠导航 + 右侧工具面板）
-- [x] 番茄钟移入右侧工具面板，添加日历工具
-- [x] 添加拖拽创建时间块（创建后立即打开编辑器）
-- [x] 添加日程块备注（与任务标题分离）
-- [x] 添加 `Task.source` 区分真实任务和日程占位
-- [x] 修复规划表滚动（时间网格拥有垂直滚动）
-- [x] 添加本地 JSON 持久化服务器 + 滚动备份 + Windows 启动脚本
-- [x] 从 JSON 迁移到 SQLite（Hono API + 按实体 CRUD 路由）
-- [x] **拆分 App.tsx 为模块化结构**：types / utils / constants / seed 独立文件 + pages/ 页面组件 + components/（Sidebar, ToolPanel）+ CLAUDE.md 架构文档
+<!-- 2026-05 之前的功能迭代已归档，详见 git log -->
+
+**2026-05-07** — P0 代码健康 & P1 CSS 拆分
+- [x] App.tsx 去重复（pageLabels → import、page → PageName、STORAGE_KEY 统一）
+- [x] 清理 ToolPanel.tsx 未使用 import（getWeekDays, weekDayText, Paperclip）
+- [x] 清理 App.css 死样式（.add-habit-center, .week-picker*, .time-block.overdue）
+- [x] useAppContext.persistenceStatus 类型修正为 PersistenceStatus
+- [x] App.css 2222 行拆分为 13 个组件级 CSS（styles/ 目录）
+
+**2026-05-07** — 模块化重构
+- [x] App.tsx 3053 行拆为薄壳（148 行）+ Sidebar + ToolPanel + ProjectsPage 组件
+- [x] 所有页面组件接入 useApp() Context，不再内联在 App.tsx
+- [x] 创建 CLAUDE.md 架构文档

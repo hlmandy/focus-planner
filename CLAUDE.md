@@ -1,69 +1,78 @@
-# Focus Planner — 项目架构
+# Focus Planner — 项目架构速查
 
-本地优先的学术科研工作台（React 19 + Vite + Hono + SQLite）。
+本地优先的学术科研工作台（React 19 + Vite 8 + Hono + SQLite）。
 
 ## 目录结构
 
 ```
 focus-planner/
 ├── src/
-│   ├── App.tsx              # 应用壳：Provider + 路由 + 核心状态
-│   ├── App.css              # 全局样式
+│   ├── App.tsx              # 薄壳（~150行）：Provider + persistence + pomodoro + 路由
+│   ├── App.css              # @import 汇总（实际样式在 styles/ 下 13 个文件）
 │   ├── main.tsx             # Vite 入口
-│   ├── types.ts             # 所有 TypeScript 类型定义
-│   ├── utils.ts             # 纯函数：日期、时间、UID、解析等
-│   ├── constants.ts         # 常量：标签、模板、节假日、默认值
-│   ├── seed.ts              # 种子数据、状态归一化、localStorage 加载
+│   ├── types.ts             # 所有 TypeScript 类型（8种实体 + AppState + PageName）
+│   ├── utils.ts             # 纯函数：日期、时间、UID、解析
+│   ├── constants.ts         # 常量：标签、模板、节假日、默认值、STORAGE_KEY
+│   ├── seed.ts              # 种子数据、状态归一化（normalizeState）、loadState
 │   ├── hooks/
-│   │   └── useAppContext.tsx # React Context：全局共享状态
+│   │   └── useAppContext.tsx # React Context：全局状态 + 导航 + 番茄钟状态
+│   ├── styles/              # 按组件拆分的 CSS（共 13 个文件）
+│   │   ├── variables.css    # CSS 自定义属性
+│   │   ├── shell.css        # app-shell grid 布局
+│   │   ├── base.css         # 全局 reset + 共享按钮样式
+│   │   ├── sidebar.css      # 侧栏
+│   │   ├── workspace.css    # 工作区 + 页头
+│   │   ├── tool-panel.css   # 右侧工具面板
+│   │   ├── planner.css      # 规划表 + 时间块 + 编辑器
+│   │   ├── today.css        # 今日页
+│   │   ├── projects.css     # 项目管理页
+│   │   ├── diary.css        # 研究日记
+│   │   ├── habits.css       # 习惯追踪
+│   │   ├── summary-settings.css
+│   │   └── responsive.css   # 媒体查询
 │   ├── pages/               # 页面组件（各自通过 useApp() 获取上下文）
-│   │   ├── PlannerPage.tsx  # 周规划时间线
-│   │   ├── TodayPage.tsx    # 今日概览 + TODO
+│   │   ├── PlannerPage.tsx  # 周规划时间线（含时间块 CRUD、拖拽、编辑器）
+│   │   ├── ProjectsPage.tsx # 项目管理（卡片、详情、任务树、论文指导）
+│   │   ├── TodayPage.tsx    # 今日概览 + TODO 条
 │   │   ├── DiaryPage.tsx    # 研究日记
 │   │   ├── LiteraturePage.tsx # 文献库
 │   │   ├── HabitsPage.tsx   # 习惯追踪
 │   │   ├── SummaryPage.tsx  # Markdown 日总结导出
 │   │   └── SettingsPage.tsx # 设置 + 数据管理
 │   └── components/          # 共享 UI 组件
-│       ├── Sidebar.tsx      # 左侧导航栏
-│       └── ToolPanel.tsx    # 右侧工具面板（番茄钟、日历、快速添加）
+│       ├── Sidebar.tsx      # 左侧导航栏（含项目创建）
+│       └── ToolPanel.tsx    # 右侧工具面板（番茄钟、快速添加、日历）
 ├── server/                  # Hono 后端
 │   ├── index.ts             # 路由注册
 │   ├── db.ts                # SQLite schema + 迁移 + 备份
 │   ├── types.ts / validate.ts
 │   └── routes/              # 按实体的 CRUD 路由（13 个文件）
+├── docs/                    # 文档
+│   ├── TODO.md              # 待办清单（按 P0-P4 优先级排列）
+│   └── RESEARCH_WORKFLOW.md # 研究工作流领域文档
 └── data/                    # SQLite 数据库 + 备份
 ```
 
-## 核心架构
-
-- **前端**：React 19 + Vite 8 + TypeScript，运行在 localhost:5173
-- **后端**：Hono + better-sqlite3，运行在 localhost:8787
-- **状态同步**：前端 useState 管理 AppState，通过 localStorage + PUT /api/state 双写
-- **数据模型**：8 种实体（Project, Task, ScheduleBlock, Habit, HabitEntry, ThesisStudent, ResearchLogEntry, PomodoroSession），定义在 `src/types.ts`
-- **启动**：`start-focus-planner.bat` 同时启动后端和前端
-
 ## 数据流
 
-1. App 组件初始化时，`loadState()` 先从 localStorage 读取
-2. `useEffect` 尝试 GET `/api/state`，如果服务器可用则用服务器数据覆盖
-3. 每次 state 变化，写 localStorage + 延迟 500ms PUT 到服务器
-4. 番茄钟完成时自动创建 PomodoroSession 记录
+1. `App.tsx` 初始化时 `loadState()` 从 localStorage 读取
+2. `useEffect` 尝试 `GET /api/state`，服务器可用则覆盖
+3. 每次 state 变化 → 写 localStorage + 延迟 500ms `PUT /api/state`
+4. 番茄钟完成 → 自动创建 `PomodoroSession` 记录
 
-## 关键约定
+## 编码约定
 
-- **不重复定义**：types/constants/utils/seed 都有独立文件，不要在 App.tsx 中重新定义
-- **Task.source** 区分真实任务 (`'task'`) 和日程占位 (`'schedule'`)
-- **Project.kind** 决定模板和 UI 呈现：research/paper/student/admin
-- **CSS** 在 App.css 中统一管理，按页面区块组织
-- **后端路由**已按实体拆分为独立文件，保持这个模式
+- **不重复定义**：types / constants / utils / seed 各有独立文件，不要在其他文件重新定义
+- **页面组件模式**：每个 page 通过 `useApp()` 获取 state 和 setter，表单状态用本地 useState
+- **样式**：改哪个组件就改 `styles/` 下对应文件，不要加到别处
+- **后端路由**：按实体拆分，保持一个文件一个实体
 
 ## 常用命令
 
 ```bash
 cd focus-planner
-npm run dev      # 启动前端 dev server
-npm run server   # 启动后端 data server
+npm run dev      # 前端 dev server (localhost:5173)
+npm run server   # 后端 data server (localhost:8787)
 npm run build    # 构建生产版本
 npm run lint     # ESLint 检查
 ```

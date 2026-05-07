@@ -1,5 +1,4 @@
 import type { Hono } from 'hono'
-import type Database from 'better-sqlite3'
 import { getBackupDir, getDbPath, createBackup, rotateBackups } from '../db.js'
 import { readdirSync, existsSync, copyFileSync, statSync } from 'node:fs'
 import path from 'node:path'
@@ -11,7 +10,7 @@ function safePath(dir: string, name: string): string | null {
   return resolved
 }
 
-export function backupRoutes(app: Hono, db: Database.Database) {
+export function backupRoutes(app: Hono) {
   app.get('/api/backups', (c) => {
     const dir = getBackupDir()
     if (!existsSync(dir)) return c.json({ items: [] })

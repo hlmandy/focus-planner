@@ -419,7 +419,10 @@ export function PlannerPage() {
           style={{ left: blockEditorPosition.x, top: blockEditorPosition.y }}
         >
           <div className="block-editor-head">
-            <strong>编辑时间块</strong>
+            <strong>
+              编辑时间块
+              <span className={`source-badge ${editingTask.source}`}>{editingTask.source === 'schedule' ? '日程占位' : '任务'}</span>
+            </strong>
             <button className="block-editor-close" onClick={() => setEditingBlockId(null)} aria-label="关闭编辑面板">
               ×
             </button>
@@ -428,7 +431,11 @@ export function PlannerPage() {
             标题
             <input
               value={editingTask.title}
-              onChange={(event) => updateTask(editingTask.id, { title: event.target.value })}
+              onChange={(event) => {
+                const title = event.target.value
+                const promote = editingTask.source === 'schedule' && title.trim() !== ''
+                updateTask(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) })
+              }}
               placeholder="可选"
             />
           </label>

@@ -1,6 +1,16 @@
 # Agent Notes
 
-This project is a React + TypeScript + Vite app for a local-first research workbench.
+This project is a local-first academic research workbench (React 19 + Vite + Hono + SQLite).
+
+For architecture and file structure, see `CLAUDE.md` at the project root.
+
+## Documentation Workflow
+
+- When files are added, removed, or reorganized (new components, new pages, directory changes), update `CLAUDE.md` to reflect the new structure.
+- When a feature is completed, update `docs/TODO.md`: mark the item done with a date, move it to the Done section.
+- `CLAUDE.md` = current state (what the project looks like now).
+- `AGENTS.md` = rules (how to work on this project).
+- Do not duplicate content between these two files.
 
 ## Product Direction
 
@@ -34,39 +44,53 @@ Avoid adding these until the user explicitly asks for them:
 - PDF parsing.
 - Weekly/monthly retrospective analytics.
 
-## Implementation Notes
+## Coding Conventions
 
-- Frontend is decomposed into modules under `src/`:
-  - `types.ts` — shared type definitions
-  - `utils.ts` — pure utility functions (date, time, UID, etc.)
-  - `constants.ts` — labels, templates, holiday calendar, defaults
-  - `seed.ts` — seed data, state normalization, legacy migration
-  - `hooks/useAppContext.tsx` — React Context providing shared state and navigation
-  - `pages/` — page components (PlannerPage, ProjectsPage, DiaryPage, LiteraturePage, HabitsPage, SummaryPage, SettingsPage, TodayPage)
-  - `components/` — shared UI components (Sidebar, ToolPanel)
-  - `App.tsx` — thin shell: providers, persistence effects, pomodoro timer, routing
-  - `App.css` — all styling (to be split into per-component CSS later)
-- Backend is a Hono server (`server/index.ts`) backed by SQLite (`better-sqlite3`). The database is at `data/focus-planner-state.db`. The server provides full-state sync (`GET/PUT /api/state`) and granular CRUD routes per entity.
-- State is persisted to SQLite when the server is running, with rolling backups under `data/backups/`. The browser also writes `localStorage` under `focus-planner-state-v1` as a fallback.
-- The legacy JSON-only server (`server/focus-planner-server.mjs`) is superseded but kept for reference.
-- Literature records are `ResearchLogEntry` objects with `kind === "literature"`.
-- HTTP/HTTPS attachment strings are rendered as clickable links; other attachment strings are plain indexed names/paths.
-- Pomodoro sessions are stored as `PomodoroSession` objects linked to a work object. Completed work intervals record 25 minutes.
-- The Pomodoro timer lives in the right docked utility drawer, not directly in the app header. The drawer also contains a small calendar tool.
-- Projects have management metadata: `status`, `goal`, and `dueDate`. The project page includes type/status filters; detail metadata is read-only until the user clicks the edit button.
-- Tasks support `parentId` for multi-level task trees. Project detail renders and manages nested tasks; deleting a task deletes its descendant task subtree and related schedule blocks.
-- `Task.source` separates real project tasks from schedule placeholders. Use `source: "task"` for project/TODO work and `source: "schedule"` for blank planner-created time blocks. Project task trees, visible TODO strips, and completion stats should ignore schedule placeholders.
-- `ScheduleBlock.note` stores notes for a specific time block, such as literature read, blockers, or actual work done. Do not store those notes in the task title.
-- New projects use type-specific templates (`projectTemplateGoals` and `projectTaskTemplates`) to seed goal text and a starter task tree.
-- Layout uses docked drawers: the left navigation drawer can collapse to icon-only mode, and the right tool drawer pushes the workspace instead of floating over it. Keep planner popovers inside the remaining workspace when the right drawer is open.
+### Frontend module boundaries
+
+- `types.ts` — shared type definitions. Do not re-define these in component files.
+- `utils.ts` — pure utility functions. Do not re-define these in component files.
+- `constants.ts` — labels, templates, holiday calendar, defaults, `STORAGE_KEY`, `pageLabels`.
+- `seed.ts` — `seedState()`, `normalizeState()`, `loadState()`, `createTasksFromTemplate()`.
+- `hooks/useAppContext.tsx` — `AppProvider` + `useApp()`. All pages and components access shared state through this context.
+- `App.tsx` — thin shell only: state initialization, persistence effects, pomodoro timer, context provider, page routing. No inline page JSX or local type/constant definitions.
+- `pages/` — each page is a self-contained component with its own local useState for form fields. Mutations go through `setState` from `useApp()`.
+- `components/` — shared UI (Sidebar, ToolPanel). Same pattern as pages.
+- `styles/` — one CSS file per component. Do not add styles to `App.css` or inline styles.
+
+### Data model rules
+
+- `Task.source`: `"task"` for real project tasks, `"schedule"` for blank planner time blocks. Task trees, TODO strips, and completion stats must ignore schedule placeholders.
+- `ScheduleBlock.note`: notes for a specific time window. Do not store in task title.
+- `Project.kind`: determines template and UI — `research` / `paper` / `student` / `admin`.
+- `Task.parentId`: multi-level task trees. Deleting a parent deletes its entire subtree and related schedule blocks.
+- Literature records are `ResearchLogEntry` with `kind === "literature"`.
+- Pomodoro sessions are `PomodoroSession` linked to a project. Completed work intervals = 25 minutes.
+- HTTP/HTTPS attachments render as clickable links; other attachments are plain names/paths.
+
+### Layout rules
+
+- Left sidebar can collapse to icon-only rail.
+- Right tool drawer pushes the workspace (not floating overlay).
+- Planner popovers must stay inside the remaining workspace when the right drawer is open.
+- Planner has one main scroll area for the time grid.
+
+### Backend
+
+- Hono server at `server/index.ts`, SQLite via `better-sqlite3`, database at `data/focus-planner-state.db`.
+- Full-state sync: `GET/PUT /api/state`. Granular CRUD routes exist per entity but frontend uses full-state sync.
+- Rolling backups under `data/backups/`.
+- Server types in `server/types.ts` are a separate copy from `src/types.ts` — keep them in sync manually for now.
+- The legacy JSON-only server (`server/focus-planner-server.mjs`) is superseded; do not modify it.
 
 ## Useful Commands
 
 ```bash
-npm run dev
-npm run server
-npm run build
-npm run lint
+cd focus-planner
+npm run dev      # frontend dev server
+npm run server   # backend data server
+npm run build    # production build
+npm run lint     # ESLint
 ```
 
-From the parent `Time_manager` directory on Windows, `start-focus-planner.bat` starts the local data server, starts the Focus Planner dev server, and opens the browser. Keep this script as a convenience wrapper around the app's normal npm workflow.
+From the parent `Time_manager` directory on Windows, `start-focus-planner.bat` starts both servers and opens the browser.

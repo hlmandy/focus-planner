@@ -1,5 +1,6 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
+import { requireFields } from '../validate.js'
 
 export function pomodoroRoutes(app: Hono, db: Database.Database) {
   app.get('/api/pomodoro-sessions', (c) => {
@@ -26,6 +27,8 @@ export function pomodoroRoutes(app: Hono, db: Database.Database) {
 
   app.post('/api/pomodoro-sessions', async (c) => {
     const body = await c.req.json()
+    const err = requireFields(body, ['id', 'projectId', 'date'])
+    if (err) return c.json({ error: err }, 400)
     db.prepare(`INSERT INTO pomodoro_sessions (id, project_id, date, minutes, created_at)
       VALUES (?, ?, ?, ?, ?)`).run(
       body.id, body.projectId, body.date, body.minutes ?? 25,

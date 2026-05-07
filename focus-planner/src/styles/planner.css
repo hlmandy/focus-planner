@@ -514,6 +514,24 @@
   gap: 10px;
 }
 
+.source-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+.source-badge.schedule {
+  background: #f59e0b22;
+  color: #b45309;
+}
+.source-badge.task {
+  background: #00a88422;
+  color: #047857;
+}
+
 .block-editor label {
   display: grid;
   gap: 6px;

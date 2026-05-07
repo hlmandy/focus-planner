@@ -31,7 +31,7 @@ thesisStudentRoutes(app, db)
 researchLogRoutes(app, db)
 pomodoroRoutes(app, db)
 searchRoutes(app, db)
-backupRoutes(app, db)
+backupRoutes(app)
 
 app.onError((err, c) => {
   console.error('Server error:', err)
