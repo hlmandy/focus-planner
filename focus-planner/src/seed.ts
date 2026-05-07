@@ -1,6 +1,6 @@
 import type { AppState, LegacyState, Project, ProjectKind, Task } from './types'
 import { todayKey, uid, getFallbackProjectId } from './utils'
-import { defaultProjects, legacyProjectIdMap, legacyProjectIds, projectTaskTemplates } from './constants'
+import { STORAGE_KEY, defaultProjects, legacyProjectIdMap, legacyProjectIds, projectTaskTemplates } from './constants'
 
 export const resolveProjectId = (projectId: string | undefined, projects: Project[]) => {
   const defaultId = getFallbackProjectId(projects, defaultProjects[0].id)
@@ -281,7 +281,7 @@ export const normalizeState = (state: LegacyState): AppState => {
 }
 
 export const loadState = (): AppState => {
-  const raw = localStorage.getItem('focus-planner-state-v1')
+  const raw = localStorage.getItem(STORAGE_KEY)
   if (!raw) return normalizeState(seedState())
   try {
     return normalizeState(JSON.parse(raw) as LegacyState)

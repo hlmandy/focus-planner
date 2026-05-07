@@ -1,0 +1,94 @@
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(60, 150, 56, 0.32);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+input,
+select,
+textarea {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.66);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #9aa88f;
+}
+.sidebar-project-composer button,
+.project-composer button,
+.project-card-actions button,
+.project-detail-actions button,
+.project-toolbar button,
+.root-task-composer button,
+.subtask-composer button,
+.thesis-composer button,
+.attachment-row button,
+.file-attach,
+.floating-input button,
+.outline-action,
+.summary-actions button,
+.new-habit-inline button,
+.pomodoro-mode-actions button,
+.pomodoro-actions button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0 13px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+}
+
+.sidebar-project-composer button:hover,
+.project-composer button:hover,
+.project-card-actions button:hover,
+.project-detail-actions button:hover,
+.project-toolbar button:hover,
+.root-task-composer button:hover,
+.subtask-composer button:hover,
+.thesis-composer button:hover,
+.attachment-row button:hover,
+.file-attach:hover,
+.floating-input button:hover,
+.outline-action:hover,
+.summary-actions button:hover,
+.new-habit-inline button:hover,
+.pomodoro-actions button:hover {
+  border-color: var(--line-strong);
+  background: #fff;
+}
+
+.outline-action.danger {
+  border-color: #f2b4ad;
+  color: var(--coral);
+  background: var(--coral-soft);
+}

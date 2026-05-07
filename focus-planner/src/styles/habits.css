@@ -1,0 +1,101 @@
+.habit-page {
+  width: min(900px, 100%);
+  margin: 28px auto 0;
+  display: grid;
+  gap: 20px;
+  text-align: center;
+}
+
+.habit-week-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--ink-soft);
+}
+
+.habit-week-header button {
+  min-width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.habit-week-header button:hover {
+  background: #fff;
+  color: var(--blue);
+}
+
+.habit-week-days {
+  display: grid;
+  grid-template-columns: 180px repeat(7, minmax(0, 1fr)) 36px;
+  gap: 10px;
+  padding: 0 10px;
+}
+
+.habit-week-days::before,
+.habit-week-days::after {
+  content: "";
+}
+
+.habit-week-days span {
+  display: grid;
+  gap: 4px;
+  color: var(--ink-soft);
+}
+
+.habit-week-days strong {
+  font-size: 13px;
+}
+
+.habit-week-days em {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.habit-board {
+  display: grid;
+  gap: 8px;
+}
+
+.habit-row {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+.habit-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+
+.habit-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.habit-days button {
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--teal);
+}
+
+.habit-days button.done {
+  border-color: #a6cfc7;
+  background: var(--teal-soft);
+}

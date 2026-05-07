@@ -1,0 +1,22 @@
+.app-shell {
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 218px minmax(0, 1fr);
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(250, 255, 247, 0.94), rgba(238, 248, 233, 0.98)),
+    var(--bg);
+  color: var(--ink);
+}
+
+.app-shell.tool-panel-open {
+  grid-template-columns: 218px minmax(0, 1fr) var(--tool-panel-width, 248px);
+}
+
+.app-shell.sidebar-collapsed {
+  grid-template-columns: 56px minmax(0, 1fr);
+}
+
+.app-shell.sidebar-collapsed.tool-panel-open {
+  grid-template-columns: 56px minmax(0, 1fr) var(--tool-panel-width, 248px);
+}

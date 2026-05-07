@@ -2,53 +2,93 @@
 
 This list intentionally excludes Zotero integration, DOI auto-completion, PDF metadata extraction, and retrospective analytics until the user explicitly asks for them.
 
-## Next
+---
 
-- Improve literature records so they have clearer fields for title, source identifier, reading status, key takeaway, and next action.
-- Make project management filters remember the user's last type/status selection.
-- Allow users to customize type templates instead of using the built-in defaults only.
-- Improve undergraduate thesis supervision with progress filters, overdue highlighting, and per-student task linking.
-- Add drag/drop or explicit controls for reordering and reparenting task-tree items.
-- Add manual correction/editing for Pomodoro sessions in case the timer was assigned to the wrong work object.
-- Add a fuller right utility drawer roadmap, such as richer calendar navigation, scratch notes, and quick statistics.
-- Consider a clearer promotion flow from schedule placeholder to real project task.
-- Add edit support for research diary and literature records.
-- Add search across projects, diary entries, literature records, notes, sources, and attachment indexes.
-- Add filters for record type, project type, and date range.
-- Make the project detail page show full lists with "show more" instead of only the first few diary/literature/attachment items.
-- Add a simple attachment index page that lists all recorded attachments across projects.
-- Improve attachment handling for local paths by distinguishing file paths, web links, and plain filenames.
-- Add export of a single work object to Markdown, including tasks, diary entries, relevant literature records, and attachment indexes.
+## P0: 代码健康（重构遗留 & 死代码清理）
+
+- [x] **清理 App.tsx 遗留问题**
+  - `pageLabels` 重复定义：删除 App.tsx 本地的，改用 `import { pageLabels } from './constants'`
+  - `page` state 类型应为 `PageName` 而非 `string`
+  - `localStorage key` 应统一使用 `STORAGE_KEY` 常量（`constants.ts` 已导出但无人使用）
+- [x] **清理 ToolPanel.tsx 未使用的 import**：`getWeekDays`, `weekDayText`, `Paperclip`
+- [x] **清理 App.css 死样式**：`.add-habit-center`, `.week-picker`, `.week-picker-day`, `.time-block.overdue`（定义了但从未使用）
+- [x] **类型一致性**：`useAppContext.tsx` 中 `persistenceStatus` 应使用 `PersistenceStatus` 类型而非 `string`
+- [ ] **服务端类型同步**：`server/types.ts` 与 `src/types.ts` 是两份独立拷贝，类型可能漂移。应改为共享或自动同步
+
+## P1: 拆分 CSS（降低单文件 token 消耗）
+
+- [x] **拆分 App.css（2222 行）为组件级 CSS** → 13 个文件，通过 `@import` 汇总
+  - `styles/variables.css` — CSS 变量 / 主题色
+  - `styles/shell.css` — 应用外壳 grid 布局
+  - `styles/base.css` — 全局 reset + 共享按钮样式
+  - `styles/sidebar.css`
+  - `styles/workspace.css` — 工作区 + 页头
+  - `styles/tool-panel.css`
+  - `styles/planner.css` — 时间线 + 时间块 + 编辑器（最大区块）
+  - `styles/today.css`
+  - `styles/projects.css`
+  - `styles/diary.css`
+  - `styles/habits.css`
+  - `styles/summary-settings.css`
+  - `styles/responsive.css` — 媒体查询
+
+## P2: 功能优化（用户体验提升）
+
+- [ ] 文献记录增加结构化字段：阅读状态、关键结论、下一步
+- [ ] 项目管理筛选器记住上次选择（type/status）
+- [ ] 支持自定义项目模板（不再仅限内置默认）
+- [ ] 毕业论文指导增强：进度筛选、逾期高亮、每学生关联任务
+- [ ] 任务树支持拖拽排序和重新归属（reorder / reparent）
+- [ ] 番茄钟记录支持手动修正（改项目、改时长）
+- [ ] 研究日记和文献记录支持编辑（目前只能新增/删除）
+- [ ] 项目详情页的日记/文献/附件列表支持"查看更多"（目前只显示前 5-10 条）
+- [ ] 日程占位→真实任务的明确转化流程
+
+## P3: 搜索与导出
+
+- [ ] 全局搜索：跨项目、日记、文献、笔记、附件索引
+- [ ] 搜索结果支持按记录类型、项目类型、日期范围筛选
+- [ ] 附件索引页：列出所有已记录的附件（跨项目汇总）
+- [ ] 附件类型区分优化：文件路径 vs 链接 vs 纯文件名
+- [ ] 单项目 Markdown 导出：包含任务、日记、文献、附件索引
+
+## P4: 工具与基础设施
+
+- [ ] **添加测试框架**（vitest + react-testing-library），先覆盖 state normalization 和迁移逻辑
+- [ ] 服务端 pomodoro POST 路由缺少入参校验（其他路由有 `requireFields`）
+- [ ] 清理 `server/focus-planner-server.mjs`（已弃用的旧 JSON 服务器）
+- [ ] `server/routes/backups.ts` 接受 `db` 参数但从未使用
+- [ ] `index.html` 标题改为 "Focus Planner" 而非 "focus-planner"
+- [ ] ESLint 配置：server 端 TS 文件被当作 browser 全局变量 lint，应分离配置
 
 ## Later
 
-- Add optional managed local file storage for attachments.
-- Add clickable local-file opening where browser/security constraints allow it.
-- Add tests for state normalization and legacy project migration.
-- Add in-app import/export controls for JSON backups.
-- Add better archived-project affordances across the sidebar and non-project views.
+- [ ] 可选的本地附件文件管理
+- [ ] 点击打开本地文件（受浏览器安全限制）
+- [ ] 应用内 JSON 备份导入导出
+- [ ] 已归档项目在侧栏和非项目视图的更好展示
 
 ## Done
 
-- Replaced generic personal projects with research workbench defaults.
-- Added work object types: research, paper, student supervision, and admin/support.
-- Added advisor-side undergraduate thesis progress tracking for multiple students.
-- Added project-aware Pomodoro sessions and focused-time attribution.
-- Added project management metadata: status, goal/description, due date, and type/status filters.
-- Added multi-level task trees via `Task.parentId` and project-detail task management.
-- Added type-specific project templates with default goals and starter task trees.
-- Added research diary records linked to date and project.
-- Added literature library view using `ResearchLogEntry` entries where `kind === "literature"`.
-- Added manual attachment/path/link indexing.
-- Added project detail aggregation for tasks, recent diary entries, literature records, and attachments.
-- Added clickable HTTP/HTTPS attachment links.
-- Added daily Markdown summary entries for research diary content.
-- Added docked left/right drawer layout with an icon-only left navigation state and a right utility drawer.
-- Moved the Pomodoro timer into the right utility drawer and added a calendar tool there.
-- Added drag-created planner time blocks that open the editor immediately.
-- Added schedule-block notes and kept them separate from task titles.
-- Added `Task.source` so blank planner blocks do not pollute project task trees, TODO strips, or completion statistics.
-- Fixed planner scrolling so the time grid owns the vertical scroll on the planner page.
-- Added a local JSON persistence server with rolling backups, plus a Windows launcher that starts both the data server and Vite.
-- Migrated persistence from JSON file to SQLite database with Hono API server and granular CRUD routes.
-- Split `src/App.tsx` into modular structure: types, utils, constants, seed data, React Context, and page components under `src/pages/`.
+- [x] 用科研工作台默认值替代通用个人项目模板
+- [x] 添加工作对象类型：research / paper / student supervision / admin
+- [x] 添加导师侧本科论文进度追踪（多学生）
+- [x] 添加项目关联番茄钟和专注时间归属
+- [x] 添加项目管理元数据：status / goal / dueDate / 类型状态筛选
+- [x] 添加多层任务树（`Task.parentId`）和项目详情任务管理
+- [x] 添加类型专属项目模板（默认目标 + 初始任务树）
+- [x] 添加关联日期和项目的研究日记
+- [x] 添加文献库视图（`kind === "literature"`）
+- [x] 添加手动附件/路径/链接索引
+- [x] 添加项目详情聚合：任务、最近日记、文献、附件
+- [x] 添加可点击的 HTTP/HTTPS 附件链接
+- [x] 添加每日 Markdown 总结
+- [x] 添加左右抽屉布局（左侧可折叠导航 + 右侧工具面板）
+- [x] 番茄钟移入右侧工具面板，添加日历工具
+- [x] 添加拖拽创建时间块（创建后立即打开编辑器）
+- [x] 添加日程块备注（与任务标题分离）
+- [x] 添加 `Task.source` 区分真实任务和日程占位
+- [x] 修复规划表滚动（时间网格拥有垂直滚动）
+- [x] 添加本地 JSON 持久化服务器 + 滚动备份 + Windows 启动脚本
+- [x] 从 JSON 迁移到 SQLite（Hono API + 按实体 CRUD 路由）
+- [x] **拆分 App.tsx 为模块化结构**：types / utils / constants / seed 独立文件 + pages/ 页面组件 + components/（Sidebar, ToolPanel）+ CLAUDE.md 架构文档

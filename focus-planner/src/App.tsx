@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { MoreHorizontal } from 'lucide-react'
 import './App.css'
-import type { AppState, PomodoroSession } from './types'
-import type { PersistenceStatus } from './types'
+import type { AppState, PageName, PersistenceStatus, PomodoroSession } from './types'
 import { todayKey, uid } from './utils'
-import { SERVER_STATE_ENDPOINT } from './constants'
+import { SERVER_STATE_ENDPOINT, STORAGE_KEY, pageLabels } from './constants'
 import { loadState, normalizeState, seedState } from './seed'
 import { AppProvider } from './hooks/useAppContext'
 import { Sidebar } from './components/Sidebar'
@@ -18,18 +17,12 @@ import { HabitsPage } from './pages/HabitsPage'
 import { SummaryPage } from './pages/SummaryPage'
 import { SettingsPage } from './pages/SettingsPage'
 
-const pageLabels: Record<string, string> = {
-  today: '今天', planner: '规划表', projects: '科研工作台',
-  diary: '研究日记', literature: '文献库', habits: '习惯',
-  summary: '今日总结', settings: '设置',
-}
-
 function AppShell() {
   const [state, setState] = useState<AppState>(loadState)
   const [persistenceStatus, setPersistenceStatus] = useState<PersistenceStatus>('checking')
   const [isPersistenceReady, setIsPersistenceReady] = useState(false)
   const [isServerAvailable, setIsServerAvailable] = useState(false)
-  const [page, setPage] = useState<string>('planner')
+  const [page, setPage] = useState<PageName>('planner')
   const [date, setDate] = useState(todayKey())
   const [projectFilterId, setProjectFilterId] = useState('all')
   const [projectDetailId, setProjectDetailId] = useState<string | null>(null)
@@ -42,7 +35,7 @@ function AppShell() {
   const [toolPanelWidth, setToolPanelWidth] = useState(248)
 
   useEffect(() => {
-    localStorage.setItem('focus-planner-state-v1', JSON.stringify(state))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   }, [state])
 
   useEffect(() => {

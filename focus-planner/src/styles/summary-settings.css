@@ -1,0 +1,70 @@
+.summary-page {
+  width: min(860px, 100%);
+  margin: 28px auto 0;
+}
+
+.summary-page textarea {
+  width: 100%;
+  min-height: 540px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 16px;
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  resize: vertical;
+  box-shadow: var(--shadow-sm);
+}
+
+.summary-actions {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dashboard {
+  width: min(860px, 100%);
+  margin: 28px auto 0;
+}
+
+.card {
+  padding: 18px;
+}
+
+.card-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card-title span {
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.card-title small {
+  color: var(--muted);
+}
+
+.settings-list {
+  padding: 14px;
+}
+
+.settings-list div {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-list strong {
+  color: var(--ink);
+}
+
+.settings-list span {
+  color: var(--ink-soft);
+  line-height: 1.6;
+}

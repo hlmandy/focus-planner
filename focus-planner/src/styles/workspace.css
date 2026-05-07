@@ -1,0 +1,62 @@
+.workspace {
+  min-width: 0;
+  position: relative;
+  height: 100vh;
+  overflow: auto;
+  padding: 14px 16px 32px;
+}
+
+.workspace.planner-workspace {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 18px;
+}
+
+.app-header {
+  min-height: 32px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.app-header h1 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(18px, 1.7vw, 24px);
+  font-weight: 650;
+  line-height: 1.18;
+}
+
+.app-header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tool-trigger {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  box-shadow: var(--shadow-sm);
+}
+
+.tool-trigger:hover {
+  border-color: #9fc993;
+  color: var(--blue);
+}

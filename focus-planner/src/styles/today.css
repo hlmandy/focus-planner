@@ -1,0 +1,59 @@
+.center-page {
+  min-height: calc(100vh - 90px);
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 22px;
+  padding-top: 72px;
+}
+
+.today-empty {
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.task-strip {
+  width: min(600px, 100%);
+  display: grid;
+  gap: 9px;
+}
+
+.todo,
+.project-task {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 0 9px;
+  box-shadow: var(--shadow-sm);
+}
+
+.todo {
+  cursor: grab;
+}
+
+.todo button,
+.project-task button {
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--muted);
+}
+
+.todo span,
+.project-task span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.todo.done span,
+.project-task.done span {
+  color: var(--muted);
+  text-decoration: line-through;
+}

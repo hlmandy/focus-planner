@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react'
-import type { AppState, PageName } from '../types'
+import type { AppState, PageName, PersistenceStatus } from '../types'
 
 interface AppContextValue {
   state: AppState
@@ -29,7 +29,7 @@ interface AppContextValue {
   toolPanelWidth: number
   setToolPanelWidth: (width: number) => void
 
-  persistenceStatus: string
+  persistenceStatus: PersistenceStatus
 
   mode: 'work' | 'break'
   setMode: (mode: 'work' | 'break') => void

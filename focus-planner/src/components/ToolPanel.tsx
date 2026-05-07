@@ -1,13 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Pause, Play, Plus, RotateCcw, Paperclip } from 'lucide-react'
+import { Pause, Play, Plus, RotateCcw } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import {
   toDateKey,
   todayKey,
   fromDateKey,
   addDays,
-  getWeekDays,
-  weekDayText,
   uid,
   clamp,
   snap,

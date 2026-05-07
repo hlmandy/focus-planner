@@ -1,0 +1,269 @@
+.tool-panel {
+  position: relative;
+  height: 100vh;
+  min-width: 0;
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  border-left: 1px solid var(--line);
+  background: #dff0d8;
+  padding: 10px;
+}
+
+.tool-panel-resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -4px;
+  z-index: 2;
+  width: 8px;
+  background: transparent;
+  cursor: col-resize;
+}
+
+.tool-panel-resizer::after {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 3px;
+  width: 2px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.tool-panel-resizer:hover::after,
+.tool-panel-resizer:focus-visible::after {
+  background: var(--line-strong);
+}
+
+.tool-panel-head,
+.tool-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tool-panel-head strong {
+  font-size: 14px;
+}
+
+.tool-panel-head button,
+.block-editor-close {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.tool-card {
+  display: grid;
+  gap: 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+.tool-card-title span {
+  font-weight: 650;
+}
+
+.tool-card-title em,
+.tool-card label {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.tool-card label {
+  display: grid;
+  gap: 7px;
+}
+
+.tool-card select,
+.tool-card input {
+  height: 38px;
+  padding: 0 8px;
+}
+
+.tool-quick-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 6px;
+}
+
+.tool-quick-add input {
+  min-width: 0;
+  height: 34px;
+  padding: 0 9px;
+}
+
+.tool-quick-add button {
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--blue);
+  border-radius: var(--radius-sm);
+  background: var(--blue);
+  color: white;
+}
+
+.tool-quick-add button:hover {
+  background: #2f7f2d;
+}
+
+.pomodoro-time {
+  color: var(--ink);
+  font-size: 28px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.pomodoro-mode-actions,
+.pomodoro-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.month-calendar-head {
+  display: grid;
+  grid-template-columns: 30px 1fr 30px;
+  align-items: center;
+  gap: 6px;
+}
+
+.month-calendar-head strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+  text-align: center;
+}
+
+.month-calendar-head button,
+.tool-calendar-actions button {
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+
+.month-calendar-head button:hover,
+.tool-calendar-actions button:hover {
+  border-color: var(--line-strong);
+  color: var(--blue);
+}
+
+.month-calendar-weekdays,
+.month-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.month-calendar-weekdays span {
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.month-calendar-grid button {
+  position: relative;
+  min-width: 0;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.month-calendar-grid button:hover {
+  border-color: var(--line);
+  background: var(--surface-2);
+}
+
+.month-calendar-grid button.active {
+  border-color: #77bf5b;
+  background: var(--blue-soft);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(60, 150, 56, 0.16);
+}
+
+.month-calendar-grid button.today {
+  color: var(--blue);
+  font-weight: 650;
+}
+
+.month-calendar-grid button.rest-day {
+  background: rgba(255, 202, 64, 0.18);
+  color: #a76800;
+}
+
+.month-calendar-grid button.rest-day:hover {
+  background: rgba(255, 202, 64, 0.26);
+}
+
+.month-calendar-grid button.workday-adjusted {
+  background: transparent;
+  color: var(--ink-soft);
+}
+
+.month-calendar-grid button.outside {
+  color: #a6b2bd;
+}
+
+.month-calendar-grid button.outside.rest-day {
+  color: #c2a65f;
+}
+
+.month-calendar-grid button strong {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  color: #b36b00;
+  font-size: 8px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.month-calendar-grid button.workday-adjusted strong {
+  color: #8b98a6;
+}
+
+.month-calendar-grid em {
+  position: absolute;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--teal);
+}
+
+.tool-calendar-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.pomodoro-mode-actions button.active,
+.pomodoro-actions button:first-child {
+  border-color: #9fc993;
+  color: var(--blue);
+  background: var(--blue-soft);
+}
