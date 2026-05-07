@@ -13,7 +13,7 @@ export default defineConfig([
       js.configs.recommended,
       tseslint.configs.recommended,
       reactHooks.configs.flat.recommended,
-      reactRefresh.configs.flat.recommended,
+      reactRefresh.configs.vite,
     ],
     languageOptions: {
       globals: globals.browser,
@@ -27,6 +27,9 @@ export default defineConfig([
     ],
     languageOptions: {
       globals: globals.node,
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ])

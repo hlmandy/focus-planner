@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 import { Check, Circle, FileText, Paperclip, Plus, Trash2 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
-import { todayKey, uid, durationText, getFallbackProjectId, getTaskDescendantIds, isWebLink, researchLogKindLabels, isProjectTask } from '../utils'
+import { todayKey, uid, durationText, getTaskDescendantIds, isWebLink, researchLogKindLabels, isProjectTask } from '../utils'
 import { colors, projectKindLabels, projectStatusLabels, thesisStageLabels, projectTemplateGoals } from '../constants'
 import { createTasksFromTemplate } from '../seed'
 import type { ProjectKind, ProjectStatus, ThesisStage, Project, Task, ThesisStudent } from '../types'

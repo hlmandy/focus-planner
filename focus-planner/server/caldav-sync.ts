@@ -1,0 +1,199 @@
+import type Database from 'better-sqlite3'
+import { buildIcs, createRemoteEvent, updateRemoteEvent, deleteRemoteEvent } from './caldav-client.js'
+import type { CalDAVConfig } from './caldav-client.js'
+
+interface BlockWithTask {
+  blockId: string
+  taskId: string
+  date: string
+  startMin: number
+  endMin: number
+  note: string
+  title: string
+  done: boolean
+  projectId: string
+}
+
+interface SyncMapRow {
+  blockId: string
+  eventUrl: string
+  eventUid: string
+  etag: string
+  contentHash: string
+  syncStatus: string
+  lastSyncedAt: string
+  errorMessage: string
+}
+
+export function getContentHash(block: BlockWithTask): string {
+  return [
+    block.blockId,
+    block.title,
+    block.date,
+    String(block.startMin),
+    String(block.endMin),
+    block.done ? '1' : '0',
+    block.note,
+  ].join('|')
+}
+
+function getConfig(db: Database.Database) {
+  return db.prepare('SELECT * FROM caldav_config WHERE id = 1').get() as any
+}
+
+function getBlocksWithTasks(db: Database.Database): BlockWithTask[] {
+  return (db.prepare(`
+    SELECT b.id as block_id, b.task_id, b.date, b.start_min, b.end_min, b.note,
+           t.title, t.done, t.project_id
+    FROM schedule_blocks b
+    JOIN tasks t ON t.id = b.task_id
+  `).all() as any[]).map(r => ({
+    blockId: r.block_id,
+    taskId: r.task_id,
+    date: r.date,
+    startMin: r.start_min,
+    endMin: r.end_min,
+    note: r.note,
+    title: r.title,
+    done: !!r.done,
+    projectId: r.project_id,
+  }))
+}
+
+function getSyncMap(db: Database.Database): Map<string, SyncMapRow> {
+  const rows = db.prepare('SELECT * FROM caldav_sync_map').all() as any[]
+  const map = new Map<string, SyncMapRow>()
+  for (const r of rows) {
+    map.set(r.block_id, {
+      blockId: r.block_id,
+      eventUrl: r.event_url,
+      eventUid: r.event_uid,
+      etag: r.etag,
+      contentHash: r.content_hash,
+      syncStatus: r.sync_status,
+      lastSyncedAt: r.last_synced_at,
+      errorMessage: r.error_message,
+    })
+  }
+  return map
+}
+
+export async function runSync(db: Database.Database): Promise<{
+  created: number
+  updated: number
+  deleted: number
+  errors: number
+}> {
+  const row = getConfig(db)
+  if (!row || !row.sync_enabled || !row.calendar_url || !row.username) {
+    return { created: 0, updated: 0, deleted: 0, errors: 0 }
+  }
+
+  const config: CalDAVConfig = {
+    serverUrl: row.server_url,
+    username: row.username,
+    password: row.password,
+    calendarUrl: row.calendar_url,
+  }
+
+  const blocks = getBlocksWithTasks(db)
+  const blockIds = new Set(blocks.map(b => b.blockId))
+  const syncMap = getSyncMap(db)
+  const now = new Date().toISOString()
+
+  let created = 0
+  let updated = 0
+  let deleted = 0
+  let errors = 0
+
+  const upsertMap = db.prepare(`
+    INSERT INTO caldav_sync_map (block_id, event_url, event_uid, etag, content_hash, sync_status, last_synced_at, error_message)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(block_id) DO UPDATE SET
+      event_url = excluded.event_url,
+      event_uid = excluded.event_uid,
+      etag = excluded.etag,
+      content_hash = excluded.content_hash,
+      sync_status = excluded.sync_status,
+      last_synced_at = excluded.last_synced_at,
+      error_message = excluded.error_message
+  `)
+
+  const deleteMapRow = db.prepare('DELETE FROM caldav_sync_map WHERE block_id = ?')
+
+  // Phase 1: Delete remote events for locally-deleted blocks
+  for (const [blockId, entry] of syncMap) {
+    if (blockIds.has(blockId)) continue
+    if (entry.eventUrl) {
+      try {
+        await deleteRemoteEvent(config, entry.eventUrl, entry.etag)
+        deleted++
+      } catch {
+        // best-effort: still remove local mapping
+        deleted++
+      }
+    }
+    deleteMapRow.run(blockId)
+  }
+
+  // Phase 2: Create and update
+  for (const block of blocks) {
+    const hash = getContentHash(block)
+    const existing = syncMap.get(block.blockId)
+    const uid = `${block.blockId}@focus-planner-caldav`
+
+    if (!existing) {
+      const ics = buildIcs({
+        uid,
+        summary: (block.done ? '✓ ' : '') + block.title,
+        date: block.date,
+        startMin: block.startMin,
+        endMin: block.endMin,
+        location: block.note || undefined,
+        description: `Source: Focus Planner\nBlock: ${block.blockId}\nTask: ${block.taskId}`,
+      })
+      try {
+        const result = await createRemoteEvent(config, uid, ics)
+        if (result.ok) {
+          upsertMap.run(block.blockId, result.eventUrl, uid, result.etag, hash, 'synced', now, '')
+          created++
+        } else {
+          upsertMap.run(block.blockId, '', uid, '', hash, 'error', now, result.message || 'Create failed')
+          errors++
+        }
+      } catch (err: any) {
+        upsertMap.run(block.blockId, '', uid, '', hash, 'error', now, err.message)
+        errors++
+      }
+    } else if (existing.contentHash !== hash) {
+      if (!existing.eventUrl) continue
+      const ics = buildIcs({
+        uid: existing.eventUid || uid,
+        summary: (block.done ? '✓ ' : '') + block.title,
+        date: block.date,
+        startMin: block.startMin,
+        endMin: block.endMin,
+        location: block.note || undefined,
+        description: `Source: Focus Planner\nBlock: ${block.blockId}\nTask: ${block.taskId}`,
+      })
+      try {
+        const result = await updateRemoteEvent(config, existing.eventUrl, existing.etag, ics)
+        if (result.ok) {
+          upsertMap.run(block.blockId, existing.eventUrl, existing.eventUid, result.etag, hash, 'synced', now, '')
+          updated++
+        } else {
+          upsertMap.run(block.blockId, existing.eventUrl, existing.eventUid, existing.etag, hash, 'error', now, result.message || 'Update failed')
+          errors++
+        }
+      } catch (err: any) {
+        upsertMap.run(block.blockId, existing.eventUrl, existing.eventUid, existing.etag, hash, 'error', now, err.message)
+        errors++
+      }
+    }
+  }
+
+  const errorMsg = errors > 0 ? `${errors} items failed` : ''
+  db.prepare('UPDATE caldav_config SET last_sync_at = ?, last_sync_error = ? WHERE id = 1').run(now, errorMsg)
+
+  return { created, updated, deleted, errors }
+}

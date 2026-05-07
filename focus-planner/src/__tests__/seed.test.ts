@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { normalizeState, seedState, normalizeProjects, resolveProjectId, createTasksFromTemplate } from '../seed'
 import type { LegacyState } from '../types'
 
@@ -46,7 +46,7 @@ describe('normalizeState', () => {
     const state: LegacyState = {
       projects: [{ id: 'p1', name: 'P', color: '#000', kind: 'research', status: 'active', goal: '', dueDate: '' }],
       tasks: [
-        { id: 't1', title: '', projectId: 'p1', tags: [], done: false, createdAt: '2026-05-07' },
+        { id: 't1', title: '', projectId: 'p1', tags: [], done: false, createdAt: '2026-05-07', source: 'schedule' as const },
       ],
       blocks: [
         { id: 'b1', taskId: 't1', date: '2026-05-07', start: 540, end: 600 },
@@ -60,7 +60,7 @@ describe('normalizeState', () => {
     const state: LegacyState = {
       projects: [{ id: 'p1', name: 'P', color: '#000', kind: 'research', status: 'active', goal: '', dueDate: '' }],
       tasks: [
-        { id: 't1', title: 'Real task', projectId: 'p1', tags: [], done: false, createdAt: '2026-05-07' },
+        { id: 't1', title: 'Real task', projectId: 'p1', tags: [], done: false, createdAt: '2026-05-07', source: 'task' as const },
       ],
       blocks: [
         { id: 'b1', taskId: 't1', date: '2026-05-07', start: 540, end: 600 },
@@ -86,7 +86,7 @@ describe('normalizeState', () => {
     const state: LegacyState = {
       projects: [{ id: 'p1', name: 'P', color: '#000', kind: 'research', status: 'active', goal: '', dueDate: '' }],
       tasks: [
-        { id: 't1', title: 'Task', projectId: 'p1', tags: [], done: false, createdAt: '2026-05-07' },
+        { id: 't1', title: 'Task', projectId: 'p1', tags: [], done: false, createdAt: '2026-05-07', source: 'task' as const },
       ],
       blocks: [
         { id: 'b1', todoId: 't1', date: '2026-05-07', start: 540, end: 600 },
@@ -142,9 +142,9 @@ describe('normalizeProjects', () => {
     expect(result.length).toBeGreaterThan(0)
   })
 
-  it('fills missing optional fields', () => {
+  it('preserves valid projects as-is', () => {
     const result = normalizeProjects([
-      { id: 'x', name: 'X', color: '#000' } as any,
+      { id: 'x', name: 'X', color: '#000', kind: 'research', status: 'active', goal: '', dueDate: '' },
     ])
     expect(result[0].kind).toBe('research')
     expect(result[0].status).toBe('active')

@@ -103,6 +103,28 @@ CREATE INDEX IF NOT EXISTS idx_habit_entries_habit_date ON habit_entries(habit_i
 CREATE INDEX IF NOT EXISTS idx_thesis_students_project ON thesis_students(project_id);
 CREATE INDEX IF NOT EXISTS idx_research_logs_project_date ON research_logs(project_id, date);
 CREATE INDEX IF NOT EXISTS idx_pomodoro_project_date ON pomodoro_sessions(project_id, date);
+
+CREATE TABLE IF NOT EXISTS caldav_config (
+  id INTEGER PRIMARY KEY CHECK(id = 1),
+  server_url TEXT NOT NULL DEFAULT '',
+  username TEXT NOT NULL DEFAULT '',
+  password TEXT NOT NULL DEFAULT '',
+  calendar_url TEXT NOT NULL DEFAULT '',
+  sync_enabled INTEGER NOT NULL DEFAULT 0,
+  last_sync_at TEXT NOT NULL DEFAULT '',
+  last_sync_error TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS caldav_sync_map (
+  block_id TEXT PRIMARY KEY,
+  event_url TEXT NOT NULL DEFAULT '',
+  event_uid TEXT NOT NULL DEFAULT '',
+  etag TEXT NOT NULL DEFAULT '',
+  content_hash TEXT NOT NULL DEFAULT '',
+  sync_status TEXT NOT NULL DEFAULT 'pending_create',
+  last_synced_at TEXT NOT NULL DEFAULT '',
+  error_message TEXT NOT NULL DEFAULT ''
+);
 `
 
 function timestamp(): string {
@@ -208,6 +230,8 @@ export function initDatabase(): Database.Database {
 
   db.exec(SCHEMA)
 
+  db.prepare('INSERT OR IGNORE INTO caldav_config (id) VALUES (1)').run()
+
   const hasData = db.prepare('SELECT COUNT(*) as c FROM projects').get() as { c: number }
   if (hasData.c === 0) {
     migrateFromJson(db)
@@ -236,7 +260,7 @@ export function rotateBackups(maxBackups = 30): void {
     .sort()
   const stale = files.slice(0, Math.max(0, files.length - maxBackups))
   for (const f of stale) {
-    try { unlinkSync(path.join(backupDir, f)) } catch {}
+    try { unlinkSync(path.join(backupDir, f)) } catch { /* rotation cleanup */ }
   }
 }
 

@@ -21,7 +21,7 @@ export function backupRoutes(app: Hono) {
       .reverse()
       .map(f => {
         let size = 0
-        try { size = statSync(path.join(dir, f)).size } catch {}
+        try { size = statSync(path.join(dir, f)).size } catch { /* file may be deleted between readdir and stat */ }
         return { name: f, size }
       })
 

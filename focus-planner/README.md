@@ -20,7 +20,7 @@ Implemented:
 - Hierarchical task trees inside each work object for phases, work packages, and nested subtasks.
 - Undergraduate thesis supervision tracks multiple students by progress stage, next milestone, due date, and notes rather than research diary/literature output.
 - Pomodoro sessions are linked to a work object so focused time can be attributed to a project or supervision workflow.
-- Weekly planning view with draggable/schedulable tasks, drag-created schedule blocks, block notes, and click-to-edit details.
+- Weekly planning view with draggable/schedulable tasks, drag-created schedule blocks, block notes, and click-to-edit details. Schedule placeholders auto-promote to real tasks when given a title.
 - Left navigation and right utility tools use docked drawer behavior. The right utility drawer contains the Pomodoro timer and a small calendar tool.
 - Daily research diary entries linked to a project and date.
 - Literature records linked to a project and date.
@@ -83,6 +83,12 @@ Lint:
 npm run lint
 ```
 
+Test:
+
+```bash
+npm run test
+```
+
 ## Project Structure
 
 ```
@@ -95,8 +101,10 @@ src/
     useAppContext.tsx — React Context for shared state and navigation
   pages/            — page components (Planner, Projects, Diary, etc.)
   components/       — shared UI components (Sidebar, ToolPanel)
+  styles/           — component-level CSS (13 files)
+  __tests__/        — vitest tests (utils, seed normalization)
   App.tsx           — app shell: providers, persistence, routing
-  App.css           — all styling
+  App.css           — style entry point (@import styles/*)
 server/
   index.ts          — Hono API server entry point
   db.ts             — SQLite schema, init, migration, backup

@@ -24,7 +24,7 @@ export function PlannerPage() {
   const timelineRef = useRef<HTMLDivElement | null>(null)
 
   const weekDays = getWeekDays(date)
-  const weekKeys = weekDays.map(toDateKey)
+  const weekKeys = useMemo(() => getWeekDays(date).map(toDateKey), [date])
   const weekStart = weekKeys[0]
   const weekEnd = weekKeys[6]
 
@@ -78,7 +78,19 @@ export function PlannerPage() {
   }
 
   const removeBlock = (id: string) => {
-    setState((prev) => ({ ...prev, blocks: prev.blocks.filter((block) => block.id !== id) }))
+    setState((prev) => {
+      const block = prev.blocks.find((b) => b.id === id)
+      const nextBlocks = prev.blocks.filter((b) => b.id !== id)
+      if (block) {
+        const taskId = block.taskId
+        const task = prev.tasks.find((t) => t.id === taskId)
+        const hasOtherBlocks = nextBlocks.some((b) => b.taskId === taskId)
+        if (task?.source === 'schedule' && !hasOtherBlocks) {
+          return { ...prev, tasks: prev.tasks.filter((t) => t.id !== taskId), blocks: nextBlocks }
+        }
+      }
+      return { ...prev, blocks: nextBlocks }
+    })
     if (editingBlockId === id) {
       setEditingBlockId(null)
     }

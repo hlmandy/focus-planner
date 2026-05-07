@@ -68,3 +68,125 @@
   color: var(--ink-soft);
   line-height: 1.6;
 }
+
+/* CalDAV settings */
+
+.caldav-form {
+  padding: 14px;
+}
+
+.caldav-status {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 16px;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.caldav-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+.caldav-dot.green { background: #22c55e; }
+.caldav-dot.yellow { background: #eab308; }
+.caldav-dot.gray { background: #9ca3af; }
+
+.caldav-form label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 12px 0 4px;
+}
+
+.caldav-form input[type="text"],
+.caldav-form input[type="password"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.caldav-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.caldav-toggle {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 8px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+}
+
+.caldav-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.caldav-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.caldav-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.caldav-actions button {
+  padding: 7px 16px;
+  font-size: 13px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.caldav-actions button:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.caldav-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.caldav-message {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.caldav-sync-info {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.caldav-error {
+  color: #ef4444;
+  margin-top: 4px;
+}

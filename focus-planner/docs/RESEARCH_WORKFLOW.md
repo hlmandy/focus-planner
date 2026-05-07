@@ -15,7 +15,7 @@ Undergraduate thesis supervision is specifically progress control from the advis
 
 2. Plan work in the planner.
    Tasks represent intended work and can be scheduled into dated time blocks.
-   Dragging on empty planner space creates a schedule block and immediately opens its editor. A blank schedule block is a time record, not a project task, so it does not appear in project task trees or completion statistics until the user gives it task-level meaning through project task workflows.
+   Dragging on empty planner space creates a schedule block and immediately opens its editor. A blank schedule block is a time record, not a project task, so it does not appear in project task trees or completion statistics until the user gives it a title — at which point it automatically becomes a real task visible across all views.
    Each schedule block has its own note field for what happened during that specific time window.
    In a work object's detail page, use the task tree to break a topic into phases, work packages, and subtasks.
 

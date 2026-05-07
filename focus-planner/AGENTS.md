@@ -60,7 +60,7 @@ Avoid adding these until the user explicitly asks for them:
 
 ### Data model rules
 
-- `Task.source`: `"task"` for real project tasks, `"schedule"` for blank planner time blocks. Task trees, TODO strips, and completion stats must ignore schedule placeholders.
+- `Task.source`: `"task"` for real project tasks, `"schedule"` for blank planner time blocks. Task trees, TODO strips, and completion stats must ignore schedule placeholders. Typing a title in the block editor auto-promotes a schedule placeholder to a real task. Deleting a time block also removes orphaned schedule-only tasks with no remaining blocks.
 - `ScheduleBlock.note`: notes for a specific time window. Do not store in task title.
 - `Project.kind`: determines template and UI — `research` / `paper` / `student` / `admin`.
 - `Task.parentId`: multi-level task trees. Deleting a parent deletes its entire subtree and related schedule blocks.
@@ -81,7 +81,6 @@ Avoid adding these until the user explicitly asks for them:
 - Full-state sync: `GET/PUT /api/state`. Granular CRUD routes exist per entity but frontend uses full-state sync.
 - Rolling backups under `data/backups/`.
 - Server types in `server/types.ts` are a separate copy from `src/types.ts` — keep them in sync manually for now.
-- The legacy JSON-only server (`server/focus-planner-server.mjs`) is superseded; do not modify it.
 
 ## Useful Commands
 
@@ -91,6 +90,7 @@ npm run dev      # frontend dev server
 npm run server   # backend data server
 npm run build    # production build
 npm run lint     # ESLint
+npm run test     # vitest
 ```
 
 From the parent `Time_manager` directory on Windows, `start-focus-planner.bat` starts both servers and opens the browser.

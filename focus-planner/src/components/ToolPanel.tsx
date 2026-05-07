@@ -24,7 +24,6 @@ export function ToolPanel() {
     setDate,
     setPage,
     projectFilterId,
-    isToolPanelOpen,
     setIsToolPanelOpen,
     toolPanelWidth,
     setToolPanelWidth,
