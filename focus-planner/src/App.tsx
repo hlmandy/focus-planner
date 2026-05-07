@@ -404,8 +404,12 @@ const durationText = (mins: number) => {
   return `${m}m`
 }
 
-const blockTitleText = (block: ScheduleBlock, task: Task | undefined) =>
-  task?.title.trim() || blockDateText(block.date)
+const blockTitleText = (block: ScheduleBlock, task: Task | undefined) => {
+  const title = task?.title.trim()
+  if (title) return title
+  const blockDay = fromDateKey(block.date)
+  return `${weekDayText(blockDay)} ${String(blockDay.getMonth() + 1).padStart(2, '0')}/${String(blockDay.getDate()).padStart(2, '0')}`
+}
 
 const isProjectTask = (task: Task) => task.source !== 'schedule'
 

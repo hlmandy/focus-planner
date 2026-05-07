@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npm install *)",
+      "Bash(npx tsx *)",
+      "Bash(curl -s http://localhost:8787/api/health)",
+      "Bash(npx kill-port *)",
+      "Bash(taskkill //F //FI \"WINDOWTITLE eq Focus*\")",
+      "Bash(netstat -ano)",
+      "Bash(FOCUS_PLANNER_PORT=8788 npx tsx server/index.ts)",
+      "Bash(curl -s http://localhost:8788/api/*)",
+      "Bash(python -c *)",
+      "Bash(mkdir -p ~/.claude/skills/*)"
+    ]
+  }
+}
