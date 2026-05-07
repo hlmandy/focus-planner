@@ -69,7 +69,7 @@ npm run server
 npm run dev
 ```
 
-`npm run server` stores app data in `data/focus-planner-state.json` and keeps rolling backups in `data/backups/`. The browser still keeps a `localStorage` copy as a fallback, but the JSON file is the safer source when the local server is running.
+`npm run server` starts a Hono API server backed by SQLite (`better-sqlite3`). Data is stored in `data/focus-planner-state.db` with rolling backups in `data/backups/`. The browser also keeps a `localStorage` copy as a fallback.
 
 Build:
 
@@ -83,10 +83,27 @@ Lint:
 npm run lint
 ```
 
-## Important Files
+## Project Structure
 
-- [src/App.tsx](src/App.tsx) contains the current app state model and all UI views.
-- [src/App.css](src/App.css) contains the current layout and component styling.
-- [server/focus-planner-server.mjs](server/focus-planner-server.mjs) contains the local JSON persistence server.
-- [docs/RESEARCH_WORKFLOW.md](docs/RESEARCH_WORKFLOW.md) explains the intended research workflow.
-- [docs/TODO.md](docs/TODO.md) tracks the next work items.
+```
+src/
+  types.ts          — shared type definitions
+  utils.ts          — pure utility functions (date, time, UID, etc.)
+  constants.ts      — labels, templates, holiday calendar, defaults
+  seed.ts           — seed data, state normalization, legacy migration
+  hooks/
+    useAppContext.tsx — React Context for shared state and navigation
+  pages/            — page components (Planner, Projects, Diary, etc.)
+  components/       — shared UI components (Sidebar, ToolPanel)
+  App.tsx           — app shell: providers, persistence, routing
+  App.css           — all styling
+server/
+  index.ts          — Hono API server entry point
+  db.ts             — SQLite schema, init, migration, backup
+  types.ts          — shared backend type definitions
+  validate.ts       — request validation helpers
+  routes/           — CRUD routes per entity
+docs/
+  RESEARCH_WORKFLOW.md — intended research workflow
+  TODO.md           — next work items
+```

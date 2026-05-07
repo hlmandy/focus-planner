@@ -116,4 +116,4 @@ Use this to distinguish planned time blocks from actual focused time.
 
 - Literature records are a subset of research diary entries, so reading a paper can be seen both in the daily diary and in the literature library.
 - Detail pages are meant to answer "what exists for this work object?" rather than only "what tasks are open?"
-- The app stores state in browser `localStorage` under `focus-planner-state-v1`.
+- The app stores state in browser `localStorage` under `focus-planner-state-v1` and syncs to a local SQLite server when available.

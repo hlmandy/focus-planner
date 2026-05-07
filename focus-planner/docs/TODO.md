@@ -24,7 +24,6 @@ This list intentionally excludes Zotero integration, DOI auto-completion, PDF me
 
 - Add optional managed local file storage for attachments.
 - Add clickable local-file opening where browser/security constraints allow it.
-- Split `src/App.tsx` into smaller components and state utilities.
 - Add tests for state normalization and legacy project migration.
 - Add in-app import/export controls for JSON backups.
 - Add better archived-project affordances across the sidebar and non-project views.
@@ -51,3 +50,5 @@ This list intentionally excludes Zotero integration, DOI auto-completion, PDF me
 - Added `Task.source` so blank planner blocks do not pollute project task trees, TODO strips, or completion statistics.
 - Fixed planner scrolling so the time grid owns the vertical scroll on the planner page.
 - Added a local JSON persistence server with rolling backups, plus a Windows launcher that starts both the data server and Vite.
+- Migrated persistence from JSON file to SQLite database with Hono API server and granular CRUD routes.
+- Split `src/App.tsx` into modular structure: types, utils, constants, seed data, React Context, and page components under `src/pages/`.
