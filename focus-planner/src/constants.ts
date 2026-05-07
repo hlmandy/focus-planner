@@ -1,7 +1,6 @@
 import type { PageName, ProjectKind, ProjectStatus, ThesisStage, BlockViewStatus, Project } from './types'
 
 export const STORAGE_KEY = 'focus-planner-state-v1'
-export const SERVER_STATE_ENDPOINT = '/api/state'
 export const DAY_START = 6 * 60
 export const REGULAR_DAY_END = 24 * 60
 export const LATE_NIGHT_END = 27 * 60

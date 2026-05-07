@@ -1,12 +1,13 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
+import type { Project, ProjectRow } from '../types.js'
 import { requireFields, checkEnum } from '../validate.js'
 
 const VALID_KINDS = ['research', 'paper', 'student', 'admin']
 const VALID_STATUSES = ['active', 'paused', 'done', 'archived']
 
-function toProject(r: any) {
-  return { id: r.id, name: r.name, color: r.color, kind: r.kind, status: r.status, goal: r.goal, dueDate: r.due_date }
+function toProject(r: ProjectRow): Project {
+  return { id: r.id, name: r.name, color: r.color, kind: r.kind as Project['kind'], status: r.status as Project['status'], goal: r.goal, dueDate: r.due_date }
 }
 
 export function projectRoutes(app: Hono, db: Database.Database) {
@@ -17,11 +18,11 @@ export function projectRoutes(app: Hono, db: Database.Database) {
     if (kind) { sql += ' AND kind = ?'; params.push(kind) }
     const status = c.req.query('status')
     if (status) { sql += ' AND status = ?'; params.push(status) }
-    return c.json({ items: (db.prepare(sql).all(...params) as any[]).map(toProject) })
+    return c.json({ items: db.prepare(sql).all(...params) as ProjectRow[] })
   })
 
   app.get('/api/projects/:id', (c) => {
-    const row = db.prepare('SELECT * FROM projects WHERE id = ?').get(c.req.param('id')) as any
+    const row = db.prepare('SELECT * FROM projects WHERE id = ?').get(c.req.param('id')) as ProjectRow | undefined
     if (!row) return c.json({ error: 'Project not found' }, 404)
     return c.json(toProject(row))
   })

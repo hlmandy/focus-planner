@@ -1,12 +1,13 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
+import type { ResearchLogEntry, ResearchLogRow } from '../types.js'
 import { requireFields, checkEnum, jsonStrArray, safeJsonParse } from '../validate.js'
 
 const VALID_KINDS = ['literature', 'experiment', 'analysis', 'writing', 'meeting', 'admin']
 
-function toLog(r: any) {
+function toLog(r: ResearchLogRow): ResearchLogEntry {
   return {
-    id: r.id, date: r.date, projectId: r.project_id, kind: r.kind,
+    id: r.id, date: r.date, projectId: r.project_id, kind: r.kind as ResearchLogEntry['kind'],
     title: r.title, source: r.source, note: r.note,
     attachments: safeJsonParse(r.attachments, []), createdAt: r.created_at,
   }
@@ -25,11 +26,11 @@ export function researchLogRoutes(app: Hono, db: Database.Database) {
     if (from) { sql += ' AND date >= ?'; params.push(from) }
     if (to) { sql += ' AND date <= ?'; params.push(to) }
     sql += ' ORDER BY date DESC, created_at DESC'
-    return c.json({ items: (db.prepare(sql).all(...params) as any[]).map(toLog) })
+    return c.json({ items: (db.prepare(sql).all(...params) as ResearchLogRow[]).map(toLog) })
   })
 
   app.get('/api/research-logs/:id', (c) => {
-    const row = db.prepare('SELECT * FROM research_logs WHERE id = ?').get(c.req.param('id')) as any
+    const row = db.prepare('SELECT * FROM research_logs WHERE id = ?').get(c.req.param('id')) as ResearchLogRow | undefined
     if (!row) return c.json({ error: 'Research log not found' }, 404)
     return c.json(toLog(row))
   })

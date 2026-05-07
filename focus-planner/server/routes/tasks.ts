@@ -1,14 +1,15 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
+import type { Task, TaskRow } from '../types.js'
 import { requireFields, checkEnum, jsonStrArray, jsonBool, safeJsonParse } from '../validate.js'
 
 const VALID_SOURCES = ['task', 'schedule']
 
-function toTask(r: any) {
+function toTask(r: TaskRow): Task {
   return {
     id: r.id, title: r.title, projectId: r.project_id,
     parentId: r.parent_id ?? undefined, tags: safeJsonParse(r.tags, []),
-    done: !!r.done, createdAt: r.created_at, source: r.source,
+    done: !!r.done, createdAt: r.created_at, source: r.source as Task['source'],
   }
 }
 
@@ -24,11 +25,11 @@ export function taskRoutes(app: Hono, db: Database.Database) {
     if (done !== undefined) { sql += ' AND done = ?'; params.push(done === 'true' ? '1' : '0') }
     const source = c.req.query('source')
     if (source) { sql += ' AND source = ?'; params.push(source) }
-    return c.json({ items: (db.prepare(sql).all(...params) as any[]).map(toTask) })
+    return c.json({ items: (db.prepare(sql).all(...params) as TaskRow[]).map(toTask) })
   })
 
   app.get('/api/tasks/:id', (c) => {
-    const row = db.prepare('SELECT * FROM tasks WHERE id = ?').get(c.req.param('id')) as any
+    const row = db.prepare('SELECT * FROM tasks WHERE id = ?').get(c.req.param('id')) as TaskRow | undefined
     if (!row) return c.json({ error: 'Task not found' }, 404)
     return c.json(toTask(row))
   })

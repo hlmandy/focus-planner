@@ -1,18 +1,19 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
+import type { Habit, HabitRow } from '../types.js'
 import { requireFields } from '../validate.js'
 
-function toHabit(r: any) {
+function toHabit(r: HabitRow): Habit {
   return { id: r.id, title: r.title, color: r.color, createdAt: r.created_at }
 }
 
 export function habitRoutes(app: Hono, db: Database.Database) {
   app.get('/api/habits', (c) => {
-    return c.json({ items: (db.prepare('SELECT * FROM habits').all() as any[]).map(toHabit) })
+    return c.json({ items: (db.prepare('SELECT * FROM habits').all() as HabitRow[]).map(toHabit) })
   })
 
   app.get('/api/habits/:id', (c) => {
-    const row = db.prepare('SELECT * FROM habits WHERE id = ?').get(c.req.param('id')) as any
+    const row = db.prepare('SELECT * FROM habits WHERE id = ?').get(c.req.param('id')) as HabitRow | undefined
     if (!row) return c.json({ error: 'Habit not found' }, 404)
     return c.json(toHabit(row))
   })

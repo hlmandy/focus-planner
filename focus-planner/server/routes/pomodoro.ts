@@ -1,11 +1,16 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
+import type { PomodoroSession, PomodoroSessionRow } from '../types.js'
 import { requireFields } from '../validate.js'
+
+function toPomodoroSession(r: PomodoroSessionRow): PomodoroSession {
+  return { id: r.id, projectId: r.project_id, date: r.date, minutes: r.minutes, createdAt: r.created_at }
+}
 
 export function pomodoroRoutes(app: Hono, db: Database.Database) {
   app.get('/api/pomodoro-sessions', (c) => {
     let sql = 'SELECT * FROM pomodoro_sessions WHERE 1=1'
-    const params: any[] = []
+    const params: string[] = []
 
     const projectId = c.req.query('projectId')
     if (projectId) { sql += ' AND project_id = ?'; params.push(projectId) }
@@ -17,12 +22,7 @@ export function pomodoroRoutes(app: Hono, db: Database.Database) {
 
     sql += ' ORDER BY date DESC, created_at DESC'
 
-    const rows = db.prepare(sql).all(...params) as any[]
-    const items = rows.map(r => ({
-      id: r.id, projectId: r.project_id, date: r.date,
-      minutes: r.minutes, createdAt: r.created_at,
-    }))
-    return c.json({ items })
+    return c.json({ items: (db.prepare(sql).all(...params) as PomodoroSessionRow[]).map(toPomodoroSession) })
   })
 
   app.post('/api/pomodoro-sessions', async (c) => {

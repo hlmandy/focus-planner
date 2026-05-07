@@ -1,13 +1,14 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
+import type { ThesisStudent, ThesisStudentRow } from '../types.js'
 import { requireFields, checkEnum } from '../validate.js'
 
 const VALID_STAGES = ['topic', 'proposal', 'draft', 'revision', 'final']
 
-function toStudent(r: any) {
+function toStudent(r: ThesisStudentRow): ThesisStudent {
   return {
     id: r.id, projectId: r.project_id, name: r.name, topic: r.topic,
-    stage: r.stage, nextMilestone: r.next_milestone, dueDate: r.due_date,
+    stage: r.stage as ThesisStudent['stage'], nextMilestone: r.next_milestone, dueDate: r.due_date,
     notes: r.notes, updatedAt: r.updated_at,
   }
 }
@@ -18,11 +19,11 @@ export function thesisStudentRoutes(app: Hono, db: Database.Database) {
     const params: string[] = []
     const projectId = c.req.query('projectId')
     if (projectId) { sql += ' AND project_id = ?'; params.push(projectId) }
-    return c.json({ items: (db.prepare(sql).all(...params) as any[]).map(toStudent) })
+    return c.json({ items: (db.prepare(sql).all(...params) as ThesisStudentRow[]).map(toStudent) })
   })
 
   app.get('/api/thesis-students/:id', (c) => {
-    const row = db.prepare('SELECT * FROM thesis_students WHERE id = ?').get(c.req.param('id')) as any
+    const row = db.prepare('SELECT * FROM thesis_students WHERE id = ?').get(c.req.param('id')) as ThesisStudentRow | undefined
     if (!row) return c.json({ error: 'Thesis student not found' }, 404)
     return c.json(toStudent(row))
   })

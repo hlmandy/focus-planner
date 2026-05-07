@@ -16,7 +16,9 @@
       "Bash(echo *)",
       "Bash(which *)",
       "Bash(node -e *)",
-      "Read(//c/Users/mandy/**)"
+      "Read(//c/Users/mandy/**)",
+      "Read(//Users/mandy/hl_Documents/Time_manager/focus-planner/server/**)",
+      "Read(//c/Users/mandy/hl_Documents/Time_manager/focus-planner/server/**)"
     ],
     "additionalDirectories": [
       "C:\\Users\\lss\\.claude\\skills\\playwright-skill"

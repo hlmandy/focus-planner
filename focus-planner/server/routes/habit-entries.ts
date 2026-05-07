@@ -1,8 +1,9 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
+import type { HabitEntry, HabitEntryRow } from '../types.js'
 import { requireFields, jsonBool } from '../validate.js'
 
-function toHabitEntry(r: any) {
+function toHabitEntry(r: HabitEntryRow): HabitEntry {
   return { id: r.id, habitId: r.habit_id, date: r.date, done: !!r.done }
 }
 
@@ -16,11 +17,11 @@ export function habitEntryRoutes(app: Hono, db: Database.Database) {
     const to = c.req.query('to')
     if (from) { sql += ' AND date >= ?'; params.push(from) }
     if (to) { sql += ' AND date <= ?'; params.push(to) }
-    return c.json({ items: (db.prepare(sql).all(...params) as any[]).map(toHabitEntry) })
+    return c.json({ items: (db.prepare(sql).all(...params) as HabitEntryRow[]).map(toHabitEntry) })
   })
 
   app.get('/api/habit-entries/:id', (c) => {
-    const row = db.prepare('SELECT * FROM habit_entries WHERE id = ?').get(c.req.param('id')) as any
+    const row = db.prepare('SELECT * FROM habit_entries WHERE id = ?').get(c.req.param('id')) as HabitEntryRow | undefined
     if (!row) return c.json({ error: 'Habit entry not found' }, 404)
     return c.json(toHabitEntry(row))
   })
@@ -37,8 +38,9 @@ export function habitEntryRoutes(app: Hono, db: Database.Database) {
   })
 
   app.put('/api/habit-entries/:id', async (c) => {
+    const body = await c.req.json()
     const r = db.prepare('UPDATE habit_entries SET done = ? WHERE id = ?').run(
-      jsonBool(await c.req.json(), 'done') ? 1 : 0, c.req.param('id')
+      jsonBool(body, 'done') ? 1 : 0, c.req.param('id')
     )
     if (r.changes === 0) return c.json({ error: 'Habit entry not found' }, 404)
     return c.json({ ok: true })
