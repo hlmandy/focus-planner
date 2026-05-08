@@ -4,26 +4,27 @@ import { useApp } from '../hooks/useAppContext'
 import { durationText, timeText, blockTitleText, researchLogKindLabels } from '../utils'
 
 export function SummaryPage() {
-  const { state, date, mode, setMode, setSecondsLeft, setIsRunning } = useApp()
+  const { date, mode, setMode, setSecondsLeft, setIsRunning,
+    projects, tasks, blocks, habits, habitEntries, researchLogs } = useApp()
 
   const habitEntryKeys = useMemo(
-    () => new Set(state.habitEntries.filter((entry) => entry.done).map((entry) => `${entry.habitId}:${entry.date}`)),
-    [state.habitEntries],
+    () => new Set(habitEntries.items.filter((entry) => entry.done).map((entry) => `${entry.habitId}:${entry.date}`)),
+    [habitEntries.items],
   )
 
   const tasksById = useMemo(
-    () => Object.fromEntries(state.tasks.map((task) => [task.id, task])),
-    [state.tasks],
+    () => Object.fromEntries(tasks.items.map((task) => [task.id, task])),
+    [tasks.items],
   )
 
   const projectsById = useMemo(
-    () => Object.fromEntries(state.projects.map((project) => [project.id, project])),
-    [state.projects],
+    () => Object.fromEntries(projects.items.map((project) => [project.id, project])),
+    [projects.items],
   )
 
   const selectedDayBlocks = useMemo(
-    () => state.blocks.filter((block) => block.date === date),
-    [state.blocks, date],
+    () => blocks.items.filter((block) => block.date === date),
+    [blocks.items, date],
   )
 
   const selectedDayMinutes = selectedDayBlocks.reduce(
@@ -32,26 +33,27 @@ export function SummaryPage() {
   )
 
   const selectedDayLogs = useMemo(
-    () => state.researchLogs
+    () => researchLogs.items
       .filter((entry) => entry.date === date)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-    [state.researchLogs, date],
+    [researchLogs.items, date],
   )
 
   const visibleTasks = useMemo(
-    () => state.tasks.filter((task) => task.source !== 'schedule'),
-    [state.tasks],
+    () => tasks.items.filter((task) => task.source !== 'schedule'),
+    [tasks.items],
   )
 
   const markdown = useMemo(() => {
+    const allBlocks = blocks.items
     const doneTasks = visibleTasks.filter(
       (task) =>
         task.done &&
-        (task.createdAt === date || state.blocks.some((block) => block.taskId === task.id && block.date === date)),
+        (task.createdAt === date || allBlocks.some((block) => block.taskId === task.id && block.date === date)),
     )
     const completedBlocks = selectedDayBlocks.filter((block) => tasksById[block.taskId]?.done)
     const completedMinutes = completedBlocks.reduce((sum, block) => sum + block.end - block.start, 0)
-    const doneHabits = state.habits.filter((habit) => habitEntryKeys.has(`${habit.id}:${date}`))
+    const doneHabits = habits.items.filter((habit) => habitEntryKeys.has(`${habit.id}:${date}`))
     const lines = [
       `# 今日总结 ${date}`,
       '',
@@ -66,7 +68,7 @@ export function SummaryPage() {
       ...(selectedDayBlocks.length
         ? selectedDayBlocks.map((block) => {
             const task = tasksById[block.taskId]
-            const project = projectsById[task?.projectId ?? state.projects[0]?.id ?? 'academic-admin']
+            const project = projectsById[task?.projectId ?? projects.items[0]?.id ?? 'academic-admin']
             const done = task?.done ? '[x]' : '[ ]'
             const tags = task?.tags.length ? ` ${task.tags.map((tag) => `#${tag}`).join(' ')}` : ''
             const note = block.note.trim() ? `：${block.note.trim()}` : ''
@@ -91,14 +93,14 @@ export function SummaryPage() {
         : ['- 无']),
       '',
       '## 习惯',
-      ...(state.habits.length
-        ? state.habits.map((habit) =>
+      ...(habits.items.length
+        ? habits.items.map((habit) =>
             `${habitEntryKeys.has(`${habit.id}:${date}`) ? '- [x]' : '- [ ]'} ${habit.title}`,
           )
         : ['- 无']),
     ]
     return lines.join('\n')
-  }, [visibleTasks, date, state.blocks, state.habits, state.projects, selectedDayBlocks, selectedDayMinutes, selectedDayLogs, tasksById, projectsById, habitEntryKeys])
+  }, [visibleTasks, date, blocks.items, habits.items, projects.items, selectedDayBlocks, selectedDayMinutes, selectedDayLogs, tasksById, projectsById, habitEntryKeys])
 
   const resetPomodoro = (nextMode = mode) => {
     setMode(nextMode)

@@ -10,7 +10,7 @@ import type { ScheduleBlock, Task } from '../../shared/types'
 
 export function ToolPanel() {
   const {
-    state, tasks, blocks,
+    projects, tasks, blocks,
     date, setDate, setPage,
     projectFilterId,
     setIsToolPanelOpen, toolPanelWidth, setToolPanelWidth,
@@ -52,7 +52,7 @@ export function ToolPanel() {
     if (!quick.trim()) return
     const parsed = parseQuickInput(quick, fallbackStart, DAY_START, DAY_END)
     const projectId = projectFilterId === 'all'
-      ? getFallbackProjectId(state.projects, state.projects[0]?.id ?? 'research-topic-a')
+      ? getFallbackProjectId(projects.items, projects.items[0]?.id ?? 'research-topic-a')
       : projectFilterId
     const task: Task = {
       id: uid(), title: parsed.title, projectId, parentId: undefined,
@@ -98,7 +98,7 @@ export function ToolPanel() {
         <label>
           关联项目
           <select value={pomodoroProjectId} onChange={e => setPomodoroProjectId(e.target.value)} aria-label="番茄钟关联项目">
-            {state.projects.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
+            {projects.items.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
           </select>
         </label>
         <div className="pomodoro-mode-actions">
@@ -143,7 +143,7 @@ export function ToolPanel() {
           {monthDays.map(monthDay => {
             const dayKey = toDateKey(monthDay)
             const isCurrentMonth = monthDay.getMonth() === monthDate.getMonth()
-            const hasBlocks = state.blocks.some(b => b.date === dayKey)
+            const hasBlocks = blocks.items.some(b => b.date === dayKey)
             const dayInfo = getCalendarDayInfo(dayKey)
             return (
               <button

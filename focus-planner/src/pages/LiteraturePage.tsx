@@ -5,7 +5,7 @@ import { uid, isWebLink, getFallbackProjectId } from '../utils'
 import { defaultProjects } from '../constants'
 
 export function LiteraturePage() {
-  const { state, researchLogs, date, setDate, projectFilterId, setProjectFilterId } = useApp()
+  const { researchLogs, projects, date, setDate, projectFilterId, setProjectFilterId } = useApp()
 
   const [newLogTitle, setNewLogTitle] = useState('')
   const [newLogSource, setNewLogSource] = useState('')
@@ -13,15 +13,15 @@ export function LiteraturePage() {
   const [newLogAttachment, setNewLogAttachment] = useState('')
 
   const projectsById = useMemo(
-    () => Object.fromEntries(state.projects.map(project => [project.id, project])),
-    [state.projects],
+    () => Object.fromEntries(projects.items.map(project => [project.id, project])),
+    [projects.items],
   )
 
   const visibleResearchLogs = useMemo(
-    () => state.researchLogs
+    () => researchLogs.items
       .filter(entry => projectFilterId === 'all' || entry.projectId === projectFilterId)
       .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)),
-    [state.researchLogs, projectFilterId],
+    [researchLogs.items, projectFilterId],
   )
 
   const visibleLiteratureLogs = visibleResearchLogs.filter(entry => entry.kind === 'literature')
@@ -35,7 +35,7 @@ export function LiteraturePage() {
 
     const entry = {
       id: uid(), date,
-      projectId: projectFilterId === 'all' ? getFallbackProjectId(state.projects, defaultProjects[0].id) : projectFilterId,
+      projectId: projectFilterId === 'all' ? getFallbackProjectId(projects.items, defaultProjects[0].id) : projectFilterId,
       kind: 'literature' as const,
       title: title || '文献', source, note,
       attachments: attachmentText ? attachmentText.split(/\n|,/).map(item => item.trim()).filter(Boolean) : [],
@@ -47,7 +47,7 @@ export function LiteraturePage() {
   }
 
   const deleteResearchLog = (id: string) => {
-    researchLogs.delete(id).catch(() => {})
+    researchLogs.remove(id).catch(() => {})
   }
 
   return (
@@ -59,7 +59,7 @@ export function LiteraturePage() {
         </div>
         <select value={projectFilterId} onChange={event => setProjectFilterId(event.target.value)} aria-label="筛选项目">
           <option value="all">全部项目</option>
-          {state.projects.map(project => (<option key={project.id} value={project.id}>{project.name}</option>))}
+          {projects.items.map(project => (<option key={project.id} value={project.id}>{project.name}</option>))}
         </select>
       </div>
 
@@ -67,11 +67,11 @@ export function LiteraturePage() {
         <div className="diary-composer-row">
           <input type="date" value={date} onChange={event => setDate(event.target.value)} />
           <select
-            value={projectFilterId === 'all' ? getFallbackProjectId(state.projects, defaultProjects[0].id) : projectFilterId}
+            value={projectFilterId === 'all' ? getFallbackProjectId(projects.items, defaultProjects[0].id) : projectFilterId}
             onChange={event => setProjectFilterId(event.target.value)}
             aria-label="关联项目"
           >
-            {state.projects.map(project => (<option key={project.id} value={project.id}>{project.name}</option>))}
+            {projects.items.map(project => (<option key={project.id} value={project.id}>{project.name}</option>))}
           </select>
         </div>
         <input value={newLogTitle} onChange={event => setNewLogTitle(event.target.value)} placeholder="文献标题" />

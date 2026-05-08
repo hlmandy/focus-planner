@@ -5,7 +5,7 @@ import { toDateKey, todayKey, addDays, fromDateKey, getWeekDays, weekDayText, ui
 import { colors } from '../constants'
 
 export function HabitsPage() {
-  const { state, habits, habitEntries, date, setDate } = useApp()
+  const { habits, habitEntries, date, setDate } = useApp()
   const [newHabitTitle, setNewHabitTitle] = useState('')
 
   const weekDays = getWeekDays(date)
@@ -14,20 +14,20 @@ export function HabitsPage() {
   const weekEnd = weekKeys[6]
 
   const habitEntryKeys = useMemo(
-    () => new Set(state.habitEntries.filter(entry => entry.done).map(entry => `${entry.habitId}:${entry.date}`)),
-    [state.habitEntries],
+    () => new Set(habitEntries.items.filter(entry => entry.done).map(entry => `${entry.habitId}:${entry.date}`)),
+    [habitEntries.items],
   )
 
   const addHabit = () => {
     const title = newHabitTitle.trim()
     if (!title) return
-    const habit = { id: uid(), title, color: colors[state.habits.length % colors.length], createdAt: date }
+    const habit = { id: uid(), title, color: colors[habits.items.length % colors.length], createdAt: date }
     habits.create(habit).catch(() => {})
     setNewHabitTitle('')
   }
 
   const toggleHabit = (habitId: string, habitDate: string) => {
-    const existing = state.habitEntries.find(entry => entry.habitId === habitId && entry.date === habitDate)
+    const existing = habitEntries.items.find(entry => entry.habitId === habitId && entry.date === habitDate)
     if (existing) {
       habitEntries.update(existing.id, { done: !existing.done }).catch(() => {})
     } else {
@@ -36,9 +36,9 @@ export function HabitsPage() {
   }
 
   const deleteHabit = (habitId: string) => {
-    habits.delete(habitId).catch(() => {})
+    habits.remove(habitId).catch(() => {})
     // Also delete entries for this habit
-    state.habitEntries.filter(e => e.habitId === habitId).forEach(e => habitEntries.delete(e.id).catch(() => {}))
+    habitEntries.items.filter(e => e.habitId === habitId).forEach(e => habitEntries.remove(e.id).catch(() => {}))
   }
 
   return (
@@ -58,7 +58,7 @@ export function HabitsPage() {
         ))}
       </div>
       <div className="habit-board">
-        {state.habits.map(habit => (
+        {habits.items.map(habit => (
           <div key={habit.id} className="habit-row">
             <div className="habit-name">
               <span className="dot" style={{ background: habit.color }} />

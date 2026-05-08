@@ -282,10 +282,10 @@ export const normalizeState = (state: LegacyState): AppState => {
 
 export const loadState = (): AppState => {
   const raw = localStorage.getItem(STORAGE_KEY)
-  if (!raw) return normalizeState(seedState())
+  if (!raw) return seedState()
   try {
     return normalizeState(JSON.parse(raw) as LegacyState)
   } catch {
-    return normalizeState(seedState())
+    return seedState()
   }
 }

@@ -2,6 +2,7 @@ import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
 import { runSync } from '../caldav-sync.js'
 import { testConnection } from '../caldav-client.js'
+import type { CaldavConfigRow } from '../types.js'
 
 export function caldavRoutes(app: Hono, db: Database.Database) {
   app.get('/api/caldav/config', (c) => {

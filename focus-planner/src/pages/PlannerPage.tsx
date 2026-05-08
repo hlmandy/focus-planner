@@ -14,7 +14,7 @@ import {
 import type { ScheduleBlock, Task } from '../../shared/types'
 
 export function PlannerPage() {
-  const { state, blocks, tasks, date, setDate, projectFilterId, isToolPanelOpen } = useApp()
+  const { projects, blocks, tasks, date, setDate, projectFilterId, isToolPanelOpen } = useApp()
 
   const [isLateNightOpen, setIsLateNightOpen] = useState(false)
   const [dragCreate, setDragCreate] = useState<{ date: string; start: number; end: number } | null>(null)
@@ -32,24 +32,24 @@ export function PlannerPage() {
   const weekEnd = weekKeys[6]
 
   const tasksById = useMemo(
-    () => Object.fromEntries(state.tasks.map((task) => [task.id, task])),
-    [state.tasks],
+    () => Object.fromEntries(tasks.items.map((task) => [task.id, task])),
+    [tasks.items],
   )
 
   const projectsById = useMemo(
-    () => Object.fromEntries(state.projects.map((project) => [project.id, project])),
-    [state.projects],
+    () => Object.fromEntries(projects.items.map((project) => [project.id, project])),
+    [projects.items],
   )
 
   const visibleBlocks = useMemo(
-    () => state.blocks
+    () => blocks.items
       .filter((block) => weekKeys.includes(block.date))
       .filter((block) => {
         const task = tasksById[block.taskId]
         return projectFilterId === 'all' || task?.projectId === projectFilterId
       })
       .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start),
-    [state.blocks, weekKeys, tasksById, projectFilterId],
+    [blocks.items, weekKeys, tasksById, projectFilterId],
   )
 
   const totalMinutes = visibleBlocks.reduce((sum, block) => sum + block.end - block.start, 0)
@@ -76,27 +76,27 @@ export function PlannerPage() {
   }
 
   const removeBlock = (id: string) => {
-    const block = state.blocks.find(b => b.id === id)
+    const block = blocks.items.find(b => b.id === id)
     if (block) {
       const taskId = block.taskId
-      const task = state.tasks.find(t => t.id === taskId)
-      const hasOtherBlocks = state.blocks.some(b => b.id !== id && b.taskId === taskId)
+      const task = tasks.items.find(t => t.id === taskId)
+      const hasOtherBlocks = blocks.items.some(b => b.id !== id && b.taskId === taskId)
       if (task?.source === 'schedule' && !hasOtherBlocks) {
         blocks.setItems(prev => prev.filter(b => b.id !== id))
         tasks.setItems(prev => prev.filter(t => t.id !== taskId))
         // Sync to API
-        blocks.delete(id).catch(() => {})
-        tasks.delete(taskId).catch(() => {})
+        blocks.remove(id).catch(() => {})
+        tasks.remove(taskId).catch(() => {})
       } else {
         blocks.setItems(prev => prev.filter(b => b.id !== id))
-        blocks.delete(id).catch(() => {})
+        blocks.remove(id).catch(() => {})
       }
     }
     if (editingBlockId === id) setEditingBlockId(null)
   }
 
   const createBlock = (blockDate: string, start: number, end: number): string => {
-    const projectId = projectFilterId === 'all' ? getFallbackProjectId(state.projects, defaultProjects[0].id) : projectFilterId
+    const projectId = projectFilterId === 'all' ? getFallbackProjectId(projects.items, defaultProjects[0].id) : projectFilterId
     const task: Task = {
       id: uid(), title: '', projectId, parentId: undefined,
       tags: [], done: false, createdAt: blockDate, source: 'schedule',
@@ -225,15 +225,15 @@ export function PlannerPage() {
   }
 
   const scheduleTodoAt = (taskId: string, blockDate: string, start: number) => {
-    const task = state.tasks.find(item => item.id === taskId)
+    const task = tasks.items.find(item => item.id === taskId)
     if (!task) return
-    const existing = state.blocks.find(block => block.taskId === taskId)
+    const existing = blocks.items.find(block => block.taskId === taskId)
     const duration = existing ? existing.end - existing.start : 30
     const nextStart = clamp(start, DAY_START, DAY_END - duration)
     const nextEnd = nextStart + duration
 
     setDate(blockDate)
-    const oldBlock = state.blocks.find(b => b.taskId === taskId)
+    const oldBlock = blocks.items.find(b => b.taskId === taskId)
     if (oldBlock) {
       blocks.setItems(prev => prev.map(b =>
         b.taskId === taskId ? { ...b, date: blockDate, start: nextStart, end: nextEnd } : b
@@ -256,7 +256,7 @@ export function PlannerPage() {
     scheduleTodoAt(taskId, blockDate, start)
   }
 
-  const editingBlock = state.blocks.find(block => block.id === editingBlockId)
+  const editingBlock = blocks.items.find(block => block.id === editingBlockId)
   const editingTask = editingBlock ? tasksById[editingBlock.taskId] : undefined
 
   return (
@@ -318,7 +318,7 @@ export function PlannerPage() {
                   )}
                   {dayBlocks.map(block => {
                     const task = tasksById[block.taskId]
-                    const project = projectsById[task?.projectId ?? getFallbackProjectId(state.projects, defaultProjects[0].id)]
+                    const project = projectsById[task?.projectId ?? getFallbackProjectId(projects.items, defaultProjects[0].id)]
                     const blockStatus = getBlockViewStatus(block, task, todayKey(), currentMinute)
                     const duration = block.end - block.start
                     return (
@@ -370,7 +370,7 @@ export function PlannerPage() {
               setTaskLocal(editingTask.id, { projectId: event.target.value })
               tasks.update(editingTask.id, { projectId: event.target.value }).catch(() => {})
             }}>
-              {state.projects.map(project => (<option key={project.id} value={project.id}>{project.name}</option>))}
+              {projects.items.map(project => (<option key={project.id} value={project.id}>{project.name}</option>))}
             </select>
           </label>
           <label>

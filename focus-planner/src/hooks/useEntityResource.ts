@@ -80,6 +80,5 @@ export function useEntityResource<T extends { id: string }>(
     }
   }, [apiDelete])
 
-  // Expose both `remove` and `delete` (delete is a JS reserved word)
-  return { items, setItems, error, create, update, remove, delete: remove }
+  return { items, setItems, error, create, update, remove }
 }

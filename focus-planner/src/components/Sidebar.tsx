@@ -12,7 +12,7 @@ export function Sidebar() {
   const [isSidebarProjectComposerOpen, setIsSidebarProjectComposerOpen] = useState(false)
 
   const {
-    state, projects, tasks,
+    projects, tasks,
     page, setPage,
     projectFilterId, setProjectFilterId,
     setProjectDetailId,
@@ -41,7 +41,7 @@ export function Sidebar() {
     }
     const project = {
       id: uid(), name,
-      color: colors[state.projects.length % colors.length],
+      color: colors[projects.items.length % colors.length],
       kind: newProjectKind, status: 'active' as const,
       goal: projectTemplateGoals[newProjectKind], dueDate: '',
     }
@@ -90,7 +90,7 @@ export function Sidebar() {
           <button type="button" className={`project-filter ${projectFilterId === 'all' ? 'active' : ''}`} onClick={() => openProject('all')}>
             <span className="dot muted" />全部项目
           </button>
-          {state.projects.map(project => (
+          {projects.items.map(project => (
             <button key={project.id} type="button" className={`project-filter ${projectFilterId === project.id ? 'active' : ''}`} onClick={() => openProject(project.id)}>
               <span className="dot" style={{ background: project.color }} />{project.name}
             </button>

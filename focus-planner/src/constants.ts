@@ -176,7 +176,18 @@ export const china2026AdjustedWorkdays = new Set([
   '2026-10-10',
 ])
 
+const _calendarDayInfoCache = new Map<string, {
+  holidayName: string | undefined
+  isAdjustedWorkday: boolean
+  isRestDay: boolean
+  label: string
+  marker: string
+}>()
+
 export const getCalendarDayInfo = (dateKey: string) => {
+  const cached = _calendarDayInfoCache.get(dateKey)
+  if (cached) return cached
+
   const date = new Date(
     Number(dateKey.slice(0, 4)),
     Number(dateKey.slice(5, 7)) - 1,
@@ -187,13 +198,15 @@ export const getCalendarDayInfo = (dateKey: string) => {
   const isWeekend = date.getDay() === 0 || date.getDay() === 6
   const isRestDay = Boolean(holidayName) || (isWeekend && !isAdjustedWorkday)
 
-  return {
+  const result = {
     holidayName,
     isAdjustedWorkday,
     isRestDay,
     label: holidayName ?? (isAdjustedWorkday ? '调休上班' : isRestDay ? '休息日' : ''),
     marker: isAdjustedWorkday ? '班' : isRestDay ? '休' : '',
   }
+  _calendarDayInfoCache.set(dateKey, result)
+  return result
 }
 
 export const pageLabels: Record<PageName, string> = {

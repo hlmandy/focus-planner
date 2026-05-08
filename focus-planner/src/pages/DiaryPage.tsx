@@ -6,7 +6,7 @@ import { defaultProjects } from '../constants'
 import type { ResearchLogKind } from '../../shared/types'
 
 export function DiaryPage() {
-  const { state, researchLogs, date, setDate, projectFilterId, setProjectFilterId } = useApp()
+  const { researchLogs, projects, date, setDate, projectFilterId, setProjectFilterId } = useApp()
 
   const [newLogKind, setNewLogKind] = useState<ResearchLogKind>('literature')
   const [newLogTitle, setNewLogTitle] = useState('')
@@ -18,23 +18,23 @@ export function DiaryPage() {
   const weekKeys = weekDays.map(toDateKey)
 
   const projectsById = useMemo(
-    () => Object.fromEntries(state.projects.map(project => [project.id, project])),
-    [state.projects],
+    () => Object.fromEntries(projects.items.map(project => [project.id, project])),
+    [projects.items],
   )
 
   const selectedDayLogs = useMemo(
-    () => state.researchLogs
+    () => researchLogs.items
       .filter(entry => entry.date === date)
       .filter(entry => projectFilterId === 'all' || entry.projectId === projectFilterId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-    [state.researchLogs, date, projectFilterId],
+    [researchLogs.items, date, projectFilterId],
   )
 
   const weekLogs = useMemo(
-    () => state.researchLogs.filter(
+    () => researchLogs.items.filter(
       entry => weekKeys.includes(entry.date) && (projectFilterId === 'all' || entry.projectId === projectFilterId),
     ),
-    [state.researchLogs, weekKeys, projectFilterId],
+    [researchLogs.items, weekKeys, projectFilterId],
   )
 
   const addResearchLog = () => {
@@ -47,7 +47,7 @@ export function DiaryPage() {
     const entry = {
       id: uid(),
       date,
-      projectId: projectFilterId === 'all' ? getFallbackProjectId(state.projects, defaultProjects[0].id) : projectFilterId,
+      projectId: projectFilterId === 'all' ? getFallbackProjectId(projects.items, defaultProjects[0].id) : projectFilterId,
       kind: newLogKind,
       title: title || researchLogKindLabels[newLogKind],
       source,
@@ -64,7 +64,7 @@ export function DiaryPage() {
   }
 
   const deleteResearchLog = (id: string) => {
-    researchLogs.delete(id).catch(() => {})
+    researchLogs.remove(id).catch(() => {})
   }
 
   return (
@@ -80,11 +80,11 @@ export function DiaryPage() {
       <section className="diary-composer">
         <div className="diary-composer-row">
           <select
-            value={projectFilterId === 'all' ? getFallbackProjectId(state.projects, defaultProjects[0].id) : projectFilterId}
+            value={projectFilterId === 'all' ? getFallbackProjectId(projects.items, defaultProjects[0].id) : projectFilterId}
             onChange={event => setProjectFilterId(event.target.value)}
             aria-label="关联项目"
           >
-            {state.projects.map(project => (<option key={project.id} value={project.id}>{project.name}</option>))}
+            {projects.items.map(project => (<option key={project.id} value={project.id}>{project.name}</option>))}
           </select>
           <select value={newLogKind} onChange={event => setNewLogKind(event.target.value as ResearchLogKind)} aria-label="记录类型">
             <option value="literature">文献</option><option value="experiment">实验</option><option value="analysis">分析</option>

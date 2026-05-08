@@ -82,6 +82,33 @@ Avoid adding these until the user explicitly asks for them:
 - Rolling backups under `data/backups/`.
 - Server types in `server/types.ts` are a separate copy from `src/types.ts` — keep them in sync manually for now.
 
+## Code Review & Refactor Principles
+
+### Correctness
+
+- **Never mix two sources of truth for the same data in the same operation.** If an optimistic update writes to one path, reads in the same function must use that same path — not a stale derived copy.
+- **Don't use language reserved words as identifiers.** They break in subtle ways across tools and modes.
+- **Every type used in a file must be explicitly imported.** Relying on implicit globals or `as` casts hides breakage when refactoring.
+- **Don't keep deprecated and active code paths side by side.** Pick one, migrate fully, remove the other. Half-migrated code is the hardest to maintain.
+
+### Performance
+
+- **A `useMemo` is not free — every dependency change recomputes and notifies all consumers.** If deps change independently and frequently, the memo adds cost without benefit. Split it up or use a ref.
+- **Pure functions called repeatedly with the same inputs should be cached.** A `Map` is enough — don't over-engineer.
+- **O(n²) in render doesn't scale.** Build lookup structures (Maps/Sets) when cross-referencing collections, instead of nested loops.
+- **Allocations in hot paths add up.** Object and Date creation in render loops should be memoized or hoisted.
+
+### Architecture
+
+- **Don't expose duplicate APIs.** Two names for the same operation increases surface area and confuses callers. One name, one behavior.
+- **Type signatures should be the simplest thing that works.** If a complex type simplifies to a basic one, use the basic one. Complexity hides intent.
+- **Backward-compat layers should have a clear removal plan.** If the migration is done, delete the compat code. Don't leave it "just in case."
+
+### Testing
+
+- **Always run `npm run build` and `npm run test` after refactoring.** Build catches type errors, tests catch logic errors. Neither alone is sufficient.
+- **Integration tests must cover the full stack.** Unit tests verify functions; integration tests verify the system works end-to-end.
+
 ## Useful Commands
 
 ```bash

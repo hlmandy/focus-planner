@@ -8,7 +8,7 @@ import type { ProjectKind, ProjectStatus, ThesisStage, Project, Task, ThesisStud
 
 export function ProjectsPage() {
   const {
-    state, projects, tasks, thesisStudents,
+    projects, tasks, thesisStudents, researchLogs, pomodoroSessions,
     date, projectFilterId, setProjectFilterId,
     projectDetailId, setProjectDetailId, setPage, setPomodoroProjectId, pomodoroProjectId,
   } = useApp()
@@ -27,16 +27,20 @@ export function ProjectsPage() {
   const [newStudentDueDate, setNewStudentDueDate] = useState(todayKey())
   const [newStudentNotes, setNewStudentNotes] = useState('')
 
-  const projectStats = useMemo(() =>
-    state.projects.map(project => {
-      const projectTasks = state.tasks.filter(t => t.projectId === project.id && isProjectTask(t))
-      const projectLogs = state.researchLogs.filter(e => e.projectId === project.id)
-      const projectStudents = state.thesisStudents.filter(s => s.projectId === project.id)
-      const projectPomodoros = state.pomodoroSessions.filter(s => s.projectId === project.id)
+  const projectStats = useMemo(() => {
+    const allTasks = tasks.items
+    const allLogs = researchLogs.items
+    const allStudents = thesisStudents.items
+    const allPomodoros = pomodoroSessions.items
+    const weekKeys = (() => { const d = new Date(); const day = d.getDay() || 7; const mon = new Date(d); mon.setDate(d.getDate() + 1 - day); return Array.from({ length: 7 }, (_, i) => { const dd = new Date(mon); dd.setDate(mon.getDate() + i); return `${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, '0')}-${String(dd.getDate()).padStart(2, '0')}`; }) })()
+    return projects.items.map(project => {
+      const projectTasks = allTasks.filter(t => t.projectId === project.id && isProjectTask(t))
+      const projectLogs = allLogs.filter(e => e.projectId === project.id)
+      const projectStudents = allStudents.filter(s => s.projectId === project.id)
+      const projectPomodoros = allPomodoros.filter(s => s.projectId === project.id)
       const doneCount = projectTasks.filter(t => t.done).length
       const literatureCount = projectLogs.filter(e => e.kind === 'literature').length
       const attachmentCount = projectLogs.reduce((sum, e) => sum + e.attachments.length, 0)
-      const weekKeys = (() => { const d = new Date(); const day = d.getDay() || 7; const mon = new Date(d); mon.setDate(d.getDate() + 1 - day); return Array.from({ length: 7 }, (_, i) => { const dd = new Date(mon); dd.setDate(mon.getDate() + i); return `${dd.getFullYear()}-${String(dd.getMonth() + 1).padStart(2, '0')}-${String(dd.getDate()).padStart(2, '0')}`; }) })()
       const weekFocusMinutes = projectPomodoros.filter(s => weekKeys.includes(s.date)).reduce((sum, s) => sum + s.minutes, 0)
       return {
         ...project,
@@ -45,9 +49,8 @@ export function ProjectsPage() {
         pomodoroCount: projectPomodoros.length, weekFocusMinutes,
         completion: projectTasks.length ? Math.round((doneCount / projectTasks.length) * 100) : 0,
       }
-    }),
-    [state.projects, state.tasks, state.researchLogs, state.thesisStudents, state.pomodoroSessions],
-  )
+    })
+  }, [projects.items, tasks.items, researchLogs.items, thesisStudents.items, pomodoroSessions.items])
 
   const managedProjectStats = projectStats.filter(p =>
     (projectKindFilter === 'all' || p.kind === projectKindFilter) &&
@@ -55,9 +58,9 @@ export function ProjectsPage() {
   )
 
   const activeProjectStats = projectDetailId ? projectStats.find(p => p.id === projectDetailId) : undefined
-  const activeProjectTasks = projectDetailId ? state.tasks.filter(t => t.projectId === projectDetailId && isProjectTask(t)) : []
-  const activeProjectStudents = projectDetailId ? state.thesisStudents.filter(s => s.projectId === projectDetailId).sort((a, b) => a.dueDate.localeCompare(b.dueDate)) : []
-  const activeProjectLogs = projectDetailId ? state.researchLogs.filter(e => e.projectId === projectDetailId).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)) : []
+  const activeProjectTasks = projectDetailId ? tasks.items.filter(t => t.projectId === projectDetailId && isProjectTask(t)) : []
+  const activeProjectStudents = projectDetailId ? thesisStudents.items.filter(s => s.projectId === projectDetailId).sort((a, b) => a.dueDate.localeCompare(b.dueDate)) : []
+  const activeProjectLogs = projectDetailId ? researchLogs.items.filter(e => e.projectId === projectDetailId).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)) : []
   const activeProjectLiterature = activeProjectLogs.filter(e => e.kind === 'literature')
   const activeProjectAttachments = activeProjectLogs.flatMap(e => e.attachments.map(a => ({ id: `${e.id}:${a}`, name: a, entryTitle: e.title, date: e.date, source: e.source })))
 
@@ -66,7 +69,7 @@ export function ProjectsPage() {
   const addProject = () => {
     const name = newProjectName.trim()
     if (!name) return
-    const project: Project = { id: uid(), name, color: colors[state.projects.length % colors.length], kind: newProjectKind, status: 'active', goal: projectTemplateGoals[newProjectKind], dueDate: '' }
+    const project: Project = { id: uid(), name, color: colors[projects.items.length % colors.length], kind: newProjectKind, status: 'active', goal: projectTemplateGoals[newProjectKind], dueDate: '' }
     const templateTasks = createTasksFromTemplate(project.id, project.kind)
     // Optimistic: update local immediately, API in background
     projects.create(project).catch(() => {})
@@ -80,27 +83,27 @@ export function ProjectsPage() {
   }
 
   const deleteProject = (projectId: string) => {
-    const remaining = state.projects.filter(p => p.id !== projectId)
+    const remaining = projects.items.filter(p => p.id !== projectId)
     if (!remaining.length) return
-    const nextId = remaining[0]?.id ?? state.projects[0].id
+    const nextId = remaining[0]?.id ?? projects.items[0].id
     // Delete project + reassign related entities
-    projects.delete(projectId).catch(() => {})
+    projects.remove(projectId).catch(() => {})
     // Reassign tasks, students, logs, pomodoros to next project
-    state.tasks.filter(t => t.projectId === projectId).forEach(t => tasks.update(t.id, { projectId: nextId }).catch(() => {}))
-    state.thesisStudents.filter(s => s.projectId === projectId).forEach(s => thesisStudents.update(s.id, { projectId: nextId }).catch(() => {}))
+    tasks.items.filter(t => t.projectId === projectId).forEach(t => tasks.update(t.id, { projectId: nextId }).catch(() => {}))
+    thesisStudents.items.filter(s => s.projectId === projectId).forEach(s => thesisStudents.update(s.id, { projectId: nextId }).catch(() => {}))
     if (projectFilterId === projectId) setProjectFilterId('all')
     if (pomodoroProjectId === projectId) setPomodoroProjectId(nextId)
     if (projectDetailId === projectId) setProjectDetailId(null)
   }
 
   const toggleTodo = (id: string) => {
-    const task = state.tasks.find(t => t.id === id)
+    const task = tasks.items.find(t => t.id === id)
     if (task) tasks.update(id, { done: !task.done }).catch(() => {})
   }
 
   const deleteTodo = (id: string) => {
-    const idsToDelete = new Set([id, ...getTaskDescendantIds(id, state.tasks)])
-    idsToDelete.forEach(tid => tasks.delete(tid).catch(() => {}))
+    const idsToDelete = new Set([id, ...getTaskDescendantIds(id, tasks.items)])
+    idsToDelete.forEach(tid => tasks.remove(tid).catch(() => {}))
   }
 
   const addProjectTask = (parentId?: string) => {
@@ -127,7 +130,7 @@ export function ProjectsPage() {
   }
 
   const deleteThesisStudent = (id: string) => {
-    thesisStudents.delete(id).catch(() => {})
+    thesisStudents.remove(id).catch(() => {})
   }
 
   const renderProjectTask = (task: Task, depth = 0): ReactNode => {
@@ -178,7 +181,7 @@ export function ProjectsPage() {
                 <strong>{project.name}</strong>
                 <span className={`kind-pill ${project.kind}`}>{projectKindLabels[project.kind]}</span>
                 <span className={`status-pill ${project.status}`}>{projectStatusLabels[project.status]}</span>
-                {state.projects.length > 1 && (
+                {projects.items.length > 1 && (
                   <button onClick={e => { e.stopPropagation(); deleteProject(project.id) }} aria-label="删除项目"><Trash2 size={15} /></button>
                 )}
               </div>
@@ -262,7 +265,7 @@ export function ProjectsPage() {
             {activeProjectStats.kind !== 'student' && (
               <><button onClick={() => setPage('diary')}>研究日记</button><button onClick={() => setPage('literature')}>文献库</button></>
             )}
-            {state.projects.length > 1 && <button onClick={() => deleteProject(activeProjectStats.id)}>删除项目</button>}
+            {projects.items.length > 1 && <button onClick={() => deleteProject(activeProjectStats.id)}>删除项目</button>}
           </div>
           <div className="project-detail-grid">
             <section className={`project-panel template-panel ${activeProjectStats.kind}`}>

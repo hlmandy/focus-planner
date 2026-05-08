@@ -70,7 +70,9 @@ export function AppProvider({
   const researchLogs = useResearchLogs(initial.researchLogs)
   const pomodoroSessions = usePomodoroSessions(initial.pomodoroSessions)
 
-  // Assemble flat state for backward compatibility (memoized to prevent unnecessary re-renders)
+  // Backward-compat flat state — memoized but only exposed for legacy consumers.
+  // New code should use entity hooks directly (projects, tasks, blocks, etc.)
+  // to avoid re-rendering on unrelated entity changes.
   const state = useMemo<AppState>(() => ({
     projects: projects.items,
     tasks: tasks.items,

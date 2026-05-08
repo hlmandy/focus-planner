@@ -3,20 +3,20 @@ import { useApp } from '../hooks/useAppContext'
 import { isProjectTask, getTaskDescendantIds } from '../utils'
 
 export function TodayPage() {
-  const { state, tasks, setPage, projectFilterId } = useApp()
+  const { tasks, setPage, projectFilterId } = useApp()
 
-  const visibleTasks = state.tasks.filter(
+  const visibleTasks = tasks.items.filter(
     (task) => isProjectTask(task) && (projectFilterId === 'all' || task.projectId === projectFilterId),
   )
 
   const toggleTodo = (id: string) => {
-    const task = state.tasks.find(t => t.id === id)
+    const task = tasks.items.find(t => t.id === id)
     if (task) tasks.update(id, { done: !task.done }).catch(() => {})
   }
 
   const deleteTodo = (id: string) => {
-    const idsToDelete = new Set([id, ...getTaskDescendantIds(id, state.tasks)])
-    idsToDelete.forEach(tid => tasks.delete(tid).catch(() => {}))
+    const idsToDelete = new Set([id, ...getTaskDescendantIds(id, tasks.items)])
+    idsToDelete.forEach(tid => tasks.remove(tid).catch(() => {}))
   }
 
   return (

@@ -150,14 +150,14 @@ export function SettingsPage() {
               pomodoroSessions.setItems(seeded.pomodoroSessions)
               // Sync to API in background (best-effort)
               await Promise.all([
-                ...oldProjects.map(id => projects.delete(id).catch(() => {})),
-                ...oldTasks.map(id => tasks.delete(id).catch(() => {})),
-                ...oldBlocks.map(id => blocks.delete(id).catch(() => {})),
-                ...oldHabits.map(id => habits.delete(id).catch(() => {})),
-                ...oldEntries.map(id => habitEntries.delete(id).catch(() => {})),
-                ...oldStudents.map(id => thesisStudents.delete(id).catch(() => {})),
-                ...oldLogs.map(id => researchLogs.delete(id).catch(() => {})),
-                ...oldPomodoros.map(id => pomodoroSessions.delete(id).catch(() => {})),
+                ...oldProjects.map(id => projects.remove(id).catch(() => {})),
+                ...oldTasks.map(id => tasks.remove(id).catch(() => {})),
+                ...oldBlocks.map(id => blocks.remove(id).catch(() => {})),
+                ...oldHabits.map(id => habits.remove(id).catch(() => {})),
+                ...oldEntries.map(id => habitEntries.remove(id).catch(() => {})),
+                ...oldStudents.map(id => thesisStudents.remove(id).catch(() => {})),
+                ...oldLogs.map(id => researchLogs.remove(id).catch(() => {})),
+                ...oldPomodoros.map(id => pomodoroSessions.remove(id).catch(() => {})),
               ])
               await Promise.all([
                 ...seeded.projects.map(p => projects.create(p).catch(() => {})),
