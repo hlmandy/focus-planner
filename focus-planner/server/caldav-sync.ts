@@ -1,6 +1,19 @@
 import type Database from 'better-sqlite3'
 import { buildIcs, createRemoteEvent, updateRemoteEvent, deleteRemoteEvent } from './caldav-client.js'
 import type { CalDAVConfig } from './caldav-client.js'
+import type { CaldavConfigRow, CaldavSyncMapRow } from './types.js'
+
+interface BlockWithTaskRow {
+  block_id: string
+  task_id: string
+  date: string
+  start_min: number
+  end_min: number
+  note: string
+  title: string
+  done: number
+  project_id: string
+}
 
 interface BlockWithTask {
   blockId: string
@@ -38,7 +51,7 @@ export function getContentHash(block: BlockWithTask): string {
 }
 
 function getConfig(db: Database.Database) {
-  return db.prepare('SELECT * FROM caldav_config WHERE id = 1').get() as any
+  return db.prepare('SELECT * FROM caldav_config WHERE id = 1').get() as CaldavConfigRow | undefined
 }
 
 function getBlocksWithTasks(db: Database.Database): BlockWithTask[] {
@@ -47,7 +60,7 @@ function getBlocksWithTasks(db: Database.Database): BlockWithTask[] {
            t.title, t.done, t.project_id
     FROM schedule_blocks b
     JOIN tasks t ON t.id = b.task_id
-  `).all() as any[]).map(r => ({
+  `).all() as BlockWithTaskRow[]).map(r => ({
     blockId: r.block_id,
     taskId: r.task_id,
     date: r.date,
@@ -61,7 +74,7 @@ function getBlocksWithTasks(db: Database.Database): BlockWithTask[] {
 }
 
 function getSyncMap(db: Database.Database): Map<string, SyncMapRow> {
-  const rows = db.prepare('SELECT * FROM caldav_sync_map').all() as any[]
+  const rows = db.prepare('SELECT * FROM caldav_sync_map').all() as CaldavSyncMapRow[]
   const map = new Map<string, SyncMapRow>()
   for (const r of rows) {
     map.set(r.block_id, {
@@ -129,7 +142,6 @@ export async function runSync(db: Database.Database): Promise<{
         await deleteRemoteEvent(config, entry.eventUrl, entry.etag)
         deleted++
       } catch {
-        // best-effort: still remove local mapping
         deleted++
       }
     }
@@ -161,8 +173,9 @@ export async function runSync(db: Database.Database): Promise<{
           upsertMap.run(block.blockId, '', uid, '', hash, 'error', now, result.message || 'Create failed')
           errors++
         }
-      } catch (err: any) {
-        upsertMap.run(block.blockId, '', uid, '', hash, 'error', now, err.message)
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        upsertMap.run(block.blockId, '', uid, '', hash, 'error', now, msg)
         errors++
       }
     } else if (existing.contentHash !== hash) {
@@ -185,8 +198,9 @@ export async function runSync(db: Database.Database): Promise<{
           upsertMap.run(block.blockId, existing.eventUrl, existing.eventUid, existing.etag, hash, 'error', now, result.message || 'Update failed')
           errors++
         }
-      } catch (err: any) {
-        upsertMap.run(block.blockId, existing.eventUrl, existing.eventUid, existing.etag, hash, 'error', now, err.message)
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err)
+        upsertMap.run(block.blockId, existing.eventUrl, existing.eventUid, existing.etag, hash, 'error', now, msg)
         errors++
       }
     }

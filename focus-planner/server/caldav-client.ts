@@ -142,8 +142,8 @@ export async function testConnection(config: CalDAVConfig): Promise<{ ok: boolea
       return { ok: true, message: `连接成功 (HTTP ${resp.status})` }
     }
     return { ok: false, message: `连接失败 (HTTP ${resp.status})` }
-  } catch (err: any) {
-    return { ok: false, message: `连接失败: ${err.message}` }
+  } catch (err: unknown) {
+    return { ok: false, message: `连接失败: ${err instanceof Error ? err.message : String(err)}` }
   }
 }
 

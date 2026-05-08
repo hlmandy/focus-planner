@@ -2,7 +2,7 @@ import Database from 'better-sqlite3'
 import { existsSync, readFileSync, renameSync, mkdirSync, readdirSync, copyFileSync, unlinkSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { AppState } from './types.js'
+import type { AppState, ProjectRow, TaskRow, ScheduleBlockRow, HabitRow, HabitEntryRow, ThesisStudentRow, ResearchLogRow, PomodoroSessionRow } from './types.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
@@ -265,43 +265,43 @@ export function rotateBackups(maxBackups = 30): void {
 }
 
 export function loadFullState(db: Database.Database): AppState {
-  const projects = (db.prepare('SELECT * FROM projects').all() as any[]).map(row => ({
+  const projects = (db.prepare('SELECT * FROM projects').all() as ProjectRow[]).map(row => ({
     id: row.id, name: row.name, color: row.color, kind: row.kind,
     status: row.status, goal: row.goal, dueDate: row.due_date,
   }))
 
-  const tasks = (db.prepare('SELECT * FROM tasks').all() as any[]).map(row => ({
+  const tasks = (db.prepare('SELECT * FROM tasks').all() as TaskRow[]).map(row => ({
     id: row.id, title: row.title, projectId: row.project_id,
     parentId: row.parent_id ?? undefined, tags: JSON.parse(row.tags),
     done: !!row.done, createdAt: row.created_at, source: row.source,
   }))
 
-  const blocks = (db.prepare('SELECT * FROM schedule_blocks').all() as any[]).map(row => ({
+  const blocks = (db.prepare('SELECT * FROM schedule_blocks').all() as ScheduleBlockRow[]).map(row => ({
     id: row.id, taskId: row.task_id, date: row.date,
     start: row.start_min, end: row.end_min, note: row.note,
   }))
 
-  const habits = (db.prepare('SELECT * FROM habits').all() as any[]).map(row => ({
+  const habits = (db.prepare('SELECT * FROM habits').all() as HabitRow[]).map(row => ({
     id: row.id, title: row.title, color: row.color, createdAt: row.created_at,
   }))
 
-  const habitEntries = (db.prepare('SELECT * FROM habit_entries').all() as any[]).map(row => ({
+  const habitEntries = (db.prepare('SELECT * FROM habit_entries').all() as HabitEntryRow[]).map(row => ({
     id: row.id, habitId: row.habit_id, date: row.date, done: !!row.done,
   }))
 
-  const thesisStudents = (db.prepare('SELECT * FROM thesis_students').all() as any[]).map(row => ({
+  const thesisStudents = (db.prepare('SELECT * FROM thesis_students').all() as ThesisStudentRow[]).map(row => ({
     id: row.id, projectId: row.project_id, name: row.name, topic: row.topic,
     stage: row.stage, nextMilestone: row.next_milestone, dueDate: row.due_date,
     notes: row.notes, updatedAt: row.updated_at,
   }))
 
-  const researchLogs = (db.prepare('SELECT * FROM research_logs').all() as any[]).map(row => ({
+  const researchLogs = (db.prepare('SELECT * FROM research_logs').all() as ResearchLogRow[]).map(row => ({
     id: row.id, date: row.date, projectId: row.project_id, kind: row.kind,
     title: row.title, source: row.source, note: row.note,
     attachments: JSON.parse(row.attachments), createdAt: row.created_at,
   }))
 
-  const pomodoroSessions = (db.prepare('SELECT * FROM pomodoro_sessions').all() as any[]).map(row => ({
+  const pomodoroSessions = (db.prepare('SELECT * FROM pomodoro_sessions').all() as PomodoroSessionRow[]).map(row => ({
     id: row.id, projectId: row.project_id, date: row.date,
     minutes: row.minutes, createdAt: row.created_at,
   }))

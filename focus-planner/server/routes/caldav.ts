@@ -5,7 +5,7 @@ import { testConnection } from '../caldav-client.js'
 
 export function caldavRoutes(app: Hono, db: Database.Database) {
   app.get('/api/caldav/config', (c) => {
-    const row = db.prepare('SELECT * FROM caldav_config WHERE id = 1').get() as any
+    const row = db.prepare('SELECT * FROM caldav_config WHERE id = 1').get() as CaldavConfigRow | undefined
     if (!row) return c.json({ serverUrl: '', username: '', password: '', calendarUrl: '', syncEnabled: false, lastSyncAt: '', lastSyncError: '' })
     return c.json({
       serverUrl: row.server_url,
@@ -28,7 +28,7 @@ export function caldavRoutes(app: Hono, db: Database.Database) {
     // If password is masked, keep the existing one
     let password = String(body.password ?? '').trim()
     if (password === '****') {
-      const existing = db.prepare('SELECT password FROM caldav_config WHERE id = 1').get() as any
+      const existing = db.prepare('SELECT password FROM caldav_config WHERE id = 1').get() as CaldavConfigRow | undefined
       password = existing?.password ?? ''
     }
 
@@ -41,7 +41,7 @@ export function caldavRoutes(app: Hono, db: Database.Database) {
   })
 
   app.post('/api/caldav/test-connection', async (c) => {
-    const row = db.prepare('SELECT * FROM caldav_config WHERE id = 1').get() as any
+    const row = db.prepare('SELECT * FROM caldav_config WHERE id = 1').get() as CaldavConfigRow | undefined
     if (!row || !row.calendar_url || !row.username) {
       return c.json({ ok: false, message: '请先填写完整的 CalDAV 配置' })
     }
@@ -60,7 +60,7 @@ export function caldavRoutes(app: Hono, db: Database.Database) {
   })
 
   app.get('/api/caldav/status', (c) => {
-    const row = db.prepare('SELECT * FROM caldav_config WHERE id = 1').get() as any
+    const row = db.prepare('SELECT * FROM caldav_config WHERE id = 1').get() as CaldavConfigRow | undefined
     const stats = db.prepare(`
       SELECT
         COUNT(*) as total,
@@ -68,7 +68,7 @@ export function caldavRoutes(app: Hono, db: Database.Database) {
         SUM(CASE WHEN sync_status = 'pending_create' THEN 1 ELSE 0 END) as pendingCreate,
         SUM(CASE WHEN sync_status = 'error' THEN 1 ELSE 0 END) as errorCount
       FROM caldav_sync_map
-    `).get() as any
+    `).get() as CaldavConfigRow | undefined
 
     return c.json({
       configured: !!(row?.calendar_url && row?.username),
