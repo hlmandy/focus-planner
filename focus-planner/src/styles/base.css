@@ -38,6 +38,13 @@ input::placeholder,
 textarea::placeholder {
   color: #9aa88f;
 }
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
 .sidebar-project-composer button,
 .project-composer button,
 .project-card-actions button,

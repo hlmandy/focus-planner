@@ -1,14 +1,11 @@
-.projects-page,
-.diary-page,
-.literature-page {
+.projects-page {
   width: min(1040px, 100%);
   margin: 22px auto 0;
   display: grid;
   gap: 16px;
 }
 
-.project-management-bar,
-.diary-toolbar {
+.project-management-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -16,34 +13,25 @@
   color: var(--ink-soft);
 }
 
-.project-management-bar div,
-.diary-toolbar div {
+.project-management-bar div {
   display: grid;
   gap: 4px;
 }
 
-.project-management-bar strong,
-.diary-toolbar strong {
+.project-management-bar strong {
   color: var(--ink);
   font-size: 20px;
   font-weight: 650;
 }
 
-.project-management-bar span,
-.diary-toolbar span {
+.project-management-bar span {
   color: var(--muted);
   font-size: 13px;
 }
 
-.project-management-bar select,
-.diary-toolbar input,
-.diary-toolbar select {
+.project-management-bar select {
   height: 38px;
   padding: 0 10px;
-}
-
-.diary-toolbar select {
-  min-width: 220px;
 }
 
 .project-composer {
@@ -69,12 +57,7 @@
 
 .project-card,
 .project-detail,
-.project-panel,
-.diary-composer,
-.diary-entry,
-.literature-entry,
-.settings-list,
-.card {
+.project-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -104,9 +87,7 @@
 
 .project-card-header strong,
 .project-log-row strong,
-.thesis-student-head strong,
-.diary-entry-head strong,
-.literature-entry-head strong {
+.thesis-student-head strong {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -115,8 +96,6 @@
 
 .project-card-header button,
 .thesis-student-head button,
-.diary-entry-head button,
-.literature-entry-head button,
 .habit-delete {
   width: 30px;
   height: 30px;
@@ -129,8 +108,6 @@
 
 .project-card-header button:hover,
 .thesis-student-head button:hover,
-.diary-entry-head button:hover,
-.literature-entry-head button:hover,
 .habit-delete:hover {
   background: var(--surface-3);
   color: var(--coral);
@@ -314,9 +291,6 @@
 .thesis-student input,
 .thesis-student select,
 .thesis-student textarea,
-.diary-composer input,
-.diary-composer select,
-.diary-composer textarea,
 .new-habit-inline input {
   padding: 0 10px;
 }
@@ -329,16 +303,13 @@
 .thesis-composer select,
 .thesis-student input,
 .thesis-student select,
-.diary-composer input,
-.diary-composer select,
 .new-habit-inline input {
   height: 38px;
 }
 
 .project-meta-editor textarea,
 .thesis-composer textarea,
-.thesis-student textarea,
-.diary-composer textarea {
+.thesis-student textarea {
   min-height: 76px;
   padding: 10px;
   resize: vertical;
@@ -350,10 +321,7 @@
 }
 
 .project-task-list,
-.task-tree-item,
-.diary-list,
-.literature-list,
-.settings-list {
+.task-tree-item {
   display: grid;
   gap: 9px;
 }
@@ -478,17 +446,14 @@
   white-space: nowrap;
 }
 
-.project-attachment-list,
-.diary-attachments {
+.project-attachment-list {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
 .project-attachment-list span,
-.project-attachment-list a,
-.diary-attachments span,
-.diary-attachments a {
+.project-attachment-list a {
   min-height: 29px;
   display: inline-flex;
   align-items: center;
@@ -514,8 +479,39 @@
   font-style: normal;
 }
 
-.project-empty,
-.diary-empty {
+.projects-page .project-task {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 0 9px;
+  box-shadow: var(--shadow-sm);
+}
+
+.projects-page .project-task button {
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--muted);
+}
+
+.projects-page .project-task span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projects-page .project-task.done span {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.project-empty {
   padding: 30px;
   border: 1px dashed var(--line-strong);
   border-radius: var(--radius);

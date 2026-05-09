@@ -83,7 +83,15 @@
 }
 
 .card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
   padding: 18px;
+}
+
+.card.wide {
+  max-width: 100%;
 }
 
 .card-title {
@@ -104,6 +112,12 @@
 }
 
 .settings-list {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  gap: 9px;
   padding: 14px;
 }
 
