@@ -80,6 +80,8 @@
 .dashboard {
   width: min(860px, 100%);
   margin: 28px auto 0;
+  display: grid;
+  gap: 14px;
 }
 
 .card {
@@ -87,13 +89,79 @@
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow-sm);
-  padding: 18px;
+  padding: 0;
 }
 
 .card.wide {
   max-width: 100%;
 }
 
+/* Collapsible settings sections */
+.settings-section {
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+
+.settings-section.open {
+  box-shadow: var(--shadow-md);
+}
+
+.settings-section-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.settings-section-header:hover {
+  background: var(--surface-2);
+}
+
+.settings-section-header .card-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-section-header .card-title span {
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.settings-section-header .card-title small {
+  color: var(--muted);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.settings-chevron {
+  font-size: 20px;
+  color: var(--muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.settings-chevron.open {
+  transform: rotate(90deg);
+}
+
+.settings-section-body {
+  padding: 0 18px 18px;
+  border-top: 1px solid var(--line);
+}
+
+/* Legacy card-title for non-collapsible usage */
 .card-title {
   display: flex;
   align-items: baseline;

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Check, FileText, Pencil, Pause, Play, Plus, RotateCcw, Search, Trash2, User, X } from 'lucide-react'
+import { Check, FileText, Pause, Pencil, Play, Plus, RotateCcw, Search, Square, Timer, Trash2, User, X } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import {
   toDateKey, todayKey, fromDateKey, addDays, uid, clamp, snap,
@@ -16,6 +16,9 @@ export function ToolPanel() {
     setIsToolPanelOpen, toolPanelWidth, setToolPanelWidth,
     mode, setMode, secondsLeft, setSecondsLeft, isRunning, setIsRunning,
     pomodoroProjectId, setPomodoroProjectId,
+    settings,
+    stopwatchSeconds, setStopwatchSeconds, stopwatchRunning, setStopwatchRunning,
+    stopwatchProjectId, setStopwatchProjectId,
   } = useApp()
 
   const [quick, setQuick] = useState('')
@@ -33,6 +36,11 @@ export function ToolPanel() {
   const seconds = secondsLeft % 60
   const monthDate = fromDateKey(date)
   const monthLabel = `${monthDate.getFullYear()}年${monthDate.getMonth() + 1}月`
+
+  // Stopwatch display
+  const swHours = Math.floor(stopwatchSeconds / 3600)
+  const swMinutes = Math.floor((stopwatchSeconds % 3600) / 60)
+  const swSecs = stopwatchSeconds % 60
 
   const monthDays = useMemo(() => {
     const selectedMonth = fromDateKey(date)
@@ -69,7 +77,7 @@ export function ToolPanel() {
 
   const resetPomodoro = (nextMode = mode) => {
     setMode(nextMode)
-    setSecondsLeft(nextMode === 'work' ? 25 * 60 : 5 * 60)
+    setSecondsLeft(nextMode === 'work' ? settings.workDuration * 60 : settings.breakDuration * 60)
     setIsRunning(false)
   }
 
@@ -161,7 +169,7 @@ export function ToolPanel() {
       <div className="tool-card pomodoro-tool">
         <div className="tool-card-title">
           <span>番茄钟</span>
-          <em>{mode === 'work' ? '专注' : '休息'}</em>
+          <em>{mode === 'work' ? `专注 ${settings.workDuration}min` : `休息 ${settings.breakDuration}min`}</em>
         </div>
         <div className="pomodoro-time">
           {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
@@ -217,7 +225,7 @@ export function ToolPanel() {
                   }
                   return (
                     <div key={session.id} className="pomodoro-history-item">
-                      <span className="pomodoro-history-dot" style={{ background: project?.color ?? '#3a7afe' }} />
+                      <span className="pomodoro-history-dot" style={{ '--dot-color': project?.color ?? '#3a7afe' } as React.CSSProperties} />
                       <span className="pomodoro-history-project">{project?.name ?? '未知项目'}</span>
                       <span className="pomodoro-history-minutes">{session.minutes}m</span>
                       <span className="pomodoro-history-time">{new Date(session.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
@@ -234,6 +242,48 @@ export function ToolPanel() {
             </div>
           )}
         </div>
+      </div>
+      <div className="tool-card stopwatch-tool">
+        <div className="tool-card-title">
+          <span>直接计时</span>
+          <Timer size={14} className="stopwatch-icon" />
+        </div>
+        <div className="stopwatch-time">
+          {swHours > 0 && <>{String(swHours).padStart(2, '0')}:</>}
+          {String(swMinutes).padStart(2, '0')}:{String(swSecs).padStart(2, '0')}
+        </div>
+        <label htmlFor="stopwatch-project-select">关联项目</label>
+        <select id="stopwatch-project-select" value={stopwatchProjectId} onChange={e => setStopwatchProjectId(e.target.value)} aria-label="计时关联项目">
+          {projects.items.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
+        </select>
+        <div className="stopwatch-actions">
+          <button type="button" className={stopwatchRunning ? 'active' : ''} onClick={() => setStopwatchRunning(!stopwatchRunning)}>
+            {stopwatchRunning ? <Pause size={16} /> : <Play size={16} />}
+            {stopwatchRunning ? '暂停' : '开始'}
+          </button>
+          <button type="button" onClick={() => { setStopwatchRunning(false); setStopwatchSeconds(0); }}>
+            <RotateCcw size={16} />
+            重置
+          </button>
+        </div>
+        {stopwatchSeconds > 0 && (
+          <button
+            type="button"
+            className="stopwatch-save"
+            onClick={() => {
+              const mins = Math.max(1, Math.round(stopwatchSeconds / 60))
+              pomodoroSessions.create({
+                id: uid(), projectId: stopwatchProjectId,
+                date: todayKey(), minutes: mins, createdAt: new Date().toISOString(),
+              }).catch(() => {})
+              setStopwatchRunning(false)
+              setStopwatchSeconds(0)
+            }}
+          >
+            <Square size={14} />
+            记录 {Math.max(1, Math.round(stopwatchSeconds / 60))} 分钟
+          </button>
+        )}
       </div>
       <div className="tool-card search-tool">
         <div className="tool-card-title">

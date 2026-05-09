@@ -136,6 +136,53 @@
   gap: 8px;
 }
 
+/* Stopwatch */
+.stopwatch-icon {
+  color: var(--teal);
+}
+
+.stopwatch-time {
+  color: var(--ink);
+  font-size: 28px;
+  font-weight: 650;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stopwatch-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.stopwatch-actions button.active {
+  border-color: var(--teal);
+  color: var(--teal);
+  background: rgba(56, 150, 100, 0.08);
+}
+
+.stopwatch-save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.stopwatch-save:hover {
+  border-color: var(--teal);
+  color: var(--teal);
+  background: rgba(56, 150, 100, 0.08);
+}
+
 .month-calendar-head {
   display: grid;
   grid-template-columns: 30px 1fr 30px;
@@ -337,7 +384,7 @@
   height: 6px;
   border-radius: 999px;
   flex-shrink: 0;
-  background: var(--blue);
+  background: var(--dot-color, var(--blue));
 }
 
 .pomodoro-history-item.pomodoro-edit {

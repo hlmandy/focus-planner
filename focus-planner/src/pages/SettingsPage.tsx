@@ -1,7 +1,7 @@
 import { RotateCcw } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { seedState } from '../seed'
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, useEffect, useCallback, type FormEvent } from 'react'
 import { settingsApi } from '../api/settings'
 import { DEFAULT_USER_SETTINGS } from '../../shared/types'
 import type { UserSettings, PageName } from '../../shared/types'
@@ -33,6 +33,8 @@ const pageOptions: { value: PageName; label: string }[] = [
   { value: 'summary', label: '今日总结' },
 ]
 
+type SectionId = 'data' | 'pomodoro' | 'sleep' | 'ui' | 'caldav'
+
 export function SettingsPage() {
   const { projects, tasks, blocks, habits, habitEntries, thesisStudents, researchLogs, pomodoroSessions, setProjectFilterId, setProjectDetailId, setPage, persistenceStatus } = useApp()
 
@@ -45,11 +47,16 @@ export function SettingsPage() {
   const [config, setConfig] = useState<CalDAVConfigForm>({
     serverUrl: '', username: '', password: '', calendarUrl: '', syncEnabled: false,
   })
+  const [passwordModified, setPasswordModified] = useState(false)
+  const [hasConfiguredPassword, setHasConfiguredPassword] = useState(false)
   const [status, setStatus] = useState<SyncStatus | null>(null)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [message, setMessage] = useState('')
+
+  // Collapsible sections — data is open by default, others collapsed
+  const [openSections, setOpenSections] = useState<Set<SectionId>>(new Set(['data']))
 
   useEffect(() => {
     settingsApi.get().then(setSettings).catch(() => {})
@@ -57,12 +64,22 @@ export function SettingsPage() {
       setConfig({
         serverUrl: data.serverUrl || '',
         username: data.username || '',
-        password: data.password || '',
+        password: data.password ? '' : '',
         calendarUrl: data.calendarUrl || '',
         syncEnabled: data.syncEnabled || false,
       })
+      setHasConfiguredPassword(!!data.password)
     }).catch(() => {})
     fetch('/api/caldav/status').then(r => r.json()).then(setStatus).catch(() => {})
+  }, [])
+
+  const toggleSection = useCallback((id: SectionId) => {
+    setOpenSections(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }, [])
 
   const refreshStatus = () => {
@@ -88,13 +105,18 @@ export function SettingsPage() {
     setSaving(true)
     setMessage('')
     try {
+      const payload = {
+        ...config,
+        password: passwordModified ? config.password : '****',
+      }
       const res = await fetch('/api/caldav/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       setMessage(data.ok ? '设置已保存' : '保存失败')
+      setPasswordModified(false)
       refreshStatus()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -134,14 +156,60 @@ export function SettingsPage() {
     setSyncing(false)
   }
 
+  const resetData = async () => {
+    if (!window.confirm('确定要清空本地数据并恢复初始示例吗？')) return
+    const seeded = seedState()
+    const oldProjects = projects.items.map(p => p.id)
+    const oldTasks = tasks.items.map(t => t.id)
+    const oldBlocks = blocks.items.map(b => b.id)
+    const oldHabits = habits.items.map(h => h.id)
+    const oldEntries = habitEntries.items.map(e => e.id)
+    const oldStudents = thesisStudents.items.map(s => s.id)
+    const oldLogs = researchLogs.items.map(r => r.id)
+    const oldPomodoros = pomodoroSessions.items.map(p => p.id)
+    projects.setItems(seeded.projects)
+    tasks.setItems(seeded.tasks)
+    blocks.setItems(seeded.blocks)
+    habits.setItems(seeded.habits)
+    habitEntries.setItems(seeded.habitEntries)
+    thesisStudents.setItems(seeded.thesisStudents)
+    researchLogs.setItems(seeded.researchLogs)
+    pomodoroSessions.setItems(seeded.pomodoroSessions)
+    await Promise.all([
+      ...oldProjects.map(id => projects.remove(id).catch(() => {})),
+      ...oldTasks.map(id => tasks.remove(id).catch(() => {})),
+      ...oldBlocks.map(id => blocks.remove(id).catch(() => {})),
+      ...oldHabits.map(id => habits.remove(id).catch(() => {})),
+      ...oldEntries.map(id => habitEntries.remove(id).catch(() => {})),
+      ...oldStudents.map(id => thesisStudents.remove(id).catch(() => {})),
+      ...oldLogs.map(id => researchLogs.remove(id).catch(() => {})),
+      ...oldPomodoros.map(id => pomodoroSessions.remove(id).catch(() => {})),
+    ])
+    await Promise.all([
+      ...seeded.projects.map(p => projects.create(p).catch(() => {})),
+      ...seeded.tasks.map(t => tasks.create(t).catch(() => {})),
+      ...seeded.blocks.map(b => blocks.create(b).catch(() => {})),
+      ...seeded.habits.map(h => habits.create(h).catch(() => {})),
+      ...seeded.habitEntries.map(e => habitEntries.create(e).catch(() => {})),
+      ...seeded.thesisStudents.map(s => thesisStudents.create(s).catch(() => {})),
+      ...seeded.researchLogs.map(r => researchLogs.create(r).catch(() => {})),
+      ...seeded.pomodoroSessions.map(p => pomodoroSessions.create(p).catch(() => {})),
+    ])
+    setProjectFilterId('all')
+    setProjectDetailId(null)
+    setPage('planner')
+  }
+
   return (
     <section className="dashboard">
       {/* Data Management */}
-      <div className="card wide">
-        <div className="card-title">
-          <span>本地设置</span>
-          <small>数据与偏好</small>
-        </div>
+      <SettingsSection
+        id="data"
+        title="本地数据"
+        subtitle="数据保存与恢复"
+        open={openSections.has('data')}
+        onToggle={toggleSection}
+      >
         <div className="settings-list">
           <div>
             <strong>数据保存</strong>
@@ -157,65 +225,21 @@ export function SettingsPage() {
                       : '未连接本地后端，当前仅保存在浏览器本地。'}
             </span>
           </div>
-          <button
-            type="button"
-            className="outline-action danger"
-            onClick={async () => {
-              if (!window.confirm('确定要清空本地数据并恢复初始示例吗？')) return
-              const seeded = seedState()
-              const oldProjects = projects.items.map(p => p.id)
-              const oldTasks = tasks.items.map(t => t.id)
-              const oldBlocks = blocks.items.map(b => b.id)
-              const oldHabits = habits.items.map(h => h.id)
-              const oldEntries = habitEntries.items.map(e => e.id)
-              const oldStudents = thesisStudents.items.map(s => s.id)
-              const oldLogs = researchLogs.items.map(r => r.id)
-              const oldPomodoros = pomodoroSessions.items.map(p => p.id)
-              projects.setItems(seeded.projects)
-              tasks.setItems(seeded.tasks)
-              blocks.setItems(seeded.blocks)
-              habits.setItems(seeded.habits)
-              habitEntries.setItems(seeded.habitEntries)
-              thesisStudents.setItems(seeded.thesisStudents)
-              researchLogs.setItems(seeded.researchLogs)
-              pomodoroSessions.setItems(seeded.pomodoroSessions)
-              await Promise.all([
-                ...oldProjects.map(id => projects.remove(id).catch(() => {})),
-                ...oldTasks.map(id => tasks.remove(id).catch(() => {})),
-                ...oldBlocks.map(id => blocks.remove(id).catch(() => {})),
-                ...oldHabits.map(id => habits.remove(id).catch(() => {})),
-                ...oldEntries.map(id => habitEntries.remove(id).catch(() => {})),
-                ...oldStudents.map(id => thesisStudents.remove(id).catch(() => {})),
-                ...oldLogs.map(id => researchLogs.remove(id).catch(() => {})),
-                ...oldPomodoros.map(id => pomodoroSessions.remove(id).catch(() => {})),
-              ])
-              await Promise.all([
-                ...seeded.projects.map(p => projects.create(p).catch(() => {})),
-                ...seeded.tasks.map(t => tasks.create(t).catch(() => {})),
-                ...seeded.blocks.map(b => blocks.create(b).catch(() => {})),
-                ...seeded.habits.map(h => habits.create(h).catch(() => {})),
-                ...seeded.habitEntries.map(e => habitEntries.create(e).catch(() => {})),
-                ...seeded.thesisStudents.map(s => thesisStudents.create(s).catch(() => {})),
-                ...seeded.researchLogs.map(r => researchLogs.create(r).catch(() => {})),
-                ...seeded.pomodoroSessions.map(p => pomodoroSessions.create(p).catch(() => {})),
-              ])
-              setProjectFilterId('all')
-              setProjectDetailId(null)
-              setPage('planner')
-            }}
-          >
+          <button type="button" className="outline-action danger" onClick={resetData}>
             <RotateCcw size={16} />
             恢复初始数据
           </button>
         </div>
-      </div>
+      </SettingsSection>
 
       {/* Pomodoro Settings */}
-      <div className="card wide">
-        <div className="card-title">
-          <span>番茄钟</span>
-          <small>工作与休息时长</small>
-        </div>
+      <SettingsSection
+        id="pomodoro"
+        title="番茄钟"
+        subtitle="工作与休息时长"
+        open={openSections.has('pomodoro')}
+        onToggle={toggleSection}
+      >
         <form onSubmit={saveSettings} className="settings-form">
           <div className="settings-row">
             <label htmlFor="setting-work-duration">工作时长（分钟）</label>
@@ -268,14 +292,16 @@ export function SettingsPage() {
           </div>
           {settingsMessage && <div className="caldav-message">{settingsMessage}</div>}
         </form>
-      </div>
+      </SettingsSection>
 
       {/* Sleep / Do Not Disturb */}
-      <div className="card wide">
-        <div className="card-title">
-          <span>作息时间</span>
-          <small>免打扰时段</small>
-        </div>
+      <SettingsSection
+        id="sleep"
+        title="作息时间"
+        subtitle="免打扰时段"
+        open={openSections.has('sleep')}
+        onToggle={toggleSection}
+      >
         <form onSubmit={saveSettings} className="settings-form">
           <div className="settings-row">
             <label htmlFor="setting-sleep-start">睡觉开始</label>
@@ -302,14 +328,16 @@ export function SettingsPage() {
             </button>
           </div>
         </form>
-      </div>
+      </SettingsSection>
 
       {/* UI Preferences */}
-      <div className="card wide">
-        <div className="card-title">
-          <span>界面偏好</span>
-          <small>启动页与同步</small>
-        </div>
+      <SettingsSection
+        id="ui"
+        title="界面偏好"
+        subtitle="启动页与同步"
+        open={openSections.has('ui')}
+        onToggle={toggleSection}
+      >
         <form onSubmit={saveSettings} className="settings-form">
           <div className="settings-row">
             <label htmlFor="setting-default-page">默认首页</label>
@@ -337,14 +365,16 @@ export function SettingsPage() {
             </button>
           </div>
         </form>
-      </div>
+      </SettingsSection>
 
       {/* CalDAV Sync */}
-      <div className="card wide">
-        <div className="card-title">
-          <span>CalDAV 日历同步</span>
-          <small>iCloud / 其他 CalDAV 服务器</small>
-        </div>
+      <SettingsSection
+        id="caldav"
+        title="CalDAV 日历同步"
+        subtitle="iCloud / 其他 CalDAV 服务器"
+        open={openSections.has('caldav')}
+        onToggle={toggleSection}
+      >
         <div className="caldav-form">
           <div className="caldav-status">
             {status?.configured && status?.syncEnabled
@@ -375,11 +405,11 @@ export function SettingsPage() {
             <label>应用专用密码</label>
             <input
               type="password"
-              placeholder="iCloud 应用专用密码"
+              placeholder={hasConfiguredPassword ? '已配置（留空则保持不变）' : 'iCloud 应用专用密码'}
               value={config.password}
-              onChange={e => setConfig({ ...config, password: e.target.value })}
+              onChange={e => { setConfig({ ...config, password: e.target.value }); setPasswordModified(true) }}
             />
-            <div className="caldav-hint">iCloud 需要在 appleid.apple.com 生成应用专用密码</div>
+            <div className="caldav-hint">iCloud 需要在 appleid.apple.com 生成应用专用密码{hasConfiguredPassword ? '。已配置密码，留空保存不会覆盖。' : ''}</div>
 
             <label>日历 URL</label>
             <input
@@ -428,7 +458,46 @@ export function SettingsPage() {
             </div>
           )}
         </div>
-      </div>
+      </SettingsSection>
     </section>
+  )
+}
+
+/* Reusable collapsible section component */
+function SettingsSection({
+  id,
+  title,
+  subtitle,
+  open,
+  onToggle,
+  children,
+}: {
+  id: SectionId
+  title: string
+  subtitle: string
+  open: boolean
+  onToggle: (id: SectionId) => void
+  children: React.ReactNode
+}) {
+  return (
+    <div className={`card wide settings-section ${open ? 'open' : ''}`}>
+      <button
+        type="button"
+        className="settings-section-header"
+        onClick={() => onToggle(id)}
+        aria-expanded={open ? 'true' : 'false'}
+      >
+        <div className="card-title">
+          <span>{title}</span>
+          <small>{subtitle}</small>
+        </div>
+        <span className={`settings-chevron ${open ? 'open' : ''}`}>›</span>
+      </button>
+      {open && (
+        <div className="settings-section-body">
+          {children}
+        </div>
+      )}
+    </div>
   )
 }
