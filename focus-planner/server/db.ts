@@ -142,6 +142,15 @@ CREATE TABLE IF NOT EXISTS user_config (
 );
 `
 
+function parseJsonArray<T = unknown>(value: string | null | undefined): T[] {
+  try {
+    const parsed = JSON.parse(value ?? '[]')
+    return Array.isArray(parsed) ? parsed as T[] : []
+  } catch {
+    return []
+  }
+}
+
 function timestamp(): string {
   return new Date().toISOString().replaceAll(':', '-').replace(/\.\d{3}Z$/, 'Z')
 }
@@ -246,6 +255,52 @@ export function initDatabase(): Database.Database {
 
   db.exec(SCHEMA)
 
+  // --- Schema migrations (run after CREATE TABLE IF NOT EXISTS) ---
+
+  // 1. Add CHECK constraints to schedule_blocks (SQLite doesn't support ALTER TABLE ADD CHECK,
+  //    so we use a trigger to enforce range checks)
+  db.exec(`
+    CREATE TRIGGER IF NOT EXISTS trg_blocks_start_min_check
+    BEFORE INSERT ON schedule_blocks
+    FOR EACH ROW WHEN NEW.start_min < 0 OR NEW.start_min >= 1440
+    BEGIN SELECT RAISE(ABORT, 'start_min must be 0..1439'); END;
+
+    CREATE TRIGGER IF NOT EXISTS trg_blocks_end_min_check
+    BEFORE INSERT ON schedule_blocks
+    FOR EACH ROW WHEN NEW.end_min <= NEW.start_min OR NEW.end_min > 1440
+    BEGIN SELECT RAISE(ABORT, 'end_min must be > start_min and <= 1440'); END;
+
+    CREATE TRIGGER IF NOT EXISTS trg_blocks_start_min_update_check
+    BEFORE UPDATE ON schedule_blocks
+    FOR EACH ROW WHEN NEW.start_min < 0 OR NEW.start_min >= 1440
+    BEGIN SELECT RAISE(ABORT, 'start_min must be 0..1439'); END;
+
+    CREATE TRIGGER IF NOT EXISTS trg_blocks_end_min_update_check
+    BEFORE UPDATE ON schedule_blocks
+    FOR EACH ROW WHEN NEW.end_min <= NEW.start_min OR NEW.end_min > 1440
+    BEGIN SELECT RAISE(ABORT, 'end_min must be > start_min and <= 1440'); END;
+  `)
+
+  // 2. Add UNIQUE constraint to habit_entries (habit_id, date)
+  //    Use a unique index which also serves as constraint
+  db.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_habit_entries_unique
+    ON habit_entries(habit_id, date);
+  `)
+
+  // 3. Add CHECK constraint on pomodoro_sessions.minutes
+  db.exec(`
+    CREATE TRIGGER IF NOT EXISTS trg_pomodoro_minutes_check
+    BEFORE INSERT ON pomodoro_sessions
+    FOR EACH ROW WHEN NEW.minutes <= 0
+    BEGIN SELECT RAISE(ABORT, 'minutes must be > 0'); END;
+
+    CREATE TRIGGER IF NOT EXISTS trg_pomodoro_minutes_update_check
+    BEFORE UPDATE ON pomodoro_sessions
+    FOR EACH ROW WHEN NEW.minutes <= 0
+    BEGIN SELECT RAISE(ABORT, 'minutes must be > 0'); END;
+  `)
+
   db.prepare('INSERT OR IGNORE INTO caldav_config (id) VALUES (1)').run()
   db.prepare('INSERT OR IGNORE INTO user_config (id) VALUES (1)').run()
 
@@ -291,7 +346,7 @@ export function loadFullState(db: Database.Database): AppState {
 
   const tasks = (db.prepare('SELECT * FROM tasks').all() as TaskRow[]).map(row => ({
     id: row.id, title: row.title, projectId: row.project_id,
-    parentId: row.parent_id ?? undefined, tags: JSON.parse(row.tags) as string[],
+    parentId: row.parent_id ?? undefined, tags: parseJsonArray<string>(row.tags),
     done: !!row.done, createdAt: row.created_at,
     source: row.source as Task['source'],
   }))
@@ -320,7 +375,7 @@ export function loadFullState(db: Database.Database): AppState {
     id: row.id, date: row.date, projectId: row.project_id,
     kind: row.kind as ResearchLogEntry['kind'],
     title: row.title, source: row.source, note: row.note,
-    attachments: JSON.parse(row.attachments) as string[],
+    attachments: parseJsonArray<string>(row.attachments),
     createdAt: row.created_at,
     readingStatus: (row.reading_status ?? 'unread') as ResearchLogEntry['readingStatus'],
     keyFindings: row.key_findings ?? '', nextAction: row.next_action ?? '',

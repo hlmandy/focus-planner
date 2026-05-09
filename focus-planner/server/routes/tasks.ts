@@ -35,27 +35,36 @@ export function taskRoutes(app: Hono, db: Database.Database) {
 
   app.post('/api/tasks', async (c) => {
     const body = await c.req.json()
+    const source = body.source ?? 'task'
     const err = requireFields(body, ['id', 'title', 'projectId'])
-      || checkEnum(body.source, TASK_SOURCES, 'source')
+      || checkEnum(source, TASK_SOURCES, 'source')
     if (err) return c.json({ error: err }, 400)
     db.prepare(`INSERT INTO tasks (id, title, project_id, parent_id, tags, done, created_at, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
       body.id, body.title, body.projectId, body.parentId ?? null,
       JSON.stringify(jsonStrArray(body, 'tags')), jsonBool(body, 'done') ? 1 : 0,
-      body.createdAt ?? new Date().toISOString(), body.source ?? 'task'
+      body.createdAt ?? new Date().toISOString(), source
     )
     return c.json({ ok: true }, 201)
   })
 
-  app.put('/api/tasks/:id', async (c) => {
-    const body = await c.req.json()
-    const err = checkEnum(body.source, TASK_SOURCES, 'source')
+  app.patch('/api/tasks/:id', async (c) => {
+    const id = c.req.param('id')
+    const body = await c.req.json() as Partial<Task>
+
+    const row = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as TaskRow | undefined
+    if (!row) return c.json({ error: 'Task not found' }, 404)
+
+    const current = toTask(row)
+    const next = { ...current, ...body }
+
+    const err = checkEnum(next.source, TASK_SOURCES, 'source')
     if (err) return c.json({ error: err }, 400)
-    const r = db.prepare(`UPDATE tasks SET title = ?, project_id = ?, parent_id = ?, tags = ?, done = ?, source = ? WHERE id = ?`).run(
-      body.title, body.projectId, body.parentId ?? null,
-      JSON.stringify(jsonStrArray(body, 'tags')), jsonBool(body, 'done') ? 1 : 0,
-      body.source ?? 'task', c.req.param('id')
+
+    db.prepare(`UPDATE tasks SET title = ?, project_id = ?, parent_id = ?, tags = ?, done = ?, source = ? WHERE id = ?`).run(
+      next.title, next.projectId, next.parentId ?? null,
+      JSON.stringify(next.tags ?? []), next.done ? 1 : 0,
+      next.source, id
     )
-    if (r.changes === 0) return c.json({ error: 'Task not found' }, 404)
     return c.json({ ok: true })
   })
 

@@ -41,12 +41,19 @@ export function blockRoutes(app: Hono, db: Database.Database) {
     return c.json({ ok: true }, 201)
   })
 
-  app.put('/api/blocks/:id', async (c) => {
-    const body = await c.req.json()
-    const r = db.prepare(`UPDATE schedule_blocks SET task_id = ?, date = ?, start_min = ?, end_min = ?, note = ? WHERE id = ?`).run(
-      body.taskId, body.date, jsonNum(body, 'start'), jsonNum(body, 'end'), body.note ?? '', c.req.param('id')
+  app.patch('/api/blocks/:id', async (c) => {
+    const id = c.req.param('id')
+    const body = await c.req.json() as Partial<ScheduleBlock>
+
+    const row = db.prepare('SELECT * FROM schedule_blocks WHERE id = ?').get(id) as ScheduleBlockRow | undefined
+    if (!row) return c.json({ error: 'Block not found' }, 404)
+
+    const current = toBlock(row)
+    const next = { ...current, ...body }
+
+    db.prepare(`UPDATE schedule_blocks SET task_id = ?, date = ?, start_min = ?, end_min = ?, note = ? WHERE id = ?`).run(
+      next.taskId, next.date, next.start, next.end, next.note ?? '', id
     )
-    if (r.changes === 0) return c.json({ error: 'Block not found' }, 404)
     return c.json({ ok: true })
   })
 

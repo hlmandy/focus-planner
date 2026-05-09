@@ -21,7 +21,12 @@ const app = new Hono()
 
 const db = initDatabase()
 
-app.get('/api/health', (c) => c.json({ ok: true, db: getDbPath() }))
+app.get('/api/health', (c) => {
+  if (process.env.NODE_ENV !== 'production') {
+    return c.json({ ok: true, db: getDbPath() })
+  }
+  return c.json({ ok: true })
+})
 
 stateRoutes(app, db)
 projectRoutes(app, db)
@@ -39,13 +44,15 @@ settingsRoutes(app, db)
 
 app.onError((err, c) => {
   console.error('Server error:', err)
-  const message = err instanceof Error ? err.message : 'Unknown server error'
+  const message = process.env.NODE_ENV !== 'production'
+    ? (err instanceof Error ? err.message : 'Unknown server error')
+    : 'Internal server error'
   return c.json({ error: message }, 500)
 })
 
 app.notFound((c) => c.json({ error: 'Not found' }, 404))
 
-serve({ fetch: app.fetch, port }, () => {
+serve({ fetch: app.fetch, port, hostname: '127.0.0.1' }, () => {
   console.log(`Focus Planner API server listening on http://localhost:${port}`)
   console.log(`Database: ${getDbPath()}`)
 })

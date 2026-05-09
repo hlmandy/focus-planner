@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { MoreHorizontal } from 'lucide-react'
 import './App.css'
 import type { AppState, PageName, PersistenceStatus, PomodoroSession } from '../shared/types'
+import { reportApiError } from './api/client'
 import { todayKey, uid } from './utils'
 import { pageLabels } from './constants'
 import { loadState } from './seed'
@@ -37,6 +38,14 @@ function PomodoroTimer() {
   const workSeconds = settings.workDuration * 60
   const breakSeconds = settings.breakDuration * 60
 
+  // Sync timer seconds when settings change (only when not running)
+  useEffect(() => {
+    if (!isRunning) {
+      setSecondsLeft(mode === 'work' ? workSeconds : breakSeconds)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.workDuration, settings.breakDuration])
+
   useEffect(() => {
     if (!isRunning) return
     const timer = window.setInterval(() => {
@@ -48,7 +57,7 @@ function PomodoroTimer() {
             id: uid(), projectId: pomodoroProjectId,
             date: todayKey(), minutes: settings.workDuration, createdAt: new Date().toISOString(),
           }
-          pomodoroSessions.create(session).catch(() => {})
+          pomodoroSessions.create(session).catch(reportApiError)
           notify('🍅 专注完成！', `完成了 ${settings.workDuration} 分钟的专注，休息一下吧`)
           requestNotificationPermission()
           setMode('break')

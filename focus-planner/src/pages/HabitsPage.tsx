@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
+import { reportApiError } from '../api/client'
 import { Check, ListTodo, Trash2 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { toDateKey, todayKey, addDays, fromDateKey, getWeekDays, weekDayText, uid } from '../utils'
@@ -26,23 +27,23 @@ export function HabitsPage() {
     const title = newHabitTitle.trim()
     if (!title) return
     const habit = { id: uid(), title, color: colors[habits.items.length % colors.length], createdAt: date }
-    habits.create(habit).catch(() => {})
+    habits.create(habit).catch(reportApiError)
     setNewHabitTitle('')
   }
 
   const toggleHabit = (habitId: string, habitDate: string) => {
     const existing = habitEntries.items.find(entry => entry.habitId === habitId && entry.date === habitDate)
     if (existing) {
-      habitEntries.update(existing.id, { done: !existing.done }).catch(() => {})
+      habitEntries.update(existing.id, { done: !existing.done }).catch(reportApiError)
     } else {
-      habitEntries.create({ id: uid(), habitId, date: habitDate, done: true }).catch(() => {})
+      habitEntries.create({ id: uid(), habitId, date: habitDate, done: true }).catch(reportApiError)
     }
   }
 
   const deleteHabit = (habitId: string) => {
-    habits.remove(habitId).catch(() => {})
+    habits.remove(habitId).catch(reportApiError)
     // Also delete entries for this habit
-    habitEntries.items.filter(e => e.habitId === habitId).forEach(e => habitEntries.remove(e.id).catch(() => {}))
+    habitEntries.items.filter(e => e.habitId === habitId).forEach(e => habitEntries.remove(e.id).catch(reportApiError))
   }
 
   const startEdit = (habitId: string, currentTitle: string) => {
@@ -54,7 +55,7 @@ export function HabitsPage() {
     if (!editingHabitId) return
     const title = editingTitle.trim()
     if (title) {
-      habits.update(editingHabitId, { title }).catch(() => {})
+      habits.update(editingHabitId, { title }).catch(reportApiError)
     }
     setEditingHabitId(null)
     setEditingTitle('')

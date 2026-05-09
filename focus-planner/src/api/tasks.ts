@@ -11,6 +11,6 @@ export const tasksApi = {
     return api.get<{ items: Task[] }>(`/tasks${suffix}`).then(r => r.items)
   },
   create: (body: Omit<Task, 'id'> & { id: string }) => api.post<{ ok: true }>('/tasks', body),
-  update: (id: string, body: Partial<Task>) => api.put<{ ok: true }>(`/tasks/${id}`, body),
+  update: (id: string, body: Partial<Task>) => api.patch<{ ok: true }>(`/tasks/${id}`, body),
   delete: (id: string) => api.delete(`/tasks/${id}`),
 }

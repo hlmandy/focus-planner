@@ -1,4 +1,5 @@
 import { RotateCcw } from 'lucide-react'
+import { reportApiError } from '../api/client'
 import { useApp } from '../hooks/useAppContext'
 import { seedState } from '../seed'
 import { useState, useEffect, useCallback, type FormEvent } from 'react'
@@ -36,10 +37,8 @@ const pageOptions: { value: PageName; label: string }[] = [
 type SectionId = 'data' | 'pomodoro' | 'sleep' | 'ui' | 'caldav'
 
 export function SettingsPage() {
-  const { projects, tasks, blocks, habits, habitEntries, thesisStudents, researchLogs, pomodoroSessions, setProjectFilterId, setProjectDetailId, setPage, persistenceStatus } = useApp()
+  const { projects, tasks, blocks, habits, habitEntries, thesisStudents, researchLogs, pomodoroSessions, setProjectFilterId, setProjectDetailId, setPage, persistenceStatus, settings, updateSettings } = useApp()
 
-  // User settings state
-  const [settings, setSettings] = useState<UserSettings>(DEFAULT_USER_SETTINGS)
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [settingsMessage, setSettingsMessage] = useState('')
 
@@ -59,7 +58,7 @@ export function SettingsPage() {
   const [openSections, setOpenSections] = useState<Set<SectionId>>(new Set(['data']))
 
   useEffect(() => {
-    settingsApi.get().then(setSettings).catch(() => {})
+    settingsApi.get().then(setSettings).catch(reportApiError)
     fetch('/api/caldav/config').then(r => r.json()).then(data => {
       setConfig({
         serverUrl: data.serverUrl || '',
@@ -69,8 +68,8 @@ export function SettingsPage() {
         syncEnabled: data.syncEnabled || false,
       })
       setHasConfiguredPassword(!!data.password)
-    }).catch(() => {})
-    fetch('/api/caldav/status').then(r => r.json()).then(setStatus).catch(() => {})
+    }).catch(reportApiError)
+    fetch('/api/caldav/status').then(r => r.json()).then(setStatus).catch(reportApiError)
   }, [])
 
   const toggleSection = useCallback((id: SectionId) => {
@@ -83,7 +82,7 @@ export function SettingsPage() {
   }, [])
 
   const refreshStatus = () => {
-    fetch('/api/caldav/status').then(r => r.json()).then(setStatus).catch(() => {})
+    fetch('/api/caldav/status').then(r => r.json()).then(setStatus).catch(reportApiError)
   }
 
   const saveSettings = async (e: FormEvent) => {
@@ -91,7 +90,7 @@ export function SettingsPage() {
     setSettingsSaving(true)
     setSettingsMessage('')
     try {
-      await settingsApi.update(settings)
+      await updateSettings(settings)
       setSettingsMessage('设置已保存')
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -159,42 +158,30 @@ export function SettingsPage() {
   const resetData = async () => {
     if (!window.confirm('确定要清空本地数据并恢复初始示例吗？')) return
     const seeded = seedState()
-    const oldProjects = projects.items.map(p => p.id)
-    const oldTasks = tasks.items.map(t => t.id)
-    const oldBlocks = blocks.items.map(b => b.id)
-    const oldHabits = habits.items.map(h => h.id)
-    const oldEntries = habitEntries.items.map(e => e.id)
-    const oldStudents = thesisStudents.items.map(s => s.id)
-    const oldLogs = researchLogs.items.map(r => r.id)
-    const oldPomodoros = pomodoroSessions.items.map(p => p.id)
-    projects.setItems(seeded.projects)
-    tasks.setItems(seeded.tasks)
-    blocks.setItems(seeded.blocks)
-    habits.setItems(seeded.habits)
-    habitEntries.setItems(seeded.habitEntries)
-    thesisStudents.setItems(seeded.thesisStudents)
-    researchLogs.setItems(seeded.researchLogs)
-    pomodoroSessions.setItems(seeded.pomodoroSessions)
-    await Promise.all([
-      ...oldProjects.map(id => projects.remove(id).catch(() => {})),
-      ...oldTasks.map(id => tasks.remove(id).catch(() => {})),
-      ...oldBlocks.map(id => blocks.remove(id).catch(() => {})),
-      ...oldHabits.map(id => habits.remove(id).catch(() => {})),
-      ...oldEntries.map(id => habitEntries.remove(id).catch(() => {})),
-      ...oldStudents.map(id => thesisStudents.remove(id).catch(() => {})),
-      ...oldLogs.map(id => researchLogs.remove(id).catch(() => {})),
-      ...oldPomodoros.map(id => pomodoroSessions.remove(id).catch(() => {})),
+    try {
+      await api.put('/state', seeded)
+    } catch {
+      // Server unavailable — fall back to local-only reset
+    }
+    // Reload all entity hooks from server (or localStorage cache)
+    const [p, t, b, h, he, ts, rl, ps] = await Promise.all([
+      projectsApi.list().catch(() => seeded.projects),
+      tasksApi.list().catch(() => seeded.tasks),
+      blocksApi.list().catch(() => seeded.blocks),
+      habitsApi.list().catch(() => seeded.habits),
+      habitEntriesApi.list().catch(() => seeded.habitEntries),
+      thesisStudentsApi.list().catch(() => seeded.thesisStudents),
+      researchLogsApi.list().catch(() => seeded.researchLogs),
+      pomodoroApi.list().catch(() => seeded.pomodoroSessions),
     ])
-    await Promise.all([
-      ...seeded.projects.map(p => projects.create(p).catch(() => {})),
-      ...seeded.tasks.map(t => tasks.create(t).catch(() => {})),
-      ...seeded.blocks.map(b => blocks.create(b).catch(() => {})),
-      ...seeded.habits.map(h => habits.create(h).catch(() => {})),
-      ...seeded.habitEntries.map(e => habitEntries.create(e).catch(() => {})),
-      ...seeded.thesisStudents.map(s => thesisStudents.create(s).catch(() => {})),
-      ...seeded.researchLogs.map(r => researchLogs.create(r).catch(() => {})),
-      ...seeded.pomodoroSessions.map(p => pomodoroSessions.create(p).catch(() => {})),
-    ])
+    projects.setItems(p)
+    tasks.setItems(t)
+    blocks.setItems(b)
+    habits.setItems(h)
+    habitEntries.setItems(he)
+    thesisStudents.setItems(ts)
+    researchLogs.setItems(rl)
+    pomodoroSessions.setItems(ps)
     setProjectFilterId('all')
     setProjectDetailId(null)
     setPage('planner')

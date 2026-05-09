@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
+import { reportApiError } from '../api/client'
 import {
   toDateKey, todayKey, fromDateKey, addDays, getWeekDays, weekDayText,
   uid, clamp, snap, timeText, parseClockTime, blockTitleText,
@@ -14,7 +15,7 @@ import {
 import type { ScheduleBlock, Task } from '../../shared/types'
 
 export function PlannerPage() {
-  const { projects, blocks, tasks, date, setDate, projectFilterId, isToolPanelOpen } = useApp()
+  const { projects, blocks, tasks, date, setDate, projectFilterId, isToolPanelOpen, settings } = useApp()
 
   const [isLateNightOpen, setIsLateNightOpen] = useState(false)
   const [dragCreate, setDragCreate] = useState<{ date: string; start: number; end: number } | null>(null)
@@ -54,15 +55,23 @@ export function PlannerPage() {
 
   const totalMinutes = visibleBlocks.reduce((sum, block) => sum + block.end - block.start, 0)
 
+  // Compute night window from user's sleep settings (in minutes from midnight)
+  const sleepStartMin = parseClockTime(settings.sleepStart)   // e.g. 22:00 → 1320
+  const sleepEndMin = parseClockTime(settings.sleepEnd)       // e.g. 07:00 → 420
+  const nightEndMin = sleepEndMin + (sleepEndMin <= sleepStartMin ? 1440 : 0)  // wrap past midnight
+
   const rawCurrentMinute = now.getHours() * 60 + now.getMinutes()
-  const currentMinute = rawCurrentMinute < 3 * 60 ? rawCurrentMinute + REGULAR_DAY_END : rawCurrentMinute
+  // Normalize current minute into the "extended day" space so night hours after midnight
+  // are represented as > 1440 (same trick as before, but now relative to sleep window)
+  const currentMinute = rawCurrentMinute < sleepEndMin ? rawCurrentMinute + 1440 : rawCurrentMinute
+
   const hasLateNightBlocks = visibleBlocks.some(
-    (block) => block.start >= REGULAR_DAY_END || block.end > REGULAR_DAY_END,
+    (block) => block.start >= sleepStartMin || block.end > sleepStartMin,
   )
-  const isLateNightCurrent = currentMinute >= REGULAR_DAY_END && currentMinute <= DAY_END
+  const isLateNightCurrent = currentMinute >= sleepStartMin && currentMinute <= nightEndMin
   const isLateNightAutoOpen = hasLateNightBlocks || isLateNightCurrent
   const shouldShowLateNight = isLateNightOpen || isLateNightAutoOpen
-  const displayDayEnd = shouldShowLateNight ? DAY_END : REGULAR_DAY_END
+  const displayDayEnd = shouldShowLateNight ? nightEndMin : sleepStartMin
   const timelineHeight = TIMELINE_HEADER_HEIGHT + (displayDayEnd - DAY_START) * PIXELS_PER_MINUTE
   const isCurrentTimeInRange = currentMinute >= DAY_START && currentMinute <= displayDayEnd
 
@@ -85,11 +94,11 @@ export function PlannerPage() {
         blocks.setItems(prev => prev.filter(b => b.id !== id))
         tasks.setItems(prev => prev.filter(t => t.id !== taskId))
         // Sync to API
-        blocks.remove(id).catch(() => {})
-        tasks.remove(taskId).catch(() => {})
+        blocks.remove(id).catch(reportApiError)
+        tasks.remove(taskId).catch(reportApiError)
       } else {
         blocks.setItems(prev => prev.filter(b => b.id !== id))
-        blocks.remove(id).catch(() => {})
+        blocks.remove(id).catch(reportApiError)
       }
     }
     if (editingBlockId === id) setEditingBlockId(null)
@@ -107,8 +116,8 @@ export function PlannerPage() {
     // Optimistic local + API
     tasks.setItems(prev => [task, ...prev])
     blocks.setItems(prev => [...prev, block])
-    tasks.create(task).catch(() => {})
-    blocks.create(block).catch(() => {})
+    tasks.create(task).catch(reportApiError)
+    blocks.create(block).catch(reportApiError)
     setDate(blockDate)
     return block.id
   }
@@ -158,7 +167,7 @@ export function PlannerPage() {
       if (didDrag && dragStartRef.current) {
         const currentBlock = blocks.items.find(b => b.id === block.id)
         if (currentBlock) {
-          blocks.update(block.id, { start: currentBlock.start, end: currentBlock.end }).catch(() => {})
+          blocks.update(block.id, { start: currentBlock.start, end: currentBlock.end }).catch(reportApiError)
         }
       }
       dragStartRef.current = null
@@ -238,11 +247,11 @@ export function PlannerPage() {
       blocks.setItems(prev => prev.map(b =>
         b.taskId === taskId ? { ...b, date: blockDate, start: nextStart, end: nextEnd } : b
       ))
-      blocks.update(oldBlock.id, { date: blockDate, start: nextStart, end: nextEnd }).catch(() => {})
+      blocks.update(oldBlock.id, { date: blockDate, start: nextStart, end: nextEnd }).catch(reportApiError)
     } else {
       const newBlock: ScheduleBlock = { id: uid(), taskId, date: blockDate, start: nextStart, end: nextEnd, note: '' }
       blocks.setItems(prev => [...prev, newBlock])
-      blocks.create(newBlock).catch(() => {})
+      blocks.create(newBlock).catch(reportApiError)
     }
   }
 
@@ -344,7 +353,7 @@ export function PlannerPage() {
         </div>
       </div>
       <button type="button" className="late-night-toggle" onClick={() => setIsLateNightOpen(v => !v)} disabled={isLateNightAutoOpen}>
-        {isLateNightAutoOpen ? '深夜时段已自动展开 00:00 - 03:00' : shouldShowLateNight ? '收起深夜时段 00:00 - 03:00' : '展开深夜时段 00:00 - 03:00'}
+        {isLateNightAutoOpen ? `深夜时段已自动展开 ${settings.sleepStart} - ${settings.sleepEnd}` : shouldShowLateNight ? `收起深夜时段 ${settings.sleepStart} - ${settings.sleepEnd}` : `展开深夜时段 ${settings.sleepStart} - ${settings.sleepEnd}`}
       </button>
       {editingBlock && editingTask && (
         <aside className="block-editor" style={{ left: blockEditorPosition.x, top: blockEditorPosition.y }}>
@@ -361,14 +370,14 @@ export function PlannerPage() {
               const title = event.target.value
               const promote = editingTask.source === 'schedule' && title.trim() !== ''
               setTaskLocal(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) })
-              tasks.update(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) }).catch(() => {})
+              tasks.update(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) }).catch(reportApiError)
             }} placeholder="可选" />
           </label>
           <label>
             项目
             <select value={editingTask.projectId} onChange={event => {
               setTaskLocal(editingTask.id, { projectId: event.target.value })
-              tasks.update(editingTask.id, { projectId: event.target.value }).catch(() => {})
+              tasks.update(editingTask.id, { projectId: event.target.value }).catch(reportApiError)
             }}>
               {projects.items.map(project => (<option key={project.id} value={project.id}>{project.name}</option>))}
             </select>
@@ -377,7 +386,7 @@ export function PlannerPage() {
             日期
             <input type="date" value={editingBlock.date} onChange={event => {
               setBlockLocal(editingBlock.id, { date: event.target.value })
-              blocks.update(editingBlock.id, { date: event.target.value }).catch(() => {})
+              blocks.update(editingBlock.id, { date: event.target.value }).catch(reportApiError)
             }} />
           </label>
           <div className="block-editor-times">
@@ -386,7 +395,7 @@ export function PlannerPage() {
               <input type="time" value={timeText(editingBlock.start)} onChange={event => {
                 const nextStart = clamp(parseClockTime(event.target.value, editingBlock.start, DAY_START, REGULAR_DAY_END), DAY_START, editingBlock.end - MIN_BLOCK)
                 setBlockLocal(editingBlock.id, { start: nextStart })
-                blocks.update(editingBlock.id, { start: nextStart }).catch(() => {})
+                blocks.update(editingBlock.id, { start: nextStart }).catch(reportApiError)
               }} />
             </label>
             <label>
@@ -394,7 +403,7 @@ export function PlannerPage() {
               <input type="time" value={timeText(editingBlock.end)} onChange={event => {
                 const nextEnd = clamp(parseClockTime(event.target.value, editingBlock.end, DAY_START, REGULAR_DAY_END), editingBlock.start + MIN_BLOCK, DAY_END)
                 setBlockLocal(editingBlock.id, { end: nextEnd })
-                blocks.update(editingBlock.id, { end: nextEnd }).catch(() => {})
+                blocks.update(editingBlock.id, { end: nextEnd }).catch(reportApiError)
               }} />
             </label>
           </div>
@@ -402,13 +411,13 @@ export function PlannerPage() {
             备注
             <textarea value={editingBlock.note} onChange={event => {
               setBlockLocal(editingBlock.id, { note: event.target.value })
-              blocks.update(editingBlock.id, { note: event.target.value }).catch(() => {})
+              blocks.update(editingBlock.id, { note: event.target.value }).catch(reportApiError)
             }} placeholder="读了哪篇文献、卡点、临时记录..." />
           </label>
           <label className="block-editor-check">
             <input type="checkbox" checked={editingTask.done} onChange={event => {
               setTaskLocal(editingTask.id, { done: event.target.checked })
-              tasks.update(editingTask.id, { done: event.target.checked }).catch(() => {})
+              tasks.update(editingTask.id, { done: event.target.checked }).catch(reportApiError)
             }} />
             标记完成
           </label>

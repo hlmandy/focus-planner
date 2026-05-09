@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { reportApiError } from '../api/client'
 import { Check, ChevronDown, Paperclip, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { uid, researchLogKindLabels, isWebLink, getFallbackProjectId } from '../utils'
@@ -74,12 +75,12 @@ export function ResearchLogPage() {
       keyFindings: '',
       nextAction: '',
     }
-    researchLogs.create(entry).catch(() => {})
+    researchLogs.create(entry).catch(reportApiError)
     setQuickText('')
   }
 
   const deleteResearchLog = (id: string) => {
-    researchLogs.remove(id).catch(() => {})
+    researchLogs.remove(id).catch(reportApiError)
     if (editingLogId === id) setEditingLogId(null)
     if (expandedId === id) setExpandedId(null)
   }
@@ -106,7 +107,7 @@ export function ResearchLogPage() {
       readingStatus: editReadingStatus,
       keyFindings: editKeyFindings.trim(),
       nextAction: editNextAction.trim(),
-    }).catch(() => {})
+    }).catch(reportApiError)
     setEditingLogId(null)
   }
 

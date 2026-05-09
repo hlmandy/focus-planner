@@ -9,6 +9,6 @@ export const thesisStudentsApi = {
     return api.get<{ items: ThesisStudent[] }>(`/thesis-students${suffix}`).then(r => r.items)
   },
   create: (body: Omit<ThesisStudent, 'id'> & { id: string }) => api.post<{ ok: true }>('/thesis-students', body),
-  update: (id: string, body: Partial<ThesisStudent>) => api.put<{ ok: true }>(`/thesis-students/${id}`, body),
+  update: (id: string, body: Partial<ThesisStudent>) => api.patch<{ ok: true }>(`/thesis-students/${id}`, body),
   delete: (id: string) => api.delete(`/thesis-students/${id}`),
 }

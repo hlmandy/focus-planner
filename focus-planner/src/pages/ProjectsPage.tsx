@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
+import { reportApiError } from '../api/client'
 import { Check, ChevronDown, ChevronRight, Circle, FileText, Paperclip, Plus, Trash2 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { todayKey, uid, durationText, getTaskDescendantIds, isWebLink, researchLogKindLabels, isProjectTask } from '../utils'
@@ -93,38 +94,43 @@ export function ProjectsPage() {
     const project: Project = { id: uid(), name, color: colors[projects.items.length % colors.length], kind: newProjectKind, status: 'active', goal: projectTemplateGoals[newProjectKind], dueDate: '' }
     const templateTasks = createTasksFromTemplate(project.id, project.kind)
     // Optimistic: update local immediately, API in background
-    projects.create(project).catch(() => {})
-    templateTasks.forEach(t => tasks.create(t).catch(() => {}))
+    projects.create(project).catch(reportApiError)
+    templateTasks.forEach(t => tasks.create(t).catch(reportApiError))
     setProjectFilterId(project.id); setProjectDetailId(project.id); setPomodoroProjectId(project.id)
     setNewProjectName(''); setNewProjectKind('research')
   }
 
   const updateProject = (projectId: string, patch: Partial<Project>) => {
-    projects.update(projectId, patch).catch(() => {})
+    projects.update(projectId, patch).catch(reportApiError)
   }
 
-  const deleteProject = (projectId: string) => {
+  const deleteProject = async (projectId: string) => {
     const remaining = projects.items.filter(p => p.id !== projectId)
     if (!remaining.length) return
-    const nextId = remaining[0]?.id ?? projects.items[0].id
-    // Delete project + reassign related entities
-    projects.remove(projectId).catch(() => {})
-    // Reassign tasks, students, logs, pomodoros to next project
-    tasks.items.filter(t => t.projectId === projectId).forEach(t => tasks.update(t.id, { projectId: nextId }).catch(() => {}))
-    thesisStudents.items.filter(s => s.projectId === projectId).forEach(s => thesisStudents.update(s.id, { projectId: nextId }).catch(() => {}))
+    const targetId = remaining[0]?.id ?? projects.items[0].id
+
+    // Optimistic: remove from local state immediately
+    projects.setItems(prev => prev.filter(p => p.id !== projectId))
     if (projectFilterId === projectId) setProjectFilterId('all')
-    if (pomodoroProjectId === projectId) setPomodoroProjectId(nextId)
+    if (pomodoroProjectId === projectId) setPomodoroProjectId(targetId)
     if (projectDetailId === projectId) setProjectDetailId(null)
+
+    try {
+      await projects.reassignAndDelete(projectId, targetId)
+    } catch {
+      // Reload from server on failure
+      projects.setItems(prev => [...prev, projects.items.find(p => p.id === projectId)!])
+    }
   }
 
   const toggleTodo = (id: string) => {
     const task = tasks.items.find(t => t.id === id)
-    if (task) tasks.update(id, { done: !task.done }).catch(() => {})
+    if (task) tasks.update(id, { done: !task.done }).catch(reportApiError)
   }
 
   const deleteTodo = (id: string) => {
     const idsToDelete = new Set([id, ...getTaskDescendantIds(id, tasks.items)])
-    idsToDelete.forEach(tid => tasks.remove(tid).catch(() => {}))
+    idsToDelete.forEach(tid => tasks.remove(tid).catch(reportApiError))
   }
 
   const addProjectTask = (parentId?: string) => {
@@ -132,7 +138,7 @@ export function ProjectsPage() {
     const title = parentId ? subtaskDrafts[parentId]?.trim() : newProjectTaskTitle.trim()
     if (!title) return
     const task: Task = { id: uid(), title, projectId: activeProjectStats.id, parentId, tags: [], done: false, createdAt: date, source: 'task' }
-    tasks.create(task).catch(() => {})
+    tasks.create(task).catch(reportApiError)
     if (parentId) setSubtaskDrafts(prev => ({ ...prev, [parentId]: '' }))
     else setNewProjectTaskTitle('')
   }
@@ -142,16 +148,16 @@ export function ProjectsPage() {
     const name = newStudentName.trim()
     if (!name) return
     const student: ThesisStudent = { id: uid(), projectId: activeProjectStats.id, name, topic: newStudentTopic.trim(), stage: newStudentStage, nextMilestone: newStudentMilestone.trim(), dueDate: newStudentDueDate, notes: newStudentNotes.trim(), updatedAt: new Date().toISOString() }
-    thesisStudents.create(student).catch(() => {})
+    thesisStudents.create(student).catch(reportApiError)
     setNewStudentName(''); setNewStudentTopic(''); setNewStudentStage('topic'); setNewStudentMilestone(''); setNewStudentDueDate(todayKey()); setNewStudentNotes('')
   }
 
   const updateThesisStudent = (id: string, patch: Partial<ThesisStudent>) => {
-    thesisStudents.update(id, { ...patch, updatedAt: new Date().toISOString() }).catch(() => {})
+    thesisStudents.update(id, { ...patch, updatedAt: new Date().toISOString() }).catch(reportApiError)
   }
 
   const deleteThesisStudent = (id: string) => {
-    thesisStudents.remove(id).catch(() => {})
+    thesisStudents.remove(id).catch(reportApiError)
   }
 
   const renderProjectTask = (task: Task, depth = 0): ReactNode => {

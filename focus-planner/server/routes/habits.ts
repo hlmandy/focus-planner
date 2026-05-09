@@ -28,12 +28,19 @@ export function habitRoutes(app: Hono, db: Database.Database) {
     return c.json({ ok: true }, 201)
   })
 
-  app.put('/api/habits/:id', async (c) => {
-    const body = await c.req.json()
-    const r = db.prepare('UPDATE habits SET title = ?, color = ? WHERE id = ?').run(
-      body.title, body.color ?? '', c.req.param('id')
+  app.patch('/api/habits/:id', async (c) => {
+    const id = c.req.param('id')
+    const body = await c.req.json() as Partial<Habit>
+
+    const row = db.prepare('SELECT * FROM habits WHERE id = ?').get(id) as HabitRow | undefined
+    if (!row) return c.json({ error: 'Habit not found' }, 404)
+
+    const current = toHabit(row)
+    const next = { ...current, ...body }
+
+    db.prepare('UPDATE habits SET title = ?, color = ? WHERE id = ?').run(
+      next.title, next.color ?? '', id
     )
-    if (r.changes === 0) return c.json({ error: 'Habit not found' }, 404)
     return c.json({ ok: true })
   })
 

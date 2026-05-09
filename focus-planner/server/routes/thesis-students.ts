@@ -29,25 +29,34 @@ export function thesisStudentRoutes(app: Hono, db: Database.Database) {
 
   app.post('/api/thesis-students', async (c) => {
     const body = await c.req.json()
+    const stage = body.stage ?? 'topic'
     const err = requireFields(body, ['id', 'projectId', 'name'])
-      || checkEnum(body.stage, THESIS_STAGES, 'stage')
+      || checkEnum(stage, THESIS_STAGES, 'stage')
     if (err) return c.json({ error: err }, 400)
     db.prepare(`INSERT INTO thesis_students (id, project_id, name, topic, stage, next_milestone, due_date, notes, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-      body.id, body.projectId, body.name, body.topic ?? '', body.stage ?? 'topic',
+      body.id, body.projectId, body.name, body.topic ?? '', stage,
       body.nextMilestone ?? '', body.dueDate ?? '', body.notes ?? '', new Date().toISOString()
     )
     return c.json({ ok: true }, 201)
   })
 
-  app.put('/api/thesis-students/:id', async (c) => {
-    const body = await c.req.json()
-    const err = checkEnum(body.stage, THESIS_STAGES, 'stage')
+  app.patch('/api/thesis-students/:id', async (c) => {
+    const id = c.req.param('id')
+    const body = await c.req.json() as Partial<ThesisStudent>
+
+    const row = db.prepare('SELECT * FROM thesis_students WHERE id = ?').get(id) as ThesisStudentRow | undefined
+    if (!row) return c.json({ error: 'Thesis student not found' }, 404)
+
+    const current = toStudent(row)
+    const next = { ...current, ...body, updatedAt: new Date().toISOString() }
+
+    const err = checkEnum(next.stage, THESIS_STAGES, 'stage')
     if (err) return c.json({ error: err }, 400)
-    const r = db.prepare(`UPDATE thesis_students SET name = ?, topic = ?, stage = ?, next_milestone = ?, due_date = ?, notes = ?, updated_at = ? WHERE id = ?`).run(
-      body.name, body.topic ?? '', body.stage ?? 'topic', body.nextMilestone ?? '',
-      body.dueDate ?? '', body.notes ?? '', new Date().toISOString(), c.req.param('id')
+
+    db.prepare(`UPDATE thesis_students SET name = ?, topic = ?, stage = ?, next_milestone = ?, due_date = ?, notes = ?, updated_at = ? WHERE id = ?`).run(
+      next.name, next.topic ?? '', next.stage, next.nextMilestone ?? '',
+      next.dueDate ?? '', next.notes ?? '', next.updatedAt, id
     )
-    if (r.changes === 0) return c.json({ error: 'Thesis student not found' }, 404)
     return c.json({ ok: true })
   })
 

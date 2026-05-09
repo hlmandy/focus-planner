@@ -7,6 +7,7 @@ import {
 } from '../utils'
 import { DAY_START, DAY_END, getCalendarDayInfo } from '../constants'
 import type { ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
+import { reportApiError } from '../api/client'
 
 type TabId = 'timer' | 'search' | 'quick-add' | 'quick-log'
 
@@ -102,8 +103,8 @@ export function ToolPanel() {
     const block: ScheduleBlock = {
       id: uid(), taskId: task.id, date, start: parsed.start, end: parsed.start + 30, note: '',
     }
-    tasks.create(task).catch(() => {})
-    blocks.create(block).catch(() => {})
+    tasks.create(task).catch(reportApiError)
+    blocks.create(block).catch(reportApiError)
     setQuick('')
   }
 
@@ -119,12 +120,12 @@ export function ToolPanel() {
       source: '', note: text.length > 60 ? text : '',
       attachments: [], createdAt: new Date().toISOString(),
       readingStatus: 'unread' as const, keyFindings: '', nextAction: '',
-    }).catch(() => {})
+    }).catch(reportApiError)
     setQuickLog('')
   }
 
   const deletePomodoro = (id: string) => {
-    pomodoroSessions.remove(id).catch(() => {})
+    pomodoroSessions.remove(id).catch(reportApiError)
   }
 
   const startPomodoroEdit = (session: { id: string; projectId: string; minutes: number }) => {
@@ -135,7 +136,7 @@ export function ToolPanel() {
 
   const savePomodoroEdit = () => {
     if (!editingPomodoroId) return
-    pomodoroSessions.update(editingPomodoroId, { minutes: editMinutes, projectId: editProjectId }).catch(() => {})
+    pomodoroSessions.update(editingPomodoroId, { minutes: editMinutes, projectId: editProjectId }).catch(reportApiError)
     setEditingPomodoroId(null)
   }
 
@@ -275,7 +276,7 @@ export function ToolPanel() {
                   pomodoroSessions.create({
                     id: uid(), projectId: stopwatchProjectId,
                     date: todayKey(), minutes: mins, createdAt: new Date().toISOString(),
-                  }).catch(() => {})
+                  }).catch(reportApiError)
                   setStopwatchRunning(false)
                   setStopwatchSeconds(0)
                 }}

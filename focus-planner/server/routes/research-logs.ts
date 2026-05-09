@@ -50,17 +50,25 @@ export function researchLogRoutes(app: Hono, db: Database.Database) {
     return c.json({ ok: true }, 201)
   })
 
-  app.put('/api/research-logs/:id', async (c) => {
-    const body = await c.req.json()
-    const err = checkEnum(body.kind, RESEARCH_LOG_KINDS, 'kind')
+  app.patch('/api/research-logs/:id', async (c) => {
+    const id = c.req.param('id')
+    const body = await c.req.json() as Partial<ResearchLogEntry>
+
+    const row = db.prepare('SELECT * FROM research_logs WHERE id = ?').get(id) as ResearchLogRow | undefined
+    if (!row) return c.json({ error: 'Research log not found' }, 404)
+
+    const current = toLog(row)
+    const next = { ...current, ...body }
+
+    const err = checkEnum(next.kind, RESEARCH_LOG_KINDS, 'kind')
     if (err) return c.json({ error: err }, 400)
-    const r = db.prepare(`UPDATE research_logs SET date = ?, project_id = ?, kind = ?, title = ?, source = ?, note = ?, attachments = ?, reading_status = ?, key_findings = ?, next_action = ? WHERE id = ?`).run(
-      body.date, body.projectId, body.kind, body.title,
-      body.source ?? '', body.note ?? '', JSON.stringify(jsonStrArray(body, 'attachments')),
-      body.readingStatus ?? 'unread', body.keyFindings ?? '', body.nextAction ?? '',
-      c.req.param('id')
+
+    db.prepare(`UPDATE research_logs SET date = ?, project_id = ?, kind = ?, title = ?, source = ?, note = ?, attachments = ?, reading_status = ?, key_findings = ?, next_action = ? WHERE id = ?`).run(
+      next.date, next.projectId, next.kind, next.title,
+      next.source ?? '', next.note ?? '', JSON.stringify(next.attachments ?? []),
+      next.readingStatus ?? 'unread', next.keyFindings ?? '', next.nextAction ?? '',
+      id
     )
-    if (r.changes === 0) return c.json({ error: 'Research log not found' }, 404)
     return c.json({ ok: true })
   })
 

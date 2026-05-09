@@ -37,12 +37,19 @@ export function habitEntryRoutes(app: Hono, db: Database.Database) {
     return c.json({ ok: true }, 201)
   })
 
-  app.put('/api/habit-entries/:id', async (c) => {
-    const body = await c.req.json()
-    const r = db.prepare('UPDATE habit_entries SET done = ? WHERE id = ?').run(
-      jsonBool(body, 'done') ? 1 : 0, c.req.param('id')
+  app.patch('/api/habit-entries/:id', async (c) => {
+    const id = c.req.param('id')
+    const body = await c.req.json() as Partial<HabitEntry>
+
+    const row = db.prepare('SELECT * FROM habit_entries WHERE id = ?').get(id) as HabitEntryRow | undefined
+    if (!row) return c.json({ error: 'Habit entry not found' }, 404)
+
+    const current = toHabitEntry(row)
+    const next = { ...current, ...body }
+
+    db.prepare('UPDATE habit_entries SET done = ? WHERE id = ?').run(
+      next.done ? 1 : 0, id
     )
-    if (r.changes === 0) return c.json({ error: 'Habit entry not found' }, 404)
     return c.json({ ok: true })
   })
 

@@ -11,6 +11,6 @@ export const blocksApi = {
     return api.get<{ items: ScheduleBlock[] }>(`/blocks${suffix}`).then(r => r.items)
   },
   create: (body: Omit<ScheduleBlock, 'id'> & { id: string }) => api.post<{ ok: true }>('/blocks', body),
-  update: (id: string, body: Partial<ScheduleBlock>) => api.put<{ ok: true }>(`/blocks/${id}`, body),
+  update: (id: string, body: Partial<ScheduleBlock>) => api.patch<{ ok: true }>(`/blocks/${id}`, body),
   delete: (id: string) => api.delete(`/blocks/${id}`),
 }

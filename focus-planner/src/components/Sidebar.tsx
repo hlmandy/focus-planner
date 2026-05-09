@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Archive, Plus, Settings, CalendarDays, TimerReset, FolderKanban, Flame, Save, FileText } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { uid } from '../utils'
+import { reportApiError } from '../api/client'
 import { colors, projectTemplateGoals } from '../constants'
 import { createTasksFromTemplate } from '../seed'
 import type { ProjectKind } from '../../shared/types'
@@ -55,8 +56,8 @@ export function Sidebar() {
       goal: projectTemplateGoals[newProjectKind], dueDate: '',
     }
     const templateTasks = createTasksFromTemplate(project.id, project.kind)
-    projects.create(project).catch(() => {})
-    templateTasks.forEach(t => tasks.create(t).catch(() => {}))
+    projects.create(project).catch(reportApiError)
+    templateTasks.forEach(t => tasks.create(t).catch(reportApiError))
     setProjectFilterId(project.id)
     setProjectDetailId(project.id)
     setPomodoroProjectId(project.id)

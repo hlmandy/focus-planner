@@ -11,6 +11,6 @@ export const habitEntriesApi = {
     return api.get<{ items: HabitEntry[] }>(`/habit-entries${suffix}`).then(r => r.items)
   },
   create: (body: Omit<HabitEntry, 'id'> & { id: string }) => api.post<{ ok: true }>('/habit-entries', body),
-  update: (id: string, body: Partial<HabitEntry>) => api.put<{ ok: true }>(`/habit-entries/${id}`, body),
+  update: (id: string, body: Partial<HabitEntry>) => api.patch<{ ok: true }>(`/habit-entries/${id}`, body),
   delete: (id: string) => api.delete(`/habit-entries/${id}`),
 }

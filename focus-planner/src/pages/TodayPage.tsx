@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { reportApiError } from '../api/client'
 import { CalendarClock, Check, Circle, Clock, ListTodo, Plus, Save, Trash2, X } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import {
@@ -103,26 +104,26 @@ export function TodayPage() {
     const block: ScheduleBlock = {
       id: uid(), taskId: task.id, date, start: parsed.start, end: parsed.start + 30, note: '',
     }
-    tasks.create(task).catch(() => {})
-    blocks.create(block).catch(() => {})
+    tasks.create(task).catch(reportApiError)
+    blocks.create(block).catch(reportApiError)
     setQuickInput('')
   }
 
   const toggleTodo = (id: string) => {
     const task = tasks.items.find(t => t.id === id)
-    if (task) tasks.update(id, { done: !task.done }).catch(() => {})
+    if (task) tasks.update(id, { done: !task.done }).catch(reportApiError)
   }
 
   const deleteTodo = (id: string) => {
     const idsToDelete = new Set([id, ...getTaskDescendantIds(id, tasks.items)])
-    idsToDelete.forEach(tid => tasks.remove(tid).catch(() => {}))
+    idsToDelete.forEach(tid => tasks.remove(tid).catch(reportApiError))
   }
 
   const toggleBlockTask = (blockId: string) => {
     const block = blocks.items.find(b => b.id === blockId)
     if (!block) return
     const task = tasks.items.find(t => t.id === block.taskId)
-    if (task) tasks.update(task.id, { done: !task.done }).catch(() => {})
+    if (task) tasks.update(task.id, { done: !task.done }).catch(reportApiError)
   }
 
   const deleteBlock = (blockId: string) => {
@@ -131,10 +132,10 @@ export function TodayPage() {
     const task = tasks.items.find(t => t.id === block.taskId)
     const hasOtherBlocks = blocks.items.some(b => b.id !== blockId && b.taskId === block.taskId)
     if (task?.source === 'schedule' && !hasOtherBlocks) {
-      blocks.remove(blockId).catch(() => {})
-      tasks.remove(task.id).catch(() => {})
+      blocks.remove(blockId).catch(reportApiError)
+      tasks.remove(task.id).catch(reportApiError)
     } else {
-      blocks.remove(blockId).catch(() => {})
+      blocks.remove(blockId).catch(reportApiError)
     }
     if (editingBlockId === blockId) setEditingBlockId(null)
   }
@@ -179,13 +180,13 @@ export function TodayPage() {
       projectId: editForm.projectId,
       done: editForm.done,
       ...(promoteSource ? { source: 'task' as const } : {}),
-    }).catch(() => {})
+    }).catch(reportApiError)
 
     blocks.update(block.id, {
       start: clamp(newStart, DAY_START, newEnd - MIN_BLOCK),
       end: clamp(newEnd, newStart + MIN_BLOCK, DAY_END),
       note: editForm.note,
-    }).catch(() => {})
+    }).catch(reportApiError)
 
     setEditingBlockId(null)
   }
@@ -201,7 +202,7 @@ export function TodayPage() {
     const block: ScheduleBlock = {
       id: uid(), taskId, date, start, end: start + 30, note: '',
     }
-    blocks.create(block).catch(() => {})
+    blocks.create(block).catch(reportApiError)
   }
 
   return (

@@ -71,12 +71,14 @@ From the repository root on Windows, double-click `start-focus-planner.bat` to i
 Install dependencies:
 
 ```bash
+cd focus-planner
 npm install
 ```
 
 Run the dev servers:
 
 ```bash
+cd focus-planner
 npm run server   # backend API (localhost:8787)
 npm run dev      # frontend dev server (localhost:5173)
 ```
@@ -86,20 +88,37 @@ npm run dev      # frontend dev server (localhost:5173)
 Build:
 
 ```bash
+cd focus-planner
 npm run build
 ```
 
 Lint:
 
 ```bash
+cd focus-planner
 npm run lint
 ```
 
 Test:
 
 ```bash
+cd focus-planner
 npm run test        # run once
 npm run test:watch  # watch mode
+```
+
+Type check:
+
+```bash
+cd focus-planner
+npm run typecheck
+```
+
+Full check (typecheck + lint + test):
+
+```bash
+cd focus-planner
+npm run check
 ```
 
 ## Project Structure

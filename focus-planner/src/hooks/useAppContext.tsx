@@ -1,7 +1,8 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { AppState, PageName, PersistenceStatus, UserSettings } from '../../shared/types'
 import { DEFAULT_USER_SETTINGS } from '../../shared/types'
 import { settingsApi } from '../api/settings'
+import { reportApiError } from '../api/client'
 import { useProjects } from './useProjects'
 import { useTasks } from './useTasks'
 import { useBlocks } from './useBlocks'
@@ -26,6 +27,7 @@ interface AppContextValue {
 
   // User settings
   settings: UserSettings
+  updateSettings: (next: UserSettings) => Promise<void>
 
   // Navigation & UI
   page: PageName
@@ -86,7 +88,12 @@ export function AppProvider({
   // User settings — loaded from backend, fallback to defaults
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_USER_SETTINGS)
   useEffect(() => {
-    settingsApi.get().then(setSettings).catch(() => {})
+    settingsApi.get().then(setSettings).catch(reportApiError)
+  }, [])
+
+  const updateSettings = useCallback(async (next: UserSettings) => {
+    await settingsApi.update(next)
+    setSettings(next)
   }, [])
 
   // Stopwatch state
@@ -118,6 +125,7 @@ export function AppProvider({
       researchLogs,
       pomodoroSessions,
       settings,
+      updateSettings,
       stopwatchSeconds,
       setStopwatchSeconds,
       stopwatchRunning,

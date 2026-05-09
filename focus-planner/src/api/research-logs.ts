@@ -12,6 +12,6 @@ export const researchLogsApi = {
     return api.get<{ items: ResearchLogEntry[] }>(`/research-logs${suffix}`).then(r => r.items)
   },
   create: (body: Omit<ResearchLogEntry, 'id'> & { id: string }) => api.post<{ ok: true }>('/research-logs', body),
-  update: (id: string, body: Partial<ResearchLogEntry>) => api.put<{ ok: true }>(`/research-logs/${id}`, body),
+  update: (id: string, body: Partial<ResearchLogEntry>) => api.patch<{ ok: true }>(`/research-logs/${id}`, body),
   delete: (id: string) => api.delete(`/research-logs/${id}`),
 }
