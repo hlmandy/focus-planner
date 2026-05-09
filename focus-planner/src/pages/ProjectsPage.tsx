@@ -19,7 +19,7 @@ function ProjectDetailSection({ title, count, defaultOpen = false, children }: {
   const [isOpen, setIsOpen] = useState(defaultOpen)
   return (
     <section className="project-panel">
-      <button type="button" className="project-section-toggle" onClick={() => setIsOpen(v => !v)} aria-expanded={isOpen ? 'true' : 'false'}>
+      <button type="button" className="btn btn-ghost project-section-toggle" onClick={() => setIsOpen(v => !v)} aria-expanded={isOpen ? 'true' : 'false'}>
         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         <h3>{title} <span className="project-section-count">{count}</span></h3>
       </button>
@@ -180,13 +180,13 @@ export function ProjectsPage() {
     return (
       <div key={task.id} className="task-tree-item">
         <div className={`project-task ${task.done ? 'done' : ''}`} style={{ marginLeft: depth * 18 }}>
-          <button onClick={() => toggleTodo(task.id)} aria-label="切换完成状态">{task.done ? <Check size={17} /> : <Circle size={17} />}</button>
+          <button className="btn btn-ghost" onClick={() => toggleTodo(task.id)} aria-label="切换完成状态">{task.done ? <Check size={17} /> : <Circle size={17} />}</button>
           <span>{task.title}</span>
-          <button onClick={() => deleteTodo(task.id)} aria-label="删除 TODO"><Trash2 size={15} /></button>
+          <button className="btn btn-danger" onClick={() => deleteTodo(task.id)} aria-label="删除 TODO"><Trash2 size={15} /></button>
         </div>
         <div className="subtask-composer" style={{ marginLeft: depth * 18 + 40 }}>
           <input value={subtaskDrafts[task.id] ?? ''} onChange={e => setSubtaskDrafts(prev => ({ ...prev, [task.id]: e.target.value }))} onKeyDown={e => e.key === 'Enter' && addProjectTask(task.id)} placeholder="添加子任务" />
-          <button onClick={() => addProjectTask(task.id)}><Plus size={14} /></button>
+          <button className="btn btn-primary" onClick={() => addProjectTask(task.id)}><Plus size={14} /></button>
         </div>
         {children.map(child => renderProjectTask(child, depth + 1))}
       </div>
@@ -212,7 +212,7 @@ export function ProjectsPage() {
         <select className="project-kind-select" value={newProjectKind} onChange={e => setNewProjectKind(e.target.value as ProjectKind)} aria-label="项目类型">
           <option value="research">科研</option><option value="paper">论文</option><option value="student">指导</option><option value="admin">事务</option>
         </select>
-        <button onClick={addProject}><Plus size={17} />添加项目</button>
+        <button className="btn btn-primary" onClick={addProject}><Plus size={17} />添加项目</button>
       </div>
       {projectDetailId === null ? (
         <div className="project-grid">
@@ -224,7 +224,7 @@ export function ProjectsPage() {
                 <span className={`kind-pill ${project.kind}`}>{projectKindLabels[project.kind]}</span>
                 <span className={`status-pill ${project.status}`}>{projectStatusLabels[project.status]}</span>
                 {projects.items.length > 1 && (
-                  <button onClick={e => { e.stopPropagation(); deleteProject(project.id) }} aria-label="删除项目"><Trash2 size={15} /></button>
+                  <button className="btn btn-danger" onClick={e => { e.stopPropagation(); deleteProject(project.id) }} aria-label="删除项目"><Trash2 size={15} /></button>
                 )}
               </div>
               <div className="project-card-stats">
@@ -251,8 +251,8 @@ export function ProjectsPage() {
                 <span style={{ width: `${project.completion}%`, background: project.color }} />
               </div>
               <div className="project-card-actions">
-                <button onClick={e => { e.stopPropagation(); setProjectFilterId(project.id); setProjectDetailId(project.id); setPage('planner') }}>查看规划</button>
-                <button onClick={e => { e.stopPropagation(); setProjectFilterId(project.id); setProjectDetailId(project.id); setPage(project.kind === 'student' ? 'projects' : 'research-log') }}>
+                <button className="btn btn-ghost" onClick={e => { e.stopPropagation(); setProjectFilterId(project.id); setProjectDetailId(project.id); setPage('planner') }}>查看规划</button>
+                <button className="btn btn-ghost" onClick={e => { e.stopPropagation(); setProjectFilterId(project.id); setProjectDetailId(project.id); setPage(project.kind === 'student' ? 'projects' : 'research-log') }}>
                   {project.kind === 'student' ? '学生进度' : '研究日志'}
                 </button>
               </div>
@@ -272,10 +272,10 @@ export function ProjectsPage() {
               </p>
             </div>
             <div className="project-detail-actions">
-              <button onClick={() => setEditingProjectId(v => v === activeProjectStats.id ? null : activeProjectStats.id)}>
+              <button className="btn btn-ghost" onClick={() => setEditingProjectId(v => v === activeProjectStats.id ? null : activeProjectStats.id)}>
                 {editingProjectId === activeProjectStats.id ? '完成编辑' : '编辑'}
               </button>
-              <button onClick={openProjectOverview}>全部项目</button>
+              <button className="btn btn-ghost" onClick={openProjectOverview}>全部项目</button>
             </div>
           </div>
           {editingProjectId === activeProjectStats.id ? (
@@ -302,12 +302,12 @@ export function ProjectsPage() {
             <span style={{ width: `${activeProjectStats.completion}%`, background: activeProjectStats.color }} />
           </div>
           <div className="project-toolbar">
-            <button onClick={() => setPage('planner')}>查看规划</button>
-            <button onClick={() => setPage('today')}>今日任务</button>
+            <button className="btn btn-ghost" onClick={() => setPage('planner')}>查看规划</button>
+            <button className="btn btn-ghost" onClick={() => setPage('today')}>今日任务</button>
             {activeProjectStats.kind !== 'student' && (
-              <button type="button" onClick={() => setPage('research-log')}>研究日志</button>
+              <button type="button" className="btn btn-ghost" onClick={() => setPage('research-log')}>研究日志</button>
             )}
-            {projects.items.length > 1 && <button onClick={() => deleteProject(activeProjectStats.id)}>删除项目</button>}
+            {projects.items.length > 1 && <button className="btn btn-danger" onClick={() => deleteProject(activeProjectStats.id)}>删除项目</button>}
           </div>
           <div className="project-detail-grid">
             <section className={`project-panel template-panel ${activeProjectStats.kind}`}>
@@ -321,7 +321,7 @@ export function ProjectsPage() {
               <h3>子任务树</h3>
               <div className="root-task-composer">
                 <input value={newProjectTaskTitle} onChange={e => setNewProjectTaskTitle(e.target.value)} onKeyDown={e => e.key === 'Enter' && addProjectTask()} placeholder="新增顶层任务 / 阶段 / 工作包" />
-                <button onClick={() => addProjectTask()}><Plus size={15} />添加</button>
+                <button className="btn btn-primary" onClick={() => addProjectTask()}><Plus size={15} />添加</button>
               </div>
               <div className="project-task-list">
                 {activeProjectTasks.length ? (
@@ -341,7 +341,7 @@ export function ProjectsPage() {
                   <input value={newStudentMilestone} onChange={e => setNewStudentMilestone(e.target.value)} placeholder="下个节点" />
                   <input type="date" value={newStudentDueDate} onChange={e => setNewStudentDueDate(e.target.value)} />
                   <textarea value={newStudentNotes} onChange={e => setNewStudentNotes(e.target.value)} placeholder="指导备注 / 风险 / 下次反馈重点" />
-                  <button onClick={addThesisStudent}><Plus size={17} />添加学生</button>
+                  <button className="btn btn-primary" onClick={addThesisStudent}><Plus size={17} />添加学生</button>
                 </div>
                 <div className="thesis-list">
                   {activeProjectStudents.length ? (
@@ -352,7 +352,7 @@ export function ProjectsPage() {
                           <select value={student.stage} onChange={e => updateThesisStudent(student.id, { stage: e.target.value as ThesisStage })} aria-label={`${student.name} 阶段`}>
                             <option value="topic">选题</option><option value="proposal">开题</option><option value="draft">初稿</option><option value="revision">修改</option><option value="final">定稿</option>
                           </select>
-                          <button onClick={() => deleteThesisStudent(student.id)} aria-label="删除学生"><Trash2 size={15} /></button>
+                          <button className="btn btn-danger" onClick={() => deleteThesisStudent(student.id)} aria-label="删除学生"><Trash2 size={15} /></button>
                         </div>
                         <input value={student.topic} onChange={e => updateThesisStudent(student.id, { topic: e.target.value })} placeholder="论文题目 / 方向" />
                         <div className="thesis-row">

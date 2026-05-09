@@ -272,13 +272,13 @@ export function PlannerPage() {
   return (
     <div className="planner-page">
       <div className="planner-controls">
-        <button type="button" className="calendar-nav" onClick={() => setDate(toDateKey(addDays(fromDateKey(date), -7)))} aria-label="上一周">‹</button>
+        <button type="button" className="btn btn-ghost calendar-nav" onClick={() => setDate(toDateKey(addDays(fromDateKey(date), -7)))} aria-label="上一周">‹</button>
         <div className="planner-week-title">
           <strong>{blockTitleText({ date, start: 0, end: 0, taskId: '', id: '', note: '' }, undefined)}</strong>
           <span>{weekStart} - {weekEnd}</span>
         </div>
-        <button type="button" className="calendar-nav" onClick={() => setDate(toDateKey(addDays(fromDateKey(date), 7)))} aria-label="下一周">›</button>
-        <button type="button" className="calendar-today" onClick={() => setDate(todayKey())}>今天</button>
+        <button type="button" className="btn btn-ghost calendar-nav" onClick={() => setDate(toDateKey(addDays(fromDateKey(date), 7)))} aria-label="下一周">›</button>
+        <button type="button" className="btn btn-ghost calendar-today" onClick={() => setDate(todayKey())}>今天</button>
         <div className="planner-summary">
           <span>本周专注</span>
           <strong>{(() => { const h = Math.floor(totalMinutes / 60); const m = totalMinutes % 60; return h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`; })()}</strong>
@@ -311,7 +311,7 @@ export function PlannerPage() {
                   onDragOver={event => event.preventDefault()}
                   onDrop={event => scheduleTodoFromDrop(event, dayKey)}
                 >
-                  <button type="button" className={`day-header ${dayInfo.isRestDay ? 'rest-day' : ''} ${dayInfo.isAdjustedWorkday ? 'workday-adjusted' : ''}`} onClick={() => setDate(dayKey)} title={dayInfo.label}>
+                  <button type="button" className={`btn btn-ghost day-header ${dayInfo.isRestDay ? 'rest-day' : ''} ${dayInfo.isAdjustedWorkday ? 'workday-adjusted' : ''}`} onClick={() => setDate(dayKey)} title={dayInfo.label}>
                     <strong>{weekDayText(weekDate)}</strong>
                     <span>{String(weekDate.getMonth() + 1).padStart(2, '0')}/{String(weekDate.getDate()).padStart(2, '0')}</span>
                     {dayInfo.marker && <em>{dayInfo.marker}</em>}
@@ -337,13 +337,13 @@ export function PlannerPage() {
                         className={`time-block ${blockStatus} ${duration < 45 ? 'compact' : duration < 75 ? 'regular' : 'spacious'}`}
                         style={{ top: (block.start - DAY_START) * PIXELS_PER_MINUTE, height: (block.end - block.start) * PIXELS_PER_MINUTE, borderColor: project?.color, background: `${project?.color ?? '#3a7afe'}18` }}
                       >
-                        <button type="button" className="drag-area" onPointerDown={event => startPointerAction(event, block, 'move')}>
+                        <button type="button" className="btn btn-ghost drag-area" onPointerDown={event => startPointerAction(event, block, 'move')}>
                           <strong>{blockTitleText(block, task)}</strong>
                           <span>{timeText(block.start)} - {timeText(block.end)}</span>
                           {duration >= 75 && (<em><b>{blockStatusLabels[blockStatus]}</b>{project?.name ?? '工作项目'} {task?.tags.map(tag => `#${tag}`).join(' ')}</em>)}
                         </button>
-                        <button type="button" className="delete-block" onClick={event => { event.stopPropagation(); removeBlock(block.id) }} aria-label="删除时间块"><Trash2 size={14} /></button>
-                        <button type="button" className="resize-handle" onPointerDown={event => startPointerAction(event, block, 'resize')} aria-label="调整时长" />
+                        <button type="button" className="btn btn-ghost delete-block" onClick={event => { event.stopPropagation(); removeBlock(block.id) }} aria-label="删除时间块"><Trash2 size={14} /></button>
+                        <button type="button" className="btn btn-ghost resize-handle" onPointerDown={event => startPointerAction(event, block, 'resize')} aria-label="调整时长" />
                       </article>
                     )
                   })}
@@ -353,7 +353,7 @@ export function PlannerPage() {
           </div>
         </div>
       </div>
-      <button type="button" className="late-night-toggle" onClick={() => setIsLateNightOpen(v => !v)} disabled={isLateNightAutoOpen}>
+      <button type="button" className="btn btn-ghost late-night-toggle" onClick={() => setIsLateNightOpen(v => !v)} disabled={isLateNightAutoOpen}>
         {isLateNightAutoOpen ? `深夜时段已自动展开 ${settings.sleepStart} - ${settings.sleepEnd}` : shouldShowLateNight ? `收起深夜时段 ${settings.sleepStart} - ${settings.sleepEnd}` : `展开深夜时段 ${settings.sleepStart} - ${settings.sleepEnd}`}
       </button>
       {editingBlock && editingTask && (
@@ -363,7 +363,7 @@ export function PlannerPage() {
               编辑时间块
               <span className={`source-badge ${editingTask.source}`}>{editingTask.source === 'schedule' ? '日程占位' : '任务'}</span>
             </strong>
-            <button type="button" className="block-editor-close" onClick={() => setEditingBlockId(null)} aria-label="关闭编辑面板">×</button>
+            <button type="button" className="btn btn-ghost block-editor-close" onClick={() => setEditingBlockId(null)} aria-label="关闭编辑面板">×</button>
           </div>
           <label>
             标题
@@ -422,7 +422,7 @@ export function PlannerPage() {
             }} />
             标记完成
           </label>
-          <button type="button" className="block-editor-delete" onClick={() => removeBlock(editingBlock.id)}>
+          <button type="button" className="btn btn-danger block-editor-delete" onClick={() => removeBlock(editingBlock.id)}>
             <Trash2 size={15} />
             删除时间块
           </button>

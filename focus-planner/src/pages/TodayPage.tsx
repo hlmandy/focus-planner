@@ -228,7 +228,7 @@ export function TodayPage() {
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>
-        <button type="button" onClick={addQuickItem} aria-label="添加">
+        <button type="button" className="btn btn-primary" onClick={addQuickItem} aria-label="添加">
           <Plus size={16} />
         </button>
       </div>
@@ -284,7 +284,7 @@ export function TodayPage() {
                     </div>
                     <button
                       type="button"
-                      className="today-block-status"
+                      className="btn btn-ghost today-block-status"
                       onClick={e => { e.stopPropagation(); toggleBlockTask(block.id) }}
                       aria-label="切换完成状态"
                     >
@@ -298,7 +298,7 @@ export function TodayPage() {
                     )}
                     <button
                       type="button"
-                      className="today-block-delete"
+                      className="btn btn-danger today-block-delete"
                       onClick={e => { e.stopPropagation(); deleteBlock(block.id) }}
                       aria-label="删除时间块"
                     >
@@ -360,13 +360,13 @@ export function TodayPage() {
                         rows={2}
                       />
                       <div className="editor-actions">
-                        <button type="button" className="editor-save" onClick={saveEditBlock}>
+                        <button type="button" className="btn btn-primary editor-save" onClick={saveEditBlock}>
                           <Save size={14} /> 保存
                         </button>
-                        <button type="button" className="editor-cancel" onClick={cancelEditBlock}>
+                        <button type="button" className="btn btn-ghost editor-cancel" onClick={cancelEditBlock}>
                           <X size={14} /> 取消
                         </button>
-                        <button type="button" className="editor-delete" onClick={() => deleteBlock(block.id)}>
+                        <button type="button" className="btn btn-danger editor-delete" onClick={() => deleteBlock(block.id)}>
                           <Trash2 size={14} /> 删除
                         </button>
                       </div>
@@ -377,7 +377,7 @@ export function TodayPage() {
             })}
           </div>
         )}
-        <button type="button" className="outline-action small" onClick={() => setPage('planner')}>
+        <button type="button" className="btn btn-ghost outline-action small" onClick={() => setPage('planner')}>
           <CalendarClock size={15} />
           去规划表
         </button>
@@ -399,7 +399,7 @@ export function TodayPage() {
               const project = projectsById[task.projectId]
               return (
                 <div key={task.id} className="todo" draggable onDragStart={event => event.dataTransfer.setData('text/plain', task.id)}>
-                  <button type="button" onClick={() => toggleTodo(task.id)} aria-label="切换完成状态">
+                  <button type="button" className="btn btn-ghost" onClick={() => toggleTodo(task.id)} aria-label="切换完成状态">
                     {task.done ? <Check size={17} /> : <Circle size={17} />}
                   </button>
                   <span>{task.title}</span>
@@ -410,13 +410,13 @@ export function TodayPage() {
                   )}
                   <button
                     type="button"
-                    className="today-schedule-btn"
+                    className="btn btn-ghost today-schedule-btn"
                     onClick={() => scheduleTaskQuick(task.id)}
                     title="排入日程"
                   >
                     <CalendarClock size={13} />
                   </button>
-                  <button type="button" onClick={() => deleteTodo(task.id)} aria-label="删除 TODO">
+                  <button type="button" className="btn btn-danger" onClick={() => deleteTodo(task.id)} aria-label="删除 TODO">
                     <Trash2 size={15} />
                   </button>
                 </div>
@@ -430,11 +430,11 @@ export function TodayPage() {
           <div className="task-strip">
             {visibleTasks.filter(t => scheduledTaskIds.has(t.id)).map(task => (
               <div key={task.id} className={`todo ${task.done ? 'done' : ''}`} draggable onDragStart={event => event.dataTransfer.setData('text/plain', task.id)}>
-                <button type="button" onClick={() => toggleTodo(task.id)} aria-label="切换完成状态">
+                <button type="button" className="btn btn-ghost" onClick={() => toggleTodo(task.id)} aria-label="切换完成状态">
                   {task.done ? <Check size={17} /> : <Circle size={17} />}
                 </button>
                 <span>{task.title}</span>
-                <button type="button" onClick={() => deleteTodo(task.id)} aria-label="删除 TODO">
+                <button type="button" className="btn btn-danger" onClick={() => deleteTodo(task.id)} aria-label="删除 TODO">
                   <Trash2 size={15} />
                 </button>
               </div>

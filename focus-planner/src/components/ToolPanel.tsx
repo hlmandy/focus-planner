@@ -190,7 +190,7 @@ export function ToolPanel() {
             <button
               key={t.id}
               type="button"
-              className={`tool-tab ${isActive ? 'active' : ''}`}
+              className={`btn btn-ghost tool-tab ${isActive ? 'active' : ''}`}
               onClick={() => toggleTab(t.id)}
               title={t.label}
             >
@@ -227,15 +227,15 @@ export function ToolPanel() {
               {projects.items.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
             </select>
             <div className="pomodoro-mode-actions">
-              <button type="button" className={mode === 'work' ? 'active' : ''} onClick={() => resetPomodoro('work')}>专注</button>
-              <button type="button" className={mode === 'break' ? 'active' : ''} onClick={() => resetPomodoro('break')}>休息</button>
+              <button type="button" className={`btn btn-ghost${mode === 'work' ? ' active' : ''}`} onClick={() => resetPomodoro('work')}>专注</button>
+              <button type="button" className={`btn btn-ghost${mode === 'break' ? ' active' : ''}`} onClick={() => resetPomodoro('break')}>休息</button>
             </div>
             <div className="pomodoro-actions">
-              <button type="button" onClick={() => setIsRunning(!isRunning)}>
+              <button type="button" className="btn btn-primary" onClick={() => setIsRunning(!isRunning)}>
                 {isRunning ? <Pause size={16} /> : <Play size={16} />}
                 {isRunning ? '暂停' : '开始'}
               </button>
-              <button type="button" onClick={() => resetPomodoro()}>
+              <button type="button" className="btn btn-ghost" onClick={() => resetPomodoro()}>
                 <RotateCcw size={16} />
                 重置
               </button>
@@ -258,11 +258,11 @@ export function ToolPanel() {
               {projects.items.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
             </select>
             <div className="stopwatch-actions">
-              <button type="button" className={stopwatchRunning ? 'active' : ''} onClick={() => setStopwatchRunning(!stopwatchRunning)}>
+              <button type="button" className={`btn btn-ghost${stopwatchRunning ? ' active' : ''}`} onClick={() => setStopwatchRunning(!stopwatchRunning)}>
                 {stopwatchRunning ? <Pause size={16} /> : <Play size={16} />}
                 {stopwatchRunning ? '暂停' : '开始'}
               </button>
-              <button type="button" onClick={() => { setStopwatchRunning(false); setStopwatchSeconds(0); }}>
+              <button type="button" className="btn btn-ghost" onClick={() => { setStopwatchRunning(false); setStopwatchSeconds(0); }}>
                 <RotateCcw size={16} />
                 重置
               </button>
@@ -270,7 +270,7 @@ export function ToolPanel() {
             {stopwatchSeconds > 0 && (
               <button
                 type="button"
-                className="stopwatch-save"
+                className="btn btn-primary stopwatch-save"
                 onClick={() => {
                   const mins = Math.max(1, Math.round(stopwatchSeconds / 60))
                   pomodoroSessions.create({
@@ -291,7 +291,7 @@ export function ToolPanel() {
 
             {/* 历史记录 */}
             <div className="pomodoro-summary">
-              <button type="button" className="pomodoro-history-toggle" onClick={() => setShowPomodoroHistory(v => !v)}>
+              <button type="button" className="btn btn-ghost pomodoro-history-toggle" onClick={() => setShowPomodoroHistory(v => !v)}>
                 <span>历史记录</span>
                 <span className={`chevron ${showPomodoroHistory ? 'open' : ''}`}>›</span>
               </button>
@@ -311,10 +311,10 @@ export function ToolPanel() {
                             </select>
                             <input type="number" min={1} max={120} value={editMinutes} onChange={e => setEditMinutes(Number(e.target.value))} aria-label="编辑分钟" />
                             <span>分钟</span>
-                            <button type="button" className="pomodoro-history-delete" onClick={savePomodoroEdit} aria-label="保存修改">
+                            <button type="button" className="btn btn-primary pomodoro-history-delete" onClick={savePomodoroEdit} aria-label="保存修改">
                               <Check size={12} />
                             </button>
-                            <button type="button" className="pomodoro-history-delete" onClick={cancelPomodoroEdit} aria-label="取消修改">
+                            <button type="button" className="btn btn-ghost pomodoro-history-delete" onClick={cancelPomodoroEdit} aria-label="取消修改">
                               <X size={12} />
                             </button>
                           </div>
@@ -326,10 +326,10 @@ export function ToolPanel() {
                           <span className="pomodoro-history-project">{project?.name ?? '未知项目'}</span>
                           <span className="pomodoro-history-minutes">{session.minutes}m</span>
                           <span className="pomodoro-history-time">{new Date(session.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-                          <button type="button" className="pomodoro-history-delete" onClick={() => startPomodoroEdit(session)} aria-label="编辑专注记录">
+                          <button type="button" className="btn btn-ghost pomodoro-history-delete" onClick={() => startPomodoroEdit(session)} aria-label="编辑专注记录">
                             <Pencil size={12} />
                           </button>
-                          <button type="button" className="pomodoro-history-delete" onClick={() => deletePomodoro(session.id)} aria-label="删除专注记录">
+                          <button type="button" className="btn btn-ghost pomodoro-history-delete" onClick={() => deletePomodoro(session.id)} aria-label="删除专注记录">
                             <Trash2 size={12} />
                           </button>
                         </div>
@@ -350,7 +350,7 @@ export function ToolPanel() {
             </div>
             <div className="tool-quick-add">
               <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="搜索项目 / 任务 / 日记 / 学生..." />
-              <button type="button" onClick={() => handleSearch(searchQuery)} aria-label="搜索"><Search size={16} /></button>
+              <button type="button" className="btn btn-ghost" onClick={() => handleSearch(searchQuery)} aria-label="搜索"><Search size={16} /></button>
             </div>
             {isSearching && <div className="search-loading">搜索中...</div>}
             {searchResults && (
@@ -359,7 +359,7 @@ export function ToolPanel() {
                   <div className="search-group">
                     <span className="search-group-title">项目</span>
                     {(searchResults.projects as { id: string; name: string; kind: string }[]).map(p => (
-                      <button key={p.id} type="button" className="search-result-item" onClick={() => { setProjectFilterId(p.id); setProjectDetailId(p.id); setPage('planner'); handleSearch(''); }}>
+                      <button key={p.id} type="button" className="btn btn-ghost search-result-item" onClick={() => { setProjectFilterId(p.id); setProjectDetailId(p.id); setPage('planner'); handleSearch(''); }}>
                         <span className={`kind-pill ${p.kind}`}>{p.kind === 'research' ? '科研' : p.kind === 'paper' ? '论文' : p.kind === 'student' ? '指导' : '事务'}</span>
                         <span>{p.name}</span>
                       </button>
@@ -418,7 +418,7 @@ export function ToolPanel() {
             </div>
             <div className="tool-quick-add">
               <input value={quick} onChange={e => setQuick(e.target.value)} onKeyDown={e => e.key === 'Enter' && addQuickItem()} placeholder="读文献 #文献 @10:00" />
-              <button type="button" onClick={addQuickItem} aria-label="新增 TODO"><Plus size={16} /></button>
+              <button type="button" className="btn btn-ghost" onClick={addQuickItem} aria-label="新增 TODO"><Plus size={16} /></button>
             </div>
           </div>
         )}
@@ -431,7 +431,7 @@ export function ToolPanel() {
             </div>
             <div className="tool-quick-add">
               <input value={quickLog} onChange={e => setQuickLog(e.target.value)} onKeyDown={e => e.key === 'Enter' && addQuickLog()} placeholder="记一笔想法、发现…" />
-              <button type="button" onClick={addQuickLog} aria-label="快速记录"><Plus size={16} /></button>
+              <button type="button" className="btn btn-ghost" onClick={addQuickLog} aria-label="快速记录"><Plus size={16} /></button>
             </div>
             <select value={quickLogKind} onChange={e => setQuickLogKind(e.target.value as ResearchLogKind)} className="quick-log-kind" aria-label="记录类型">
               <option value="literature">文献</option><option value="experiment">实验</option><option value="analysis">分析</option>
@@ -449,9 +449,9 @@ export function ToolPanel() {
             <em>{monthLabel}</em>
           </div>
           <div className="month-calendar-head">
-            <button type="button" onClick={() => setDate(toDateKey(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1)))} aria-label="上一月">‹</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setDate(toDateKey(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1)))} aria-label="上一月">‹</button>
             <strong>{monthLabel}</strong>
-            <button type="button" onClick={() => setDate(toDateKey(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1)))} aria-label="下一月">›</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setDate(toDateKey(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1)))} aria-label="下一月">›</button>
           </div>
           <div className="month-calendar-weekdays">
             {['一', '二', '三', '四', '五', '六', '日'].map(w => (<span key={w}>{w}</span>))}
@@ -478,7 +478,7 @@ export function ToolPanel() {
             })}
           </div>
           <div className="tool-calendar-actions">
-            <button type="button" onClick={() => setDate(todayKey())}>今天</button>
+            <button type="button" className="btn btn-ghost" onClick={() => setDate(todayKey())}>今天</button>
           </div>
         </div>
 
