@@ -88,7 +88,9 @@ textarea::placeholder {
   box-shadow: none;
 }
 
-/* Legacy: keep existing button styles working via parent selectors */
+/* Legacy: keep existing button styles working via parent selectors.
+   TODO: gradually add .btn / .btn-primary / .btn-danger classes to JSX buttons,
+   then remove this entire block once all buttons use component classes. */
 .sidebar-project-composer button,
 .project-composer button,
 .project-card-actions button,

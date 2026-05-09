@@ -24,4 +24,13 @@
   --hover: #f0f7ec;
   --radius: 8px;
   --radius-sm: 6px;
+
+  /* Semantic aliases — new CSS should use these; old CSS keeps using raw names above */
+  --color-primary: var(--blue);
+  --color-primary-soft: var(--blue-soft);
+  --color-warning: var(--amber);
+  --color-warning-soft: var(--amber-soft);
+  --color-danger: var(--coral);
+  --color-danger-soft: var(--coral-soft);
+  --color-accent: var(--accent);
 }
