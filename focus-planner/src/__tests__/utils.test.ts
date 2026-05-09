@@ -1,9 +1,20 @@
 import { describe, it, expect } from 'vitest'
 import {
-  clamp, snap, timeText, parseClockTime, durationText,
-  blockTitleText, isProjectTask, parseQuickInput,
-  getTaskDescendantIds, toDateKey, fromDateKey, addDays,
-  getWeekDays, weekDayText, isWebLink,
+  clamp,
+  snap,
+  timeText,
+  parseClockTime,
+  durationText,
+  blockTitleText,
+  isProjectTask,
+  parseQuickInput,
+  getTaskDescendantIds,
+  toDateKey,
+  fromDateKey,
+  addDays,
+  getWeekDays,
+  weekDayText,
+  isWebLink,
 } from '../utils'
 import type { Task, ScheduleBlock } from '../types'
 
@@ -104,17 +115,60 @@ describe('parseQuickInput', () => {
 describe('getTaskDescendantIds', () => {
   it('returns all descendant task IDs', () => {
     const tasks: Task[] = [
-      { id: 'a', title: 'parent', projectId: 'p', tags: [], done: false, createdAt: '', source: 'task' },
-      { id: 'b', title: 'child1', projectId: 'p', parentId: 'a', tags: [], done: false, createdAt: '', source: 'task' },
-      { id: 'c', title: 'child2', projectId: 'p', parentId: 'a', tags: [], done: false, createdAt: '', source: 'task' },
-      { id: 'd', title: 'grandchild', projectId: 'p', parentId: 'b', tags: [], done: false, createdAt: '', source: 'task' },
+      {
+        id: 'a',
+        title: 'parent',
+        projectId: 'p',
+        tags: [],
+        done: false,
+        createdAt: '',
+        source: 'task',
+      },
+      {
+        id: 'b',
+        title: 'child1',
+        projectId: 'p',
+        parentId: 'a',
+        tags: [],
+        done: false,
+        createdAt: '',
+        source: 'task',
+      },
+      {
+        id: 'c',
+        title: 'child2',
+        projectId: 'p',
+        parentId: 'a',
+        tags: [],
+        done: false,
+        createdAt: '',
+        source: 'task',
+      },
+      {
+        id: 'd',
+        title: 'grandchild',
+        projectId: 'p',
+        parentId: 'b',
+        tags: [],
+        done: false,
+        createdAt: '',
+        source: 'task',
+      },
     ]
     expect(getTaskDescendantIds('a', tasks)).toEqual(['b', 'd', 'c'])
   })
 
   it('returns empty array for leaf task', () => {
     const tasks: Task[] = [
-      { id: 'a', title: 'leaf', projectId: 'p', tags: [], done: false, createdAt: '', source: 'task' },
+      {
+        id: 'a',
+        title: 'leaf',
+        projectId: 'p',
+        tags: [],
+        done: false,
+        createdAt: '',
+        source: 'task',
+      },
     ]
     expect(getTaskDescendantIds('a', tasks)).toEqual([])
   })

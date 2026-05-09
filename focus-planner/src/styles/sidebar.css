@@ -52,7 +52,10 @@
   color: #3d4147;
   padding: 0 8px;
   text-align: left;
-  transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
   font-size: 14px;
 }
 

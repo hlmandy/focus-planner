@@ -58,7 +58,9 @@
   background: var(--surface);
   padding: 8px 10px;
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 
 .today-block.active {
@@ -343,7 +345,7 @@
   color: var(--muted);
 }
 
-.editor-time-label input[type="time"] {
+.editor-time-label input[type='time'] {
   height: 32px;
   padding: 0 6px;
   border: 1px solid var(--line);

@@ -1,11 +1,17 @@
 import type { AppState, LegacyState, Project, ProjectKind, Task } from './types'
 import { todayKey, uid, getFallbackProjectId } from './utils'
-import { STORAGE_KEY, defaultProjects, legacyProjectIdMap, legacyProjectIds, projectTaskTemplates } from './constants'
+import {
+  STORAGE_KEY,
+  defaultProjects,
+  legacyProjectIdMap,
+  legacyProjectIds,
+  projectTaskTemplates,
+} from './constants'
 
 export const resolveProjectId = (projectId: string | undefined, projects: Project[]) => {
   const defaultId = getFallbackProjectId(projects, defaultProjects[0].id)
   const migratedProjectId = legacyProjectIdMap[projectId ?? ''] ?? projectId
-  return migratedProjectId && projects.some((project) => project.id === migratedProjectId)
+  return migratedProjectId && projects.some(project => project.id === migratedProjectId)
     ? migratedProjectId
     : defaultId
 }
@@ -13,9 +19,9 @@ export const resolveProjectId = (projectId: string | undefined, projects: Projec
 export const normalizeProjects = (projects?: Project[]) => {
   if (!projects?.length) return defaultProjects
 
-  const hasLegacySeedProject = projects.some((project) => legacyProjectIds.has(project.id))
+  const hasLegacySeedProject = projects.some(project => legacyProjectIds.has(project.id))
   if (!hasLegacySeedProject) {
-    return projects.map((project) => ({
+    return projects.map(project => ({
       ...project,
       kind: project.kind ?? 'research',
       status: project.status ?? 'active',
@@ -24,27 +30,29 @@ export const normalizeProjects = (projects?: Project[]) => {
     }))
   }
 
-  const customProjects = projects.filter((project) => !legacyProjectIds.has(project.id))
-  const usedIds = new Set(defaultProjects.map((project) => project.id))
+  const customProjects = projects.filter(project => !legacyProjectIds.has(project.id))
+  const usedIds = new Set(defaultProjects.map(project => project.id))
   return [
     ...defaultProjects,
-    ...customProjects.filter((project) => {
-      if (usedIds.has(project.id)) return false
-      usedIds.add(project.id)
-      return true
-    }).map((project) => ({
-      ...project,
-      kind: project.kind ?? 'research',
-      status: project.status ?? 'active',
-      goal: project.goal ?? '',
-      dueDate: project.dueDate ?? '',
-    })),
+    ...customProjects
+      .filter(project => {
+        if (usedIds.has(project.id)) return false
+        usedIds.add(project.id)
+        return true
+      })
+      .map(project => ({
+        ...project,
+        kind: project.kind ?? 'research',
+        status: project.status ?? 'active',
+        goal: project.goal ?? '',
+        dueDate: project.dueDate ?? '',
+      })),
   ]
 }
 
 export const createTasksFromTemplate = (projectId: string, kind: ProjectKind) => {
   const createdAt = todayKey()
-  return projectTaskTemplates[kind].flatMap((item) => {
+  return projectTaskTemplates[kind].flatMap(item => {
     const parentId = uid()
     const parentTask: Task = {
       id: parentId,
@@ -56,7 +64,7 @@ export const createTasksFromTemplate = (projectId: string, kind: ProjectKind) =>
       createdAt,
       source: 'task',
     }
-    const childTasks: Task[] = (item.children ?? []).map((title) => ({
+    const childTasks: Task[] = (item.children ?? []).map(title => ({
       id: uid(),
       title,
       projectId,
@@ -73,9 +81,7 @@ export const createTasksFromTemplate = (projectId: string, kind: ProjectKind) =>
 export const seedState = (): AppState => {
   const planTaskId = uid()
   return {
-    projects: [
-      ...defaultProjects,
-    ],
+    projects: [...defaultProjects],
     tasks: [
       {
         id: uid(),
@@ -191,11 +197,9 @@ export const normalizeState = (state: LegacyState): AppState => {
   const projects = normalizeProjects(state.projects?.length ? state.projects : seeded.projects)
   const taskSource = state.tasks ?? state.todos ?? []
   const scheduleBlockTaskIds = new Set(
-    (state.blocks ?? [])
-      .map((block) => block.taskId ?? block.todoId)
-      .filter(Boolean),
+    (state.blocks ?? []).map(block => block.taskId ?? block.todoId).filter(Boolean),
   )
-  const tasks: Task[] = taskSource.map((task) => ({
+  const tasks: Task[] = taskSource.map(task => ({
     id: task.id,
     title: task.title,
     projectId: resolveProjectId(task.projectId, projects),
@@ -203,10 +207,12 @@ export const normalizeState = (state: LegacyState): AppState => {
     tags: task.tags ?? [],
     done: Boolean(task.done),
     createdAt: task.createdAt || todayKey(),
-    source: task.source ?? (scheduleBlockTaskIds.has(task.id) && !task.title.trim() ? 'schedule' : 'task'),
+    source:
+      task.source ??
+      (scheduleBlockTaskIds.has(task.id) && !task.title.trim() ? 'schedule' : 'task'),
   }))
-  const tasksById = new Map(tasks.map((task) => [task.id, task]))
-  tasks.forEach((task) => {
+  const tasksById = new Map(tasks.map(task => [task.id, task]))
+  tasks.forEach(task => {
     if (!task.parentId) return
     const parent = tasksById.get(task.parentId)
     if (!parent || parent.projectId !== task.projectId) {
@@ -214,7 +220,7 @@ export const normalizeState = (state: LegacyState): AppState => {
     }
   })
 
-  const blocks = (state.blocks ?? []).map((block) => {
+  const blocks = (state.blocks ?? []).map(block => {
     const existingTaskId = block.taskId ?? block.todoId
     if (existingTaskId && tasksById.has(existingTaskId)) {
       return {
@@ -228,11 +234,11 @@ export const normalizeState = (state: LegacyState): AppState => {
     }
 
     const matchedTask = tasks.find(
-      (task) => task.title === block.title && task.projectId === block.projectId,
+      task => task.title === block.title && task.projectId === block.projectId,
     )
     const taskId = matchedTask?.id ?? uid()
     if (!matchedTask) {
-        tasks.push({
+      tasks.push({
         id: taskId,
         title: block.title || '未命名任务',
         projectId: resolveProjectId(block.projectId, projects),
@@ -261,13 +267,13 @@ export const normalizeState = (state: LegacyState): AppState => {
     blocks,
     habits: state.habits?.length ? state.habits : seeded.habits,
     habitEntries: state.habitEntries ?? seeded.habitEntries,
-    thesisStudents: (state.thesisStudents ?? seeded.thesisStudents).map((student) => ({
+    thesisStudents: (state.thesisStudents ?? seeded.thesisStudents).map(student => ({
       ...student,
       projectId: resolveProjectId(student.projectId, projects),
       stage: student.stage ?? 'topic',
       updatedAt: student.updatedAt ?? new Date().toISOString(),
     })),
-    researchLogs: (state.researchLogs ?? seeded.researchLogs).map((entry) => ({
+    researchLogs: (state.researchLogs ?? seeded.researchLogs).map(entry => ({
       ...entry,
       projectId: resolveProjectId(entry.projectId, projects),
       attachments: entry.attachments ?? [],
@@ -276,7 +282,7 @@ export const normalizeState = (state: LegacyState): AppState => {
       keyFindings: entry.keyFindings ?? '',
       nextAction: entry.nextAction ?? '',
     })),
-    pomodoroSessions: (state.pomodoroSessions ?? seeded.pomodoroSessions).map((session) => ({
+    pomodoroSessions: (state.pomodoroSessions ?? seeded.pomodoroSessions).map(session => ({
       ...session,
       projectId: resolveProjectId(session.projectId, projects),
       date: session.date ?? todayKey(),

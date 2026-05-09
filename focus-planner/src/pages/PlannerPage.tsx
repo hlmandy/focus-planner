@@ -3,22 +3,42 @@ import { Trash2 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { reportApiError } from '../api/client'
 import {
-  toDateKey, todayKey, fromDateKey, addDays, getWeekDays, weekDayText,
-  uid, clamp, snap, timeText, parseClockTime, blockTitleText,
-  getBlockViewStatus, getFallbackProjectId,
+  toDateKey,
+  todayKey,
+  fromDateKey,
+  addDays,
+  getWeekDays,
+  weekDayText,
+  uid,
+  clamp,
+  snap,
+  timeText,
+  parseClockTime,
+  blockTitleText,
+  getBlockViewStatus,
+  getFallbackProjectId,
 } from '../utils'
 import {
-  DAY_START, REGULAR_DAY_END, DAY_END, MIN_BLOCK,
-  PIXELS_PER_MINUTE, TIMELINE_HEADER_HEIGHT, blockStatusLabels,
-  defaultProjects, getCalendarDayInfo,
+  DAY_START,
+  REGULAR_DAY_END,
+  DAY_END,
+  MIN_BLOCK,
+  PIXELS_PER_MINUTE,
+  TIMELINE_HEADER_HEIGHT,
+  blockStatusLabels,
+  defaultProjects,
+  getCalendarDayInfo,
 } from '../constants'
 import type { ScheduleBlock, Task } from '../../shared/types'
 
 export function PlannerPage() {
-  const { projects, blocks, tasks, date, setDate, projectFilterId, isToolPanelOpen, settings } = useApp()
+  const { projects, blocks, tasks, date, setDate, projectFilterId, isToolPanelOpen, settings } =
+    useApp()
 
   const [isLateNightOpen, setIsLateNightOpen] = useState(false)
-  const [dragCreate, setDragCreate] = useState<{ date: string; start: number; end: number } | null>(null)
+  const [dragCreate, setDragCreate] = useState<{ date: string; start: number; end: number } | null>(
+    null,
+  )
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null)
   const [blockEditorPosition, setBlockEditorPosition] = useState({ x: 0, y: 0 })
   const [now] = useState(() => new Date())
@@ -33,33 +53,37 @@ export function PlannerPage() {
   const weekEnd = weekKeys[6]
 
   const tasksById = useMemo(
-    () => Object.fromEntries(tasks.items.map((task) => [task.id, task])),
+    () => Object.fromEntries(tasks.items.map(task => [task.id, task])),
     [tasks.items],
   )
 
   const projectsById = useMemo(
-    () => Object.fromEntries(projects.items.map((project) => [project.id, project])),
+    () => Object.fromEntries(projects.items.map(project => [project.id, project])),
     [projects.items],
   )
 
   const visibleBlocks = useMemo(
-    () => blocks.items
-      .filter((block) => weekKeys.includes(block.date))
-      .filter((block) => {
-        const task = tasksById[block.taskId]
-        return projectFilterId === 'all' || task?.projectId === projectFilterId
-      })
-      .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start),
+    () =>
+      blocks.items
+        .filter(block => weekKeys.includes(block.date))
+        .filter(block => {
+          const task = tasksById[block.taskId]
+          return projectFilterId === 'all' || task?.projectId === projectFilterId
+        })
+        .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start),
     [blocks.items, weekKeys, tasksById, projectFilterId],
   )
 
   const totalMinutes = visibleBlocks.reduce((sum, block) => sum + block.end - block.start, 0)
 
   // Compute night window from user's sleep settings (in minutes from midnight)
-  const toMins = (hhmm: string) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m }
-  const sleepStartMin = toMins(settings.sleepStart)   // e.g. 22:00 → 1320
-  const sleepEndMin = toMins(settings.sleepEnd)       // e.g. 07:00 → 420
-  const nightEndMin = sleepEndMin + (sleepEndMin <= sleepStartMin ? 1440 : 0)  // wrap past midnight
+  const toMins = (hhmm: string) => {
+    const [h, m] = hhmm.split(':').map(Number)
+    return h * 60 + m
+  }
+  const sleepStartMin = toMins(settings.sleepStart) // e.g. 22:00 → 1320
+  const sleepEndMin = toMins(settings.sleepEnd) // e.g. 07:00 → 420
+  const nightEndMin = sleepEndMin + (sleepEndMin <= sleepStartMin ? 1440 : 0) // wrap past midnight
 
   const rawCurrentMinute = now.getHours() * 60 + now.getMinutes()
   // Normalize current minute into the "extended day" space so night hours after midnight
@@ -67,7 +91,7 @@ export function PlannerPage() {
   const currentMinute = rawCurrentMinute < sleepEndMin ? rawCurrentMinute + 1440 : rawCurrentMinute
 
   const hasLateNightBlocks = visibleBlocks.some(
-    (block) => block.start >= sleepStartMin || block.end > sleepStartMin,
+    block => block.start >= sleepStartMin || block.end > sleepStartMin,
   )
   const isLateNightCurrent = currentMinute >= sleepStartMin && currentMinute <= nightEndMin
   const isLateNightAutoOpen = hasLateNightBlocks || isLateNightCurrent
@@ -78,11 +102,11 @@ export function PlannerPage() {
 
   // Local-only update for drag (no API call)
   const setBlockLocal = (id: string, patch: Partial<ScheduleBlock>) => {
-    blocks.setItems(prev => prev.map(b => b.id === id ? { ...b, ...patch } : b))
+    blocks.setItems(prev => prev.map(b => (b.id === id ? { ...b, ...patch } : b)))
   }
 
   const setTaskLocal = (id: string, patch: Partial<Task>) => {
-    tasks.setItems(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t))
+    tasks.setItems(prev => prev.map(t => (t.id === id ? { ...t, ...patch } : t)))
   }
 
   const removeBlock = (id: string) => {
@@ -106,13 +130,27 @@ export function PlannerPage() {
   }
 
   const createBlock = (blockDate: string, start: number, end: number): string => {
-    const projectId = projectFilterId === 'all' ? getFallbackProjectId(projects.items, defaultProjects[0].id) : projectFilterId
+    const projectId =
+      projectFilterId === 'all'
+        ? getFallbackProjectId(projects.items, defaultProjects[0].id)
+        : projectFilterId
     const task: Task = {
-      id: uid(), title: '', projectId, parentId: undefined,
-      tags: [], done: false, createdAt: blockDate, source: 'schedule',
+      id: uid(),
+      title: '',
+      projectId,
+      parentId: undefined,
+      tags: [],
+      done: false,
+      createdAt: blockDate,
+      source: 'schedule',
     }
     const block: ScheduleBlock = {
-      id: uid(), taskId: task.id, date: blockDate, start, end, note: '',
+      id: uid(),
+      taskId: task.id,
+      date: blockDate,
+      start,
+      end,
+      note: '',
     }
     // Optimistic local + API
     tasks.setItems(prev => [task, ...prev])
@@ -168,7 +206,9 @@ export function PlannerPage() {
       if (didDrag && dragStartRef.current) {
         const currentBlock = blocks.items.find(b => b.id === block.id)
         if (currentBlock) {
-          blocks.update(block.id, { start: currentBlock.start, end: currentBlock.end }).catch(reportApiError)
+          blocks
+            .update(block.id, { start: currentBlock.start, end: currentBlock.end })
+            .catch(reportApiError)
         }
       }
       dragStartRef.current = null
@@ -189,7 +229,10 @@ export function PlannerPage() {
     openBlockEditor(blockId, event.clientX, event.clientY)
   }
 
-  const minuteFromPointer = (event: PointerEvent | React.PointerEvent<HTMLElement>, element: HTMLElement) => {
+  const minuteFromPointer = (
+    event: PointerEvent | React.PointerEvent<HTMLElement>,
+    element: HTMLElement,
+  ) => {
     const rect = element.getBoundingClientRect()
     const y = event.clientY - rect.top - TIMELINE_HEADER_HEIGHT
     return clamp(snap(y / PIXELS_PER_MINUTE + DAY_START), DAY_START, DAY_END)
@@ -220,7 +263,11 @@ export function PlannerPage() {
     const up = (upEvent: PointerEvent) => {
       const pointerMinute = minuteFromPointer(upEvent, column)
       const nextStart = clamp(Math.min(start, pointerMinute), DAY_START, DAY_END - MIN_BLOCK)
-      const nextEnd = clamp(Math.max(start + MIN_BLOCK, pointerMinute), nextStart + MIN_BLOCK, DAY_END)
+      const nextEnd = clamp(
+        Math.max(start + MIN_BLOCK, pointerMinute),
+        nextStart + MIN_BLOCK,
+        DAY_END,
+      )
       if (didDrag) {
         const blockId = createBlock(blockDate, nextStart, nextEnd)
         openBlockEditor(blockId, upEvent.clientX, upEvent.clientY)
@@ -245,12 +292,23 @@ export function PlannerPage() {
     setDate(blockDate)
     const oldBlock = blocks.items.find(b => b.taskId === taskId)
     if (oldBlock) {
-      blocks.setItems(prev => prev.map(b =>
-        b.taskId === taskId ? { ...b, date: blockDate, start: nextStart, end: nextEnd } : b
-      ))
-      blocks.update(oldBlock.id, { date: blockDate, start: nextStart, end: nextEnd }).catch(reportApiError)
+      blocks.setItems(prev =>
+        prev.map(b =>
+          b.taskId === taskId ? { ...b, date: blockDate, start: nextStart, end: nextEnd } : b,
+        ),
+      )
+      blocks
+        .update(oldBlock.id, { date: blockDate, start: nextStart, end: nextEnd })
+        .catch(reportApiError)
     } else {
-      const newBlock: ScheduleBlock = { id: uid(), taskId, date: blockDate, start: nextStart, end: nextEnd, note: '' }
+      const newBlock: ScheduleBlock = {
+        id: uid(),
+        taskId,
+        date: blockDate,
+        start: nextStart,
+        end: nextEnd,
+        note: '',
+      }
       blocks.setItems(prev => [...prev, newBlock])
       blocks.create(newBlock).catch(reportApiError)
     }
@@ -272,16 +330,46 @@ export function PlannerPage() {
   return (
     <div className="planner-page">
       <div className="planner-controls">
-        <button type="button" className="btn btn-ghost calendar-nav" onClick={() => setDate(toDateKey(addDays(fromDateKey(date), -7)))} aria-label="上一周">‹</button>
+        <button
+          type="button"
+          className="btn btn-ghost calendar-nav"
+          onClick={() => setDate(toDateKey(addDays(fromDateKey(date), -7)))}
+          aria-label="上一周"
+        >
+          ‹
+        </button>
         <div className="planner-week-title">
-          <strong>{blockTitleText({ date, start: 0, end: 0, taskId: '', id: '', note: '' }, undefined)}</strong>
-          <span>{weekStart} - {weekEnd}</span>
+          <strong>
+            {blockTitleText({ date, start: 0, end: 0, taskId: '', id: '', note: '' }, undefined)}
+          </strong>
+          <span>
+            {weekStart} - {weekEnd}
+          </span>
         </div>
-        <button type="button" className="btn btn-ghost calendar-nav" onClick={() => setDate(toDateKey(addDays(fromDateKey(date), 7)))} aria-label="下一周">›</button>
-        <button type="button" className="btn btn-ghost calendar-today" onClick={() => setDate(todayKey())}>今天</button>
+        <button
+          type="button"
+          className="btn btn-ghost calendar-nav"
+          onClick={() => setDate(toDateKey(addDays(fromDateKey(date), 7)))}
+          aria-label="下一周"
+        >
+          ›
+        </button>
+        <button
+          type="button"
+          className="btn btn-ghost calendar-today"
+          onClick={() => setDate(todayKey())}
+        >
+          今天
+        </button>
         <div className="planner-summary">
           <span>本周专注</span>
-          <strong>{(() => { const h = Math.floor(totalMinutes / 60); const m = totalMinutes % 60; return h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`; })()}</strong>
+          <strong>
+            {(() => {
+              const h = Math.floor(totalMinutes / 60)
+              const m = totalMinutes % 60
+              return h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`
+            })()}
+          </strong>
         </div>
       </div>
       <div className="timeline-wrap">
@@ -292,9 +380,17 @@ export function PlannerPage() {
             </span>
           ))}
         </div>
-        <div ref={timelineRef} className="timeline week-timeline" style={{ height: timelineHeight }}>
+        <div
+          ref={timelineRef}
+          className="timeline week-timeline"
+          style={{ height: timelineHeight }}
+        >
           {Array.from({ length: (displayDayEnd - DAY_START) / 60 + 1 }, (_, i) => (
-            <div key={i} className={`hour-line ${[8, 12, 18, 22].includes((DAY_START + i * 60) / 60) ? 'major' : ''}`} style={{ top: i * 60 * PIXELS_PER_MINUTE }} />
+            <div
+              key={i}
+              className={`hour-line ${[8, 12, 18, 22].includes((DAY_START + i * 60) / 60) ? 'major' : ''}`}
+              style={{ top: i * 60 * PIXELS_PER_MINUTE }}
+            />
           ))}
           <div className="week-grid">
             {weekDays.map(weekDate => {
@@ -311,39 +407,92 @@ export function PlannerPage() {
                   onDragOver={event => event.preventDefault()}
                   onDrop={event => scheduleTodoFromDrop(event, dayKey)}
                 >
-                  <button type="button" className={`btn btn-ghost day-header ${dayInfo.isRestDay ? 'rest-day' : ''} ${dayInfo.isAdjustedWorkday ? 'workday-adjusted' : ''}`} onClick={() => setDate(dayKey)} title={dayInfo.label}>
+                  <button
+                    type="button"
+                    className={`btn btn-ghost day-header ${dayInfo.isRestDay ? 'rest-day' : ''} ${dayInfo.isAdjustedWorkday ? 'workday-adjusted' : ''}`}
+                    onClick={() => setDate(dayKey)}
+                    title={dayInfo.label}
+                  >
                     <strong>{weekDayText(weekDate)}</strong>
-                    <span>{String(weekDate.getMonth() + 1).padStart(2, '0')}/{String(weekDate.getDate()).padStart(2, '0')}</span>
+                    <span>
+                      {String(weekDate.getMonth() + 1).padStart(2, '0')}/
+                      {String(weekDate.getDate()).padStart(2, '0')}
+                    </span>
                     {dayInfo.marker && <em>{dayInfo.marker}</em>}
                   </button>
                   {dayKey === todayKey() && isCurrentTimeInRange && (
-                    <div className="now-line" style={{ top: (currentMinute - DAY_START) * PIXELS_PER_MINUTE }}>
+                    <div
+                      className="now-line"
+                      style={{ top: (currentMinute - DAY_START) * PIXELS_PER_MINUTE }}
+                    >
                       <span>{timeText(currentMinute)}</span>
                     </div>
                   )}
                   {dragCreate?.date === dayKey && (
-                    <div className="drag-create-preview" style={{ top: (dragCreate.start - DAY_START) * PIXELS_PER_MINUTE, height: (dragCreate.end - dragCreate.start) * PIXELS_PER_MINUTE }}>
+                    <div
+                      className="drag-create-preview"
+                      style={{
+                        top: (dragCreate.start - DAY_START) * PIXELS_PER_MINUTE,
+                        height: (dragCreate.end - dragCreate.start) * PIXELS_PER_MINUTE,
+                      }}
+                    >
                       {timeText(dragCreate.start)} - {timeText(dragCreate.end)}
                     </div>
                   )}
                   {dayBlocks.map(block => {
                     const task = tasksById[block.taskId]
-                    const project = projectsById[task?.projectId ?? getFallbackProjectId(projects.items, defaultProjects[0].id)]
+                    const project =
+                      projectsById[
+                        task?.projectId ??
+                          getFallbackProjectId(projects.items, defaultProjects[0].id)
+                      ]
                     const blockStatus = getBlockViewStatus(block, task, todayKey(), currentMinute)
                     const duration = block.end - block.start
                     return (
                       <article
                         key={block.id}
                         className={`time-block ${blockStatus} ${duration < 45 ? 'compact' : duration < 75 ? 'regular' : 'spacious'}`}
-                        style={{ top: (block.start - DAY_START) * PIXELS_PER_MINUTE, height: (block.end - block.start) * PIXELS_PER_MINUTE, borderColor: project?.color, background: `${project?.color ?? '#3a7afe'}18` }}
+                        style={{
+                          top: (block.start - DAY_START) * PIXELS_PER_MINUTE,
+                          height: (block.end - block.start) * PIXELS_PER_MINUTE,
+                          borderColor: project?.color,
+                          background: `${project?.color ?? '#3a7afe'}18`,
+                        }}
                       >
-                        <button type="button" className="btn btn-ghost drag-area" onPointerDown={event => startPointerAction(event, block, 'move')}>
+                        <button
+                          type="button"
+                          className="btn btn-ghost drag-area"
+                          onPointerDown={event => startPointerAction(event, block, 'move')}
+                        >
                           <strong>{blockTitleText(block, task)}</strong>
-                          <span>{timeText(block.start)} - {timeText(block.end)}</span>
-                          {duration >= 75 && (<em><b>{blockStatusLabels[blockStatus]}</b>{project?.name ?? '工作项目'} {task?.tags.map(tag => `#${tag}`).join(' ')}</em>)}
+                          <span>
+                            {timeText(block.start)} - {timeText(block.end)}
+                          </span>
+                          {duration >= 75 && (
+                            <em>
+                              <b>{blockStatusLabels[blockStatus]}</b>
+                              {project?.name ?? '工作项目'}{' '}
+                              {task?.tags.map(tag => `#${tag}`).join(' ')}
+                            </em>
+                          )}
                         </button>
-                        <button type="button" className="btn btn-ghost delete-block" onClick={event => { event.stopPropagation(); removeBlock(block.id) }} aria-label="删除时间块"><Trash2 size={14} /></button>
-                        <button type="button" className="btn btn-ghost resize-handle" onPointerDown={event => startPointerAction(event, block, 'resize')} aria-label="调整时长" />
+                        <button
+                          type="button"
+                          className="btn btn-ghost delete-block"
+                          onClick={event => {
+                            event.stopPropagation()
+                            removeBlock(block.id)
+                          }}
+                          aria-label="删除时间块"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost resize-handle"
+                          onPointerDown={event => startPointerAction(event, block, 'resize')}
+                          aria-label="调整时长"
+                        />
                       </article>
                     )
                   })}
@@ -353,76 +502,154 @@ export function PlannerPage() {
           </div>
         </div>
       </div>
-      <button type="button" className="btn btn-ghost late-night-toggle" onClick={() => setIsLateNightOpen(v => !v)} disabled={isLateNightAutoOpen}>
-        {isLateNightAutoOpen ? `深夜时段已自动展开 ${settings.sleepStart} - ${settings.sleepEnd}` : shouldShowLateNight ? `收起深夜时段 ${settings.sleepStart} - ${settings.sleepEnd}` : `展开深夜时段 ${settings.sleepStart} - ${settings.sleepEnd}`}
+      <button
+        type="button"
+        className="btn btn-ghost late-night-toggle"
+        onClick={() => setIsLateNightOpen(v => !v)}
+        disabled={isLateNightAutoOpen}
+      >
+        {isLateNightAutoOpen
+          ? `深夜时段已自动展开 ${settings.sleepStart} - ${settings.sleepEnd}`
+          : shouldShowLateNight
+            ? `收起深夜时段 ${settings.sleepStart} - ${settings.sleepEnd}`
+            : `展开深夜时段 ${settings.sleepStart} - ${settings.sleepEnd}`}
       </button>
       {editingBlock && editingTask && (
-        <aside className="block-editor" style={{ left: blockEditorPosition.x, top: blockEditorPosition.y }}>
+        <aside
+          className="block-editor"
+          style={{ left: blockEditorPosition.x, top: blockEditorPosition.y }}
+        >
           <div className="block-editor-head">
             <strong>
               编辑时间块
-              <span className={`source-badge ${editingTask.source}`}>{editingTask.source === 'schedule' ? '日程占位' : '任务'}</span>
+              <span className={`source-badge ${editingTask.source}`}>
+                {editingTask.source === 'schedule' ? '日程占位' : '任务'}
+              </span>
             </strong>
-            <button type="button" className="btn btn-ghost block-editor-close" onClick={() => setEditingBlockId(null)} aria-label="关闭编辑面板">×</button>
+            <button
+              type="button"
+              className="btn btn-ghost block-editor-close"
+              onClick={() => setEditingBlockId(null)}
+              aria-label="关闭编辑面板"
+            >
+              ×
+            </button>
           </div>
           <label>
             标题
-            <input value={editingTask.title} onChange={event => {
-              const title = event.target.value
-              const promote = editingTask.source === 'schedule' && title.trim() !== ''
-              setTaskLocal(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) })
-              tasks.update(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) }).catch(reportApiError)
-            }} placeholder="可选" />
+            <input
+              value={editingTask.title}
+              onChange={event => {
+                const title = event.target.value
+                const promote = editingTask.source === 'schedule' && title.trim() !== ''
+                setTaskLocal(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) })
+                tasks
+                  .update(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) })
+                  .catch(reportApiError)
+              }}
+              placeholder="可选"
+            />
           </label>
           <label>
             项目
-            <select value={editingTask.projectId} onChange={event => {
-              setTaskLocal(editingTask.id, { projectId: event.target.value })
-              tasks.update(editingTask.id, { projectId: event.target.value }).catch(reportApiError)
-            }}>
-              {projects.items.map(project => (<option key={project.id} value={project.id}>{project.name}</option>))}
+            <select
+              value={editingTask.projectId}
+              onChange={event => {
+                setTaskLocal(editingTask.id, { projectId: event.target.value })
+                tasks
+                  .update(editingTask.id, { projectId: event.target.value })
+                  .catch(reportApiError)
+              }}
+            >
+              {projects.items.map(project => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
             </select>
           </label>
           <label>
             日期
-            <input type="date" value={editingBlock.date} onChange={event => {
-              setBlockLocal(editingBlock.id, { date: event.target.value })
-              blocks.update(editingBlock.id, { date: event.target.value }).catch(reportApiError)
-            }} />
+            <input
+              type="date"
+              value={editingBlock.date}
+              onChange={event => {
+                setBlockLocal(editingBlock.id, { date: event.target.value })
+                blocks.update(editingBlock.id, { date: event.target.value }).catch(reportApiError)
+              }}
+            />
           </label>
           <div className="block-editor-times">
             <label>
               开始
-              <input type="time" value={timeText(editingBlock.start)} onChange={event => {
-                const nextStart = clamp(parseClockTime(event.target.value, editingBlock.start, DAY_START, REGULAR_DAY_END), DAY_START, editingBlock.end - MIN_BLOCK)
-                setBlockLocal(editingBlock.id, { start: nextStart })
-                blocks.update(editingBlock.id, { start: nextStart }).catch(reportApiError)
-              }} />
+              <input
+                type="time"
+                value={timeText(editingBlock.start)}
+                onChange={event => {
+                  const nextStart = clamp(
+                    parseClockTime(
+                      event.target.value,
+                      editingBlock.start,
+                      DAY_START,
+                      REGULAR_DAY_END,
+                    ),
+                    DAY_START,
+                    editingBlock.end - MIN_BLOCK,
+                  )
+                  setBlockLocal(editingBlock.id, { start: nextStart })
+                  blocks.update(editingBlock.id, { start: nextStart }).catch(reportApiError)
+                }}
+              />
             </label>
             <label>
               结束
-              <input type="time" value={timeText(editingBlock.end)} onChange={event => {
-                const nextEnd = clamp(parseClockTime(event.target.value, editingBlock.end, DAY_START, REGULAR_DAY_END), editingBlock.start + MIN_BLOCK, DAY_END)
-                setBlockLocal(editingBlock.id, { end: nextEnd })
-                blocks.update(editingBlock.id, { end: nextEnd }).catch(reportApiError)
-              }} />
+              <input
+                type="time"
+                value={timeText(editingBlock.end)}
+                onChange={event => {
+                  const nextEnd = clamp(
+                    parseClockTime(
+                      event.target.value,
+                      editingBlock.end,
+                      DAY_START,
+                      REGULAR_DAY_END,
+                    ),
+                    editingBlock.start + MIN_BLOCK,
+                    DAY_END,
+                  )
+                  setBlockLocal(editingBlock.id, { end: nextEnd })
+                  blocks.update(editingBlock.id, { end: nextEnd }).catch(reportApiError)
+                }}
+              />
             </label>
           </div>
           <label>
             备注
-            <textarea value={editingBlock.note} onChange={event => {
-              setBlockLocal(editingBlock.id, { note: event.target.value })
-              blocks.update(editingBlock.id, { note: event.target.value }).catch(reportApiError)
-            }} placeholder="读了哪篇文献、卡点、临时记录..." />
+            <textarea
+              value={editingBlock.note}
+              onChange={event => {
+                setBlockLocal(editingBlock.id, { note: event.target.value })
+                blocks.update(editingBlock.id, { note: event.target.value }).catch(reportApiError)
+              }}
+              placeholder="读了哪篇文献、卡点、临时记录..."
+            />
           </label>
           <label className="block-editor-check">
-            <input type="checkbox" checked={editingTask.done} onChange={event => {
-              setTaskLocal(editingTask.id, { done: event.target.checked })
-              tasks.update(editingTask.id, { done: event.target.checked }).catch(reportApiError)
-            }} />
+            <input
+              type="checkbox"
+              checked={editingTask.done}
+              onChange={event => {
+                setTaskLocal(editingTask.id, { done: event.target.checked })
+                tasks.update(editingTask.id, { done: event.target.checked }).catch(reportApiError)
+              }}
+            />
             标记完成
           </label>
-          <button type="button" className="btn btn-danger block-editor-delete" onClick={() => removeBlock(editingBlock.id)}>
+          <button
+            type="button"
+            className="btn btn-danger block-editor-delete"
+            onClick={() => removeBlock(editingBlock.id)}
+          >
             <Trash2 size={15} />
             删除时间块
           </button>

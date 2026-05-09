@@ -1,8 +1,30 @@
 import Database from 'better-sqlite3'
-import { existsSync, readFileSync, renameSync, mkdirSync, readdirSync, copyFileSync, unlinkSync } from 'node:fs'
+import {
+  existsSync,
+  readFileSync,
+  renameSync,
+  mkdirSync,
+  readdirSync,
+  copyFileSync,
+  unlinkSync,
+} from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { AppState, Project, Task, ThesisStudent, ResearchLogEntry, ProjectRow, TaskRow, ScheduleBlockRow, HabitRow, HabitEntryRow, ThesisStudentRow, ResearchLogRow, PomodoroSessionRow } from './types.js'
+import type {
+  AppState,
+  Project,
+  Task,
+  ThesisStudent,
+  ResearchLogEntry,
+  ProjectRow,
+  TaskRow,
+  ScheduleBlockRow,
+  HabitRow,
+  HabitEntryRow,
+  ThesisStudentRow,
+  ResearchLogRow,
+  PomodoroSessionRow,
+} from './types.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
@@ -145,14 +167,17 @@ CREATE TABLE IF NOT EXISTS user_config (
 function parseJsonArray<T = unknown>(value: string | null | undefined): T[] {
   try {
     const parsed = JSON.parse(value ?? '[]')
-    return Array.isArray(parsed) ? parsed as T[] : []
+    return Array.isArray(parsed) ? (parsed as T[]) : []
   } catch {
     return []
   }
 }
 
 function timestamp(): string {
-  return new Date().toISOString().replaceAll(':', '-').replace(/\.\d{3}Z$/, 'Z')
+  return new Date()
+    .toISOString()
+    .replaceAll(':', '-')
+    .replace(/\.\d{3}Z$/, 'Z')
 }
 
 function migrateFromJson(db: Database.Database): void {
@@ -177,59 +202,104 @@ function migrateFromJson(db: Database.Database): void {
 
   const tx = db.transaction(() => {
     for (const p of state.projects ?? []) {
-      db.prepare(`INSERT OR IGNORE INTO projects (id, name, color, kind, status, goal, due_date)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
-        p.id, p.name, p.color, p.kind ?? 'admin', p.status ?? 'active', p.goal ?? '', p.dueDate ?? ''
+      db.prepare(
+        `INSERT OR IGNORE INTO projects (id, name, color, kind, status, goal, due_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        p.id,
+        p.name,
+        p.color,
+        p.kind ?? 'admin',
+        p.status ?? 'active',
+        p.goal ?? '',
+        p.dueDate ?? '',
       )
     }
 
     for (const t of state.tasks ?? []) {
-      db.prepare(`INSERT OR IGNORE INTO tasks (id, title, project_id, parent_id, tags, done, created_at, source)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
-        t.id, t.title, t.projectId, t.parentId ?? null,
-        JSON.stringify(t.tags ?? []), t.done ? 1 : 0, t.createdAt ?? new Date().toISOString(),
-        t.source ?? 'task'
+      db.prepare(
+        `INSERT OR IGNORE INTO tasks (id, title, project_id, parent_id, tags, done, created_at, source)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        t.id,
+        t.title,
+        t.projectId,
+        t.parentId ?? null,
+        JSON.stringify(t.tags ?? []),
+        t.done ? 1 : 0,
+        t.createdAt ?? new Date().toISOString(),
+        t.source ?? 'task',
       )
     }
 
     for (const b of state.blocks ?? []) {
-      db.prepare(`INSERT OR IGNORE INTO schedule_blocks (id, task_id, date, start_min, end_min, note)
-        VALUES (?, ?, ?, ?, ?, ?)`).run(
-        b.id, b.taskId, b.date, b.start, b.end, b.note ?? ''
-      )
+      db.prepare(
+        `INSERT OR IGNORE INTO schedule_blocks (id, task_id, date, start_min, end_min, note)
+        VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run(b.id, b.taskId, b.date, b.start, b.end, b.note ?? '')
     }
 
     for (const h of state.habits ?? []) {
-      db.prepare(`INSERT OR IGNORE INTO habits (id, title, color, created_at)
-        VALUES (?, ?, ?, ?)`).run(h.id, h.title, h.color ?? '', h.createdAt ?? new Date().toISOString())
+      db.prepare(
+        `INSERT OR IGNORE INTO habits (id, title, color, created_at)
+        VALUES (?, ?, ?, ?)`,
+      ).run(h.id, h.title, h.color ?? '', h.createdAt ?? new Date().toISOString())
     }
 
     for (const he of state.habitEntries ?? []) {
-      db.prepare(`INSERT OR IGNORE INTO habit_entries (id, habit_id, date, done)
-        VALUES (?, ?, ?, ?)`).run(he.id, he.habitId, he.date, he.done ? 1 : 0)
+      db.prepare(
+        `INSERT OR IGNORE INTO habit_entries (id, habit_id, date, done)
+        VALUES (?, ?, ?, ?)`,
+      ).run(he.id, he.habitId, he.date, he.done ? 1 : 0)
     }
 
     for (const s of state.thesisStudents ?? []) {
-      db.prepare(`INSERT OR IGNORE INTO thesis_students (id, project_id, name, topic, stage, next_milestone, due_date, notes, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-        s.id, s.projectId, s.name, s.topic ?? '', s.stage ?? 'topic',
-        s.nextMilestone ?? '', s.dueDate ?? '', s.notes ?? '', s.updatedAt ?? new Date().toISOString()
+      db.prepare(
+        `INSERT OR IGNORE INTO thesis_students (id, project_id, name, topic, stage, next_milestone, due_date, notes, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        s.id,
+        s.projectId,
+        s.name,
+        s.topic ?? '',
+        s.stage ?? 'topic',
+        s.nextMilestone ?? '',
+        s.dueDate ?? '',
+        s.notes ?? '',
+        s.updatedAt ?? new Date().toISOString(),
       )
     }
 
     for (const r of state.researchLogs ?? []) {
-      db.prepare(`INSERT OR IGNORE INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-        r.id, r.date, r.projectId, r.kind, r.title, r.source ?? '',
-        r.note ?? '', JSON.stringify(r.attachments ?? []), r.createdAt ?? new Date().toISOString(),
-        r.readingStatus ?? 'unread', r.keyFindings ?? '', r.nextAction ?? ''
+      db.prepare(
+        `INSERT OR IGNORE INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        r.id,
+        r.date,
+        r.projectId,
+        r.kind,
+        r.title,
+        r.source ?? '',
+        r.note ?? '',
+        JSON.stringify(r.attachments ?? []),
+        r.createdAt ?? new Date().toISOString(),
+        r.readingStatus ?? 'unread',
+        r.keyFindings ?? '',
+        r.nextAction ?? '',
       )
     }
 
     for (const ps of state.pomodoroSessions ?? []) {
-      db.prepare(`INSERT OR IGNORE INTO pomodoro_sessions (id, project_id, date, minutes, created_at)
-        VALUES (?, ?, ?, ?, ?)`).run(
-        ps.id, ps.projectId, ps.date, ps.minutes ?? 25, ps.createdAt ?? new Date().toISOString()
+      db.prepare(
+        `INSERT OR IGNORE INTO pomodoro_sessions (id, project_id, date, minutes, created_at)
+        VALUES (?, ?, ?, ?, ?)`,
+      ).run(
+        ps.id,
+        ps.projectId,
+        ps.date,
+        ps.minutes ?? 25,
+        ps.createdAt ?? new Date().toISOString(),
       )
     }
   })
@@ -282,7 +352,13 @@ export function initDatabase(): Database.Database {
   `)
 
   // 2. Add UNIQUE constraint to habit_entries (habit_id, date)
-  //    Use a unique index which also serves as constraint
+  //    First deduplicate existing entries: keep the last row per (habit_id, date)
+  db.exec(`
+    DELETE FROM habit_entries
+    WHERE id NOT IN (
+      SELECT MAX(id) FROM habit_entries GROUP BY habit_id, date
+    );
+  `)
   db.exec(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_habit_entries_unique
     ON habit_entries(habit_id, date);
@@ -332,61 +408,114 @@ export function rotateBackups(maxBackups = 30): void {
     .sort()
   const stale = files.slice(0, Math.max(0, files.length - maxBackups))
   for (const f of stale) {
-    try { unlinkSync(path.join(backupDir, f)) } catch { /* rotation cleanup */ }
+    try {
+      unlinkSync(path.join(backupDir, f))
+    } catch {
+      /* rotation cleanup */
+    }
   }
 }
 
 export function loadFullState(db: Database.Database): AppState {
   const projects = (db.prepare('SELECT * FROM projects').all() as ProjectRow[]).map(row => ({
-    id: row.id, name: row.name, color: row.color,
+    id: row.id,
+    name: row.name,
+    color: row.color,
     kind: row.kind as Project['kind'],
     status: row.status as Project['status'],
-    goal: row.goal, dueDate: row.due_date,
+    goal: row.goal,
+    dueDate: row.due_date,
   }))
 
   const tasks = (db.prepare('SELECT * FROM tasks').all() as TaskRow[]).map(row => ({
-    id: row.id, title: row.title, projectId: row.project_id,
-    parentId: row.parent_id ?? undefined, tags: parseJsonArray<string>(row.tags),
-    done: !!row.done, createdAt: row.created_at,
+    id: row.id,
+    title: row.title,
+    projectId: row.project_id,
+    parentId: row.parent_id ?? undefined,
+    tags: parseJsonArray<string>(row.tags),
+    done: !!row.done,
+    createdAt: row.created_at,
     source: row.source as Task['source'],
   }))
 
-  const blocks = (db.prepare('SELECT * FROM schedule_blocks').all() as ScheduleBlockRow[]).map(row => ({
-    id: row.id, taskId: row.task_id, date: row.date,
-    start: row.start_min, end: row.end_min, note: row.note,
-  }))
+  const blocks = (db.prepare('SELECT * FROM schedule_blocks').all() as ScheduleBlockRow[]).map(
+    row => ({
+      id: row.id,
+      taskId: row.task_id,
+      date: row.date,
+      start: row.start_min,
+      end: row.end_min,
+      note: row.note,
+    }),
+  )
 
   const habits = (db.prepare('SELECT * FROM habits').all() as HabitRow[]).map(row => ({
-    id: row.id, title: row.title, color: row.color, createdAt: row.created_at,
-  }))
-
-  const habitEntries = (db.prepare('SELECT * FROM habit_entries').all() as HabitEntryRow[]).map(row => ({
-    id: row.id, habitId: row.habit_id, date: row.date, done: !!row.done,
-  }))
-
-  const thesisStudents = (db.prepare('SELECT * FROM thesis_students').all() as ThesisStudentRow[]).map(row => ({
-    id: row.id, projectId: row.project_id, name: row.name, topic: row.topic,
-    stage: row.stage as ThesisStudent['stage'],
-    nextMilestone: row.next_milestone, dueDate: row.due_date,
-    notes: row.notes, updatedAt: row.updated_at,
-  }))
-
-  const researchLogs = (db.prepare('SELECT * FROM research_logs').all() as ResearchLogRow[]).map(row => ({
-    id: row.id, date: row.date, projectId: row.project_id,
-    kind: row.kind as ResearchLogEntry['kind'],
-    title: row.title, source: row.source, note: row.note,
-    attachments: parseJsonArray<string>(row.attachments),
+    id: row.id,
+    title: row.title,
+    color: row.color,
     createdAt: row.created_at,
-    readingStatus: (row.reading_status ?? 'unread') as ResearchLogEntry['readingStatus'],
-    keyFindings: row.key_findings ?? '', nextAction: row.next_action ?? '',
   }))
 
-  const pomodoroSessions = (db.prepare('SELECT * FROM pomodoro_sessions').all() as PomodoroSessionRow[]).map(row => ({
-    id: row.id, projectId: row.project_id, date: row.date,
-    minutes: row.minutes, createdAt: row.created_at,
+  const habitEntries = (db.prepare('SELECT * FROM habit_entries').all() as HabitEntryRow[]).map(
+    row => ({
+      id: row.id,
+      habitId: row.habit_id,
+      date: row.date,
+      done: !!row.done,
+    }),
+  )
+
+  const thesisStudents = (
+    db.prepare('SELECT * FROM thesis_students').all() as ThesisStudentRow[]
+  ).map(row => ({
+    id: row.id,
+    projectId: row.project_id,
+    name: row.name,
+    topic: row.topic,
+    stage: row.stage as ThesisStudent['stage'],
+    nextMilestone: row.next_milestone,
+    dueDate: row.due_date,
+    notes: row.notes,
+    updatedAt: row.updated_at,
   }))
 
-  return { projects, tasks, blocks, habits, habitEntries, thesisStudents, researchLogs, pomodoroSessions }
+  const researchLogs = (db.prepare('SELECT * FROM research_logs').all() as ResearchLogRow[]).map(
+    row => ({
+      id: row.id,
+      date: row.date,
+      projectId: row.project_id,
+      kind: row.kind as ResearchLogEntry['kind'],
+      title: row.title,
+      source: row.source,
+      note: row.note,
+      attachments: parseJsonArray<string>(row.attachments),
+      createdAt: row.created_at,
+      readingStatus: (row.reading_status ?? 'unread') as ResearchLogEntry['readingStatus'],
+      keyFindings: row.key_findings ?? '',
+      nextAction: row.next_action ?? '',
+    }),
+  )
+
+  const pomodoroSessions = (
+    db.prepare('SELECT * FROM pomodoro_sessions').all() as PomodoroSessionRow[]
+  ).map(row => ({
+    id: row.id,
+    projectId: row.project_id,
+    date: row.date,
+    minutes: row.minutes,
+    createdAt: row.created_at,
+  }))
+
+  return {
+    projects,
+    tasks,
+    blocks,
+    habits,
+    habitEntries,
+    thesisStudents,
+    researchLogs,
+    pomodoroSessions,
+  }
 }
 
 export function replaceFullState(db: Database.Database, state: AppState): void {
@@ -400,27 +529,45 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
     db.prepare('DELETE FROM tasks').run()
     db.prepare('DELETE FROM projects').run()
 
-    const insProject = db.prepare(`INSERT INTO projects (id, name, color, kind, status, goal, due_date)
+    const insProject =
+      db.prepare(`INSERT INTO projects (id, name, color, kind, status, goal, due_date)
       VALUES (?, ?, ?, ?, ?, ?, ?)`)
-    const insTask = db.prepare(`INSERT INTO tasks (id, title, project_id, parent_id, tags, done, created_at, source)
+    const insTask =
+      db.prepare(`INSERT INTO tasks (id, title, project_id, parent_id, tags, done, created_at, source)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-    const insBlock = db.prepare(`INSERT INTO schedule_blocks (id, task_id, date, start_min, end_min, note)
+    const insBlock =
+      db.prepare(`INSERT INTO schedule_blocks (id, task_id, date, start_min, end_min, note)
       VALUES (?, ?, ?, ?, ?, ?)`)
-    const insHabit = db.prepare(`INSERT INTO habits (id, title, color, created_at) VALUES (?, ?, ?, ?)`)
-    const insHabitEntry = db.prepare(`INSERT INTO habit_entries (id, habit_id, date, done) VALUES (?, ?, ?, ?)`)
-    const insStudent = db.prepare(`INSERT INTO thesis_students (id, project_id, name, topic, stage, next_milestone, due_date, notes, updated_at)
+    const insHabit = db.prepare(
+      `INSERT INTO habits (id, title, color, created_at) VALUES (?, ?, ?, ?)`,
+    )
+    const insHabitEntry = db.prepare(
+      `INSERT INTO habit_entries (id, habit_id, date, done) VALUES (?, ?, ?, ?)`,
+    )
+    const insStudent =
+      db.prepare(`INSERT INTO thesis_students (id, project_id, name, topic, stage, next_milestone, due_date, notes, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    const insLog = db.prepare(`INSERT INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action)
+    const insLog =
+      db.prepare(`INSERT INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    const insPomodoro = db.prepare(`INSERT INTO pomodoro_sessions (id, project_id, date, minutes, created_at)
+    const insPomodoro =
+      db.prepare(`INSERT INTO pomodoro_sessions (id, project_id, date, minutes, created_at)
       VALUES (?, ?, ?, ?, ?)`)
 
     for (const p of state.projects ?? []) {
       insProject.run(p.id, p.name, p.color, p.kind, p.status, p.goal, p.dueDate)
     }
     for (const t of state.tasks ?? []) {
-      insTask.run(t.id, t.title, t.projectId, t.parentId ?? null,
-        JSON.stringify(t.tags), t.done ? 1 : 0, t.createdAt, t.source)
+      insTask.run(
+        t.id,
+        t.title,
+        t.projectId,
+        t.parentId ?? null,
+        JSON.stringify(t.tags),
+        t.done ? 1 : 0,
+        t.createdAt,
+        t.source,
+      )
     }
     for (const b of state.blocks ?? []) {
       insBlock.run(b.id, b.taskId, b.date, b.start, b.end, b.note ?? '')
@@ -432,13 +579,33 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
       insHabitEntry.run(he.id, he.habitId, he.date, he.done ? 1 : 0)
     }
     for (const s of state.thesisStudents ?? []) {
-      insStudent.run(s.id, s.projectId, s.name, s.topic, s.stage,
-        s.nextMilestone, s.dueDate, s.notes, s.updatedAt)
+      insStudent.run(
+        s.id,
+        s.projectId,
+        s.name,
+        s.topic,
+        s.stage,
+        s.nextMilestone,
+        s.dueDate,
+        s.notes,
+        s.updatedAt,
+      )
     }
     for (const r of state.researchLogs ?? []) {
-      insLog.run(r.id, r.date, r.projectId, r.kind, r.title, r.source,
-        r.note, JSON.stringify(r.attachments), r.createdAt,
-        r.readingStatus ?? 'unread', r.keyFindings ?? '', r.nextAction ?? '')
+      insLog.run(
+        r.id,
+        r.date,
+        r.projectId,
+        r.kind,
+        r.title,
+        r.source,
+        r.note,
+        JSON.stringify(r.attachments),
+        r.createdAt,
+        r.readingStatus ?? 'unread',
+        r.keyFindings ?? '',
+        r.nextAction ?? '',
+      )
     }
     for (const ps of state.pomodoroSessions ?? []) {
       insPomodoro.run(ps.id, ps.projectId, ps.date, ps.minutes, ps.createdAt)

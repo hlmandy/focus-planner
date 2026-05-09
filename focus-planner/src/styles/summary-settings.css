@@ -34,7 +34,9 @@
   background: var(--surface);
   color: var(--ink);
   padding: 18px 20px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 1.75;
   resize: vertical;
@@ -68,7 +70,10 @@
   font-size: 13px;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
 
 .summary-actions button:hover {
@@ -226,9 +231,15 @@
   margin-right: 6px;
   flex-shrink: 0;
 }
-.caldav-dot.green { background: #22c55e; }
-.caldav-dot.yellow { background: #eab308; }
-.caldav-dot.gray { background: #9ca3af; }
+.caldav-dot.green {
+  background: #22c55e;
+}
+.caldav-dot.yellow {
+  background: #eab308;
+}
+.caldav-dot.gray {
+  background: #9ca3af;
+}
 
 .caldav-form label {
   display: block;
@@ -238,8 +249,8 @@
   margin: 12px 0 4px;
 }
 
-.caldav-form input[type="text"],
-.caldav-form input[type="password"] {
+.caldav-form input[type='text'],
+.caldav-form input[type='password'] {
   width: 100%;
   padding: 8px 10px;
   border: 1px solid var(--line);
@@ -264,7 +275,7 @@
   cursor: pointer;
 }
 
-.caldav-toggle input[type="checkbox"] {
+.caldav-toggle input[type='checkbox'] {
   width: 16px;
   height: 16px;
   accent-color: var(--accent);
@@ -345,8 +356,8 @@
   color: var(--ink);
 }
 
-.settings-row input[type="number"],
-.settings-row input[type="time"],
+.settings-row input[type='number'],
+.settings-row input[type='time'],
 .settings-row select {
   padding: 6px 10px;
   border: 1px solid var(--line);

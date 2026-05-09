@@ -27,7 +27,8 @@ export const getWeekDays = (dateKey: string) => {
   return Array.from({ length: 7 }, (_, i) => addDays(monday, i))
 }
 
-export const weekDayText = (date: Date) => ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][date.getDay()]
+export const weekDayText = (date: Date) =>
+  ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][date.getDay()]
 
 export const blockDateText = (dateKey: string) => {
   const date = fromDateKey(dateKey)
@@ -47,7 +48,12 @@ export const timeText = (mins: number) => {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
-export const parseClockTime = (value: string, reference: number, dayStart: number, regularDayEnd: number) => {
+export const parseClockTime = (
+  value: string,
+  reference: number,
+  dayStart: number,
+  regularDayEnd: number,
+) => {
   const [hour, minute] = value.split(':').map(Number)
   const mins = hour * 60 + minute
   return reference >= regularDayEnd || mins < dayStart ? mins + regularDayEnd : mins
@@ -70,7 +76,12 @@ export const blockTitleText = (block: ScheduleBlock, task: Task | undefined) => 
 
 export const isProjectTask = (task: Task) => task.source !== 'schedule'
 
-export const getBlockViewStatus = (block: ScheduleBlock, task: Task | undefined, currentDateKey: string, currentMinutes: number): BlockViewStatus => {
+export const getBlockViewStatus = (
+  block: ScheduleBlock,
+  task: Task | undefined,
+  currentDateKey: string,
+  currentMinutes: number,
+): BlockViewStatus => {
   if (task?.done) return 'done'
   if (block.date < currentDateKey) return 'done'
   if (block.date > currentDateKey) return 'todo'
@@ -81,14 +92,23 @@ export const getBlockViewStatus = (block: ScheduleBlock, task: Task | undefined,
 
 export const isWebLink = (value: string) => /^https?:\/\//i.test(value)
 
-export const parseQuickInput = (input: string, fallbackStart: number, dayStart: number, dayEnd: number) => {
-  const tags = [...input.matchAll(/#([\p{L}\p{N}_-]+)/gu)].map((m) => m[1])
+export const parseQuickInput = (
+  input: string,
+  fallbackStart: number,
+  dayStart: number,
+  dayEnd: number,
+) => {
+  const tags = [...input.matchAll(/#([\p{L}\p{N}_-]+)/gu)].map(m => m[1])
   const timeMatch = input.match(/@(\d{1,2})(?::([0-5]\d))?/)
   const parsedStart = timeMatch
     ? Number(timeMatch[1]) * 60 + Number(timeMatch[2] ?? 0)
     : fallbackStart
   const regularDayEnd = 24 * 60
-  const start = clamp(parsedStart < dayStart ? parsedStart + regularDayEnd : parsedStart, dayStart, dayEnd - 30)
+  const start = clamp(
+    parsedStart < dayStart ? parsedStart + regularDayEnd : parsedStart,
+    dayStart,
+    dayEnd - 30,
+  )
   const title =
     input
       .replace(/#[\p{L}\p{N}_-]+/gu, '')
@@ -102,8 +122,8 @@ export const getFallbackProjectId = (projects: Project[], defaultProjectId: stri
   projects[0]?.id ?? defaultProjectId
 
 export const getTaskDescendantIds = (taskId: string, tasks: Task[]): string[] => {
-  const childIds = tasks.filter((task) => task.parentId === taskId).map((task) => task.id)
-  return childIds.flatMap((childId) => [childId, ...getTaskDescendantIds(childId, tasks)])
+  const childIds = tasks.filter(task => task.parentId === taskId).map(task => task.id)
+  return childIds.flatMap(childId => [childId, ...getTaskDescendantIds(childId, tasks)])
 }
 
 export const researchLogKindLabels: Record<ResearchLogKind, string> = {

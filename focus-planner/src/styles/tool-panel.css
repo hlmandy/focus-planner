@@ -22,7 +22,7 @@
 }
 
 .tool-panel-resizer::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 12px;
   bottom: 12px;
@@ -62,7 +62,10 @@
   background: transparent;
   color: var(--ink-soft);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
 
 .tool-tab:hover {
@@ -302,7 +305,7 @@
   background: var(--surface-2);
 }
 
-.pomodoro-history-item.pomodoro-edit input[type="number"] {
+.pomodoro-history-item.pomodoro-edit input[type='number'] {
   width: 40px;
   height: 20px;
   padding: 0 3px;
@@ -401,7 +404,10 @@
   color: var(--ink-soft);
   font-size: 11px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
 }
 
 .stopwatch-save:hover {

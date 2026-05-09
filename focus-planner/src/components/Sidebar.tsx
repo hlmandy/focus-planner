@@ -1,5 +1,15 @@
 import { useState } from 'react'
-import { Archive, Plus, Settings, CalendarDays, TimerReset, FolderKanban, Flame, Save, FileText } from 'lucide-react'
+import {
+  Archive,
+  Plus,
+  Settings,
+  CalendarDays,
+  TimerReset,
+  FolderKanban,
+  Flame,
+  Save,
+  FileText,
+} from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { uid } from '../utils'
 import { reportApiError } from '../api/client'
@@ -13,14 +23,20 @@ export function Sidebar() {
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectKind, setNewProjectKind] = useState<ProjectKind>('research')
   const [isSidebarProjectComposerOpen, setIsSidebarProjectComposerOpen] = useState(false)
-  const [showArchived, setShowArchived] = useState(() => localStorage.getItem(ARCHIVED_STORAGE_KEY) === 'true')
+  const [showArchived, setShowArchived] = useState(
+    () => localStorage.getItem(ARCHIVED_STORAGE_KEY) === 'true',
+  )
 
   const {
-    projects, tasks,
-    page, setPage,
-    projectFilterId, setProjectFilterId,
+    projects,
+    tasks,
+    page,
+    setPage,
+    projectFilterId,
+    setProjectFilterId,
     setProjectDetailId,
-    isSidebarOpen, setIsSidebarOpen,
+    isSidebarOpen,
+    setIsSidebarOpen,
     setPomodoroProjectId,
   } = useApp()
 
@@ -50,10 +66,13 @@ export function Sidebar() {
       return
     }
     const project = {
-      id: uid(), name,
+      id: uid(),
+      name,
       color: colors[projects.items.length % colors.length],
-      kind: newProjectKind, status: 'active' as const,
-      goal: projectTemplateGoals[newProjectKind], dueDate: '',
+      kind: newProjectKind,
+      status: 'active' as const,
+      goal: projectTemplateGoals[newProjectKind],
+      dueDate: '',
     }
     const templateTasks = createTasksFromTemplate(project.id, project.kind)
     projects.create(project).catch(reportApiError)
@@ -72,73 +91,168 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar">
-      <button type="button" className="collapse-button" onClick={() => setIsSidebarOpen(!isSidebarOpen)} aria-label={isSidebarOpen ? '折叠侧栏' : '展开侧栏'}>
+      <button
+        type="button"
+        className="collapse-button"
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        aria-label={isSidebarOpen ? '折叠侧栏' : '展开侧栏'}
+      >
         {isSidebarOpen ? '‹' : '›'}
       </button>
       <nav className="nav-list">
-        <button type="button" className={`btn btn-ghost${page === 'today' ? ' active' : ''}`} onClick={() => setPage('today')} title="今天">
-          <CalendarDays size={18} /><span>今天</span>
+        <button
+          type="button"
+          className={`btn btn-ghost${page === 'today' ? ' active' : ''}`}
+          onClick={() => setPage('today')}
+          title="今天"
+        >
+          <CalendarDays size={18} />
+          <span>今天</span>
         </button>
-        <button type="button" className={`btn btn-ghost${page === 'planner' ? ' active' : ''}`} onClick={() => setPage('planner')} title="规划表">
-          <TimerReset size={18} /><span>规划表</span>
+        <button
+          type="button"
+          className={`btn btn-ghost${page === 'planner' ? ' active' : ''}`}
+          onClick={() => setPage('planner')}
+          title="规划表"
+        >
+          <TimerReset size={18} />
+          <span>规划表</span>
         </button>
-        <button type="button" className={`btn btn-ghost${page === 'projects' ? ' active' : ''}`} onClick={openProjectOverview} title="项目">
-          <FolderKanban size={18} /><span>项目</span>
+        <button
+          type="button"
+          className={`btn btn-ghost${page === 'projects' ? ' active' : ''}`}
+          onClick={openProjectOverview}
+          title="项目"
+        >
+          <FolderKanban size={18} />
+          <span>项目</span>
         </button>
-        <button type="button" className={`btn btn-ghost${page === 'research-log' ? ' active' : ''}`} onClick={() => setPage('research-log')} title="研究日志">
-          <FileText size={18} /><span>研究日志</span>
+        <button
+          type="button"
+          className={`btn btn-ghost${page === 'research-log' ? ' active' : ''}`}
+          onClick={() => setPage('research-log')}
+          title="研究日志"
+        >
+          <FileText size={18} />
+          <span>研究日志</span>
         </button>
-        <button type="button" className={`btn btn-ghost${page === 'habits' ? ' active' : ''}`} onClick={() => setPage('habits')} title="习惯">
-          <Flame size={18} /><span>习惯</span>
+        <button
+          type="button"
+          className={`btn btn-ghost${page === 'habits' ? ' active' : ''}`}
+          onClick={() => setPage('habits')}
+          title="习惯"
+        >
+          <Flame size={18} />
+          <span>习惯</span>
         </button>
-        <button type="button" className={`btn btn-ghost${page === 'summary' ? ' active' : ''}`} onClick={() => setPage('summary')} title="今日总结">
-          <Save size={18} /><span>今日总结</span>
+        <button
+          type="button"
+          className={`btn btn-ghost${page === 'summary' ? ' active' : ''}`}
+          onClick={() => setPage('summary')}
+          title="今日总结"
+        >
+          <Save size={18} />
+          <span>今日总结</span>
         </button>
       </nav>
       {isSidebarOpen && (
         <div className="sidebar-section">
           <div className="sidebar-section-title">
             <span>项目</span>
-            <button type="button" className="btn btn-ghost" onClick={() => setIsSidebarProjectComposerOpen(v => !v)} aria-label="添加项目">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => setIsSidebarProjectComposerOpen(v => !v)}
+              aria-label="添加项目"
+            >
               <Plus size={16} />
             </button>
           </div>
-          <button type="button" className={`btn btn-ghost project-filter ${projectFilterId === 'all' ? 'active' : ''}`} onClick={() => openProject('all')}>
-            <span className="dot muted" />全部项目
+          <button
+            type="button"
+            className={`btn btn-ghost project-filter ${projectFilterId === 'all' ? 'active' : ''}`}
+            onClick={() => openProject('all')}
+          >
+            <span className="dot muted" />
+            全部项目
           </button>
           {activeProjects.map(project => (
-            <button key={project.id} type="button" className={`btn btn-ghost project-filter ${projectFilterId === project.id ? 'active' : ''}`} onClick={() => openProject(project.id)} style={{ '--dot-color': project.color } as React.CSSProperties}>
-              <span className="dot" />{project.name}
+            <button
+              key={project.id}
+              type="button"
+              className={`btn btn-ghost project-filter ${projectFilterId === project.id ? 'active' : ''}`}
+              onClick={() => openProject(project.id)}
+              style={{ '--dot-color': project.color } as React.CSSProperties}
+            >
+              <span className="dot" />
+              {project.name}
             </button>
           ))}
           {archivedProjects.length > 0 && (
             <>
-              <button type="button" className="sidebar-archive-toggle" onClick={toggleArchived} aria-expanded={showArchived ? 'true' : 'false'}>
+              <button
+                type="button"
+                className="sidebar-archive-toggle"
+                onClick={toggleArchived}
+                aria-expanded={showArchived ? 'true' : 'false'}
+              >
                 <Archive size={14} />
                 <span>已归档 ({archivedProjects.length})</span>
                 <span className={`chevron ${showArchived ? 'open' : ''}`}>›</span>
               </button>
-              {showArchived && archivedProjects.map(project => (
-                <button key={project.id} type="button" className={`btn btn-ghost project-filter archived ${projectFilterId === project.id ? 'active' : ''}`} onClick={() => openProject(project.id)} style={{ '--dot-color': project.color } as React.CSSProperties}>
-                  <span className="dot" />{project.name}
-                </button>
-              ))}
+              {showArchived &&
+                archivedProjects.map(project => (
+                  <button
+                    key={project.id}
+                    type="button"
+                    className={`btn btn-ghost project-filter archived ${projectFilterId === project.id ? 'active' : ''}`}
+                    onClick={() => openProject(project.id)}
+                    style={{ '--dot-color': project.color } as React.CSSProperties}
+                  >
+                    <span className="dot" />
+                    {project.name}
+                  </button>
+                ))}
             </>
           )}
           {isSidebarProjectComposerOpen && (
             <div className="sidebar-project-composer">
-              <input className="project-input" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addProject()} placeholder="新项目名称" autoFocus />
-              <select className="project-kind-select compact" value={newProjectKind} onChange={e => setNewProjectKind(e.target.value as ProjectKind)} aria-label="项目类型">
-                <option value="research">科研</option><option value="paper">论文</option><option value="student">指导</option><option value="admin">事务</option>
+              <input
+                className="project-input"
+                value={newProjectName}
+                onChange={e => setNewProjectName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addProject()}
+                placeholder="新项目名称"
+                autoFocus
+              />
+              <select
+                className="project-kind-select compact"
+                value={newProjectKind}
+                onChange={e => setNewProjectKind(e.target.value as ProjectKind)}
+                aria-label="项目类型"
+              >
+                <option value="research">科研</option>
+                <option value="paper">论文</option>
+                <option value="student">指导</option>
+                <option value="admin">事务</option>
               </select>
-              <button type="button" className="btn btn-primary" onClick={addProject}><Plus size={15} />创建项目</button>
+              <button type="button" className="btn btn-primary" onClick={addProject}>
+                <Plus size={15} />
+                创建项目
+              </button>
             </div>
           )}
         </div>
       )}
       <div className="sidebar-footer">
-        <button type="button" className={`btn btn-ghost${page === 'settings' ? ' active' : ''}`} onClick={() => setPage('settings')} title="设置">
-          <Settings size={18} /><span>设置</span>
+        <button
+          type="button"
+          className={`btn btn-ghost${page === 'settings' ? ' active' : ''}`}
+          onClick={() => setPage('settings')}
+          title="设置"
+        >
+          <Settings size={18} />
+          <span>设置</span>
         </button>
       </div>
     </aside>

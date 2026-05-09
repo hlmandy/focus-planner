@@ -27,18 +27,30 @@ function rowToSettings(row: UserConfigRow): UserSettings {
 }
 
 export function settingsRoutes(app: Hono, db: Database.Database) {
-  app.get('/api/settings', (c) => {
-    const row = db.prepare('SELECT * FROM user_config WHERE id = 1').get() as UserConfigRow | undefined
-    return c.json(row ? rowToSettings(row) : {
-      workDuration: 25, breakDuration: 5, longBreakDuration: 15,
-      longBreakInterval: 4, sleepStart: '22:00', sleepEnd: '07:00',
-      defaultPage: 'today', autoSyncCalDAV: false,
-    })
+  app.get('/api/settings', c => {
+    const row = db.prepare('SELECT * FROM user_config WHERE id = 1').get() as
+      | UserConfigRow
+      | undefined
+    return c.json(
+      row
+        ? rowToSettings(row)
+        : {
+            workDuration: 25,
+            breakDuration: 5,
+            longBreakDuration: 15,
+            longBreakInterval: 4,
+            sleepStart: '22:00',
+            sleepEnd: '07:00',
+            defaultPage: 'today',
+            autoSyncCalDAV: false,
+          },
+    )
   })
 
-  app.put('/api/settings', async (c) => {
-    const body = await c.req.json() as Partial<UserSettings>
-    db.prepare(`
+  app.put('/api/settings', async c => {
+    const body = (await c.req.json()) as Partial<UserSettings>
+    db.prepare(
+      `
       UPDATE user_config SET
         work_duration = ?,
         break_duration = ?,
@@ -49,7 +61,8 @@ export function settingsRoutes(app: Hono, db: Database.Database) {
         default_page = ?,
         auto_sync_caldav = ?
       WHERE id = 1
-    `).run(
+    `,
+    ).run(
       body.workDuration ?? 25,
       body.breakDuration ?? 5,
       body.longBreakDuration ?? 15,

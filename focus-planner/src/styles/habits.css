@@ -38,7 +38,7 @@
 
 .habit-week-days::before,
 .habit-week-days::after {
-  content: "";
+  content: '';
 }
 
 .habit-week-days span {

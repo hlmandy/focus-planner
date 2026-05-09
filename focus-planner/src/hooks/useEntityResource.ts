@@ -14,7 +14,18 @@ export function useEntityResource<T extends { id: string }>(
   const mountedRef = useRef(false)
   // Use ref to always have latest items for rollback
   const itemsRef = useRef(items)
-  useEffect(() => { itemsRef.current = items })
+  useEffect(() => {
+    itemsRef.current = items
+  })
+
+  // Sync to localStorage whenever items change (cache for offline fallback)
+  const commitItems = useCallback(
+    (next: T[]) => {
+      setItems(next)
+      localStorage.setItem(`cache_${key}`, JSON.stringify(next))
+    },
+    [key],
+  )
 
   // Fetch from API on mount, fall back to localStorage cache
   useEffect(() => {
@@ -33,52 +44,68 @@ export function useEntityResource<T extends { id: string }>(
         if (!cancelled) {
           const cached = localStorage.getItem(`cache_${key}`)
           if (cached) {
-            try { setItems(JSON.parse(cached)) } catch { /* ignore */ }
+            try {
+              setItems(JSON.parse(cached))
+            } catch {
+              /* ignore */
+            }
           }
         }
       })
 
-    return () => { mountedRef.current = false; cancelled = true }
+    return () => {
+      mountedRef.current = false
+      cancelled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
-  const create = useCallback(async (body: T) => {
-    setItems(prev => [...prev, body])
-    try {
-      await apiCreate(body)
-    } catch (err) {
-      // Rollback: remove the item we just added
-      setItems(prev => prev.filter(x => x.id !== body.id))
-      setError(err instanceof ApiError ? err.message : 'Create failed')
-      throw err
-    }
-  }, [apiCreate])
+  const create = useCallback(
+    async (body: T) => {
+      commitItems([...itemsRef.current, body])
+      try {
+        await apiCreate(body)
+      } catch (err) {
+        // Rollback: remove the item we just added
+        commitItems(itemsRef.current.filter(x => x.id !== body.id))
+        setError(err instanceof ApiError ? err.message : 'Create failed')
+        throw err
+      }
+    },
+    [apiCreate, commitItems],
+  )
 
-  const update = useCallback(async (id: string, body: Partial<T>) => {
-    // Snapshot from ref for rollback (always latest)
-    const snapshot = itemsRef.current
-    setItems(prev => prev.map(x => x.id === id ? { ...x, ...body } : x))
-    try {
-      await apiUpdate(id, body)
-    } catch (err) {
-      // Rollback to snapshot
-      setItems(snapshot)
-      setError(err instanceof ApiError ? err.message : 'Update failed')
-      throw err
-    }
-  }, [apiUpdate])
+  const update = useCallback(
+    async (id: string, body: Partial<T>) => {
+      // Snapshot from ref for rollback (always latest)
+      const snapshot = itemsRef.current
+      commitItems(itemsRef.current.map(x => (x.id === id ? { ...x, ...body } : x)))
+      try {
+        await apiUpdate(id, body)
+      } catch (err) {
+        // Rollback to snapshot
+        commitItems(snapshot)
+        setError(err instanceof ApiError ? err.message : 'Update failed')
+        throw err
+      }
+    },
+    [apiUpdate, commitItems],
+  )
 
-  const remove = useCallback(async (id: string) => {
-    const snapshot = itemsRef.current
-    setItems(prev => prev.filter(x => x.id !== id))
-    try {
-      await apiDelete(id)
-    } catch (err) {
-      setItems(snapshot)
-      setError(err instanceof ApiError ? err.message : 'Delete failed')
-      throw err
-    }
-  }, [apiDelete])
+  const remove = useCallback(
+    async (id: string) => {
+      const snapshot = itemsRef.current
+      commitItems(itemsRef.current.filter(x => x.id !== id))
+      try {
+        await apiDelete(id)
+      } catch (err) {
+        commitItems(snapshot)
+        setError(err instanceof ApiError ? err.message : 'Delete failed')
+        throw err
+      }
+    },
+    [apiDelete, commitItems],
+  )
 
   return { items, setItems, error, create, update, remove }
 }

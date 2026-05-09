@@ -31,8 +31,14 @@ function requestNotificationPermission() {
 
 function PomodoroTimer() {
   const {
-    pomodoroSessions, mode, setMode, setSecondsLeft, isRunning, setIsRunning,
-    pomodoroProjectId, settings,
+    pomodoroSessions,
+    mode,
+    setMode,
+    setSecondsLeft,
+    isRunning,
+    setIsRunning,
+    pomodoroProjectId,
+    settings,
   } = useApp()
 
   const workSeconds = settings.workDuration * 60
@@ -49,13 +55,16 @@ function PomodoroTimer() {
   useEffect(() => {
     if (!isRunning) return
     const timer = window.setInterval(() => {
-      setSecondsLeft((value) => {
+      setSecondsLeft(value => {
         if (value > 1) return value - 1
         setIsRunning(false)
         if (mode === 'work') {
           const session: PomodoroSession = {
-            id: uid(), projectId: pomodoroProjectId,
-            date: todayKey(), minutes: settings.workDuration, createdAt: new Date().toISOString(),
+            id: uid(),
+            projectId: pomodoroProjectId,
+            date: todayKey(),
+            minutes: settings.workDuration,
+            createdAt: new Date().toISOString(),
           }
           pomodoroSessions.create(session).catch(reportApiError)
           notify('🍅 专注完成！', `完成了 ${settings.workDuration} 分钟的专注，休息一下吧`)
@@ -70,7 +79,18 @@ function PomodoroTimer() {
       })
     }, 1000)
     return () => window.clearInterval(timer)
-  }, [isRunning, mode, pomodoroProjectId, pomodoroSessions, setMode, setSecondsLeft, setIsRunning, workSeconds, breakSeconds, settings.workDuration])
+  }, [
+    isRunning,
+    mode,
+    pomodoroProjectId,
+    pomodoroSessions,
+    setMode,
+    setSecondsLeft,
+    setIsRunning,
+    workSeconds,
+    breakSeconds,
+    settings.workDuration,
+  ])
 
   return null
 }
@@ -119,9 +139,15 @@ function AppShell() {
   useEffect(() => {
     let cancelled = false
     fetch('/api/health')
-      .then(() => { if (!cancelled) setPersistenceStatus('server') })
-      .catch(() => { if (!cancelled) setPersistenceStatus('local') })
-    return () => { cancelled = true }
+      .then(() => {
+        if (!cancelled) setPersistenceStatus('server')
+      })
+      .catch(() => {
+        if (!cancelled) setPersistenceStatus('local')
+      })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // Request notification permission on first user interaction
@@ -132,21 +158,35 @@ function AppShell() {
   }, [])
 
   const contextValue = {
-    page, setPage,
-    date, setDate,
-    projectFilterId, setProjectFilterId,
-    projectDetailId, setProjectDetailId,
-    pomodoroProjectId, setPomodoroProjectId,
-    isSidebarOpen, setIsSidebarOpen,
-    isToolPanelOpen, setIsToolPanelOpen,
-    toolPanelWidth, setToolPanelWidth,
+    page,
+    setPage,
+    date,
+    setDate,
+    projectFilterId,
+    setProjectFilterId,
+    projectDetailId,
+    setProjectDetailId,
+    pomodoroProjectId,
+    setPomodoroProjectId,
+    isSidebarOpen,
+    setIsSidebarOpen,
+    isToolPanelOpen,
+    setIsToolPanelOpen,
+    toolPanelWidth,
+    setToolPanelWidth,
     persistenceStatus,
-    mode, setMode,
-    secondsLeft, setSecondsLeft,
-    isRunning, setIsRunning,
-    stopwatchSeconds, setStopwatchSeconds,
-    stopwatchRunning, setStopwatchRunning,
-    stopwatchProjectId, setStopwatchProjectId,
+    mode,
+    setMode,
+    secondsLeft,
+    setSecondsLeft,
+    isRunning,
+    setIsRunning,
+    stopwatchSeconds,
+    setStopwatchSeconds,
+    stopwatchRunning,
+    setStopwatchRunning,
+    stopwatchProjectId,
+    setStopwatchProjectId,
   }
 
   return (
@@ -163,7 +203,13 @@ function AppShell() {
             <h1>{pageLabels[page] ?? ''}</h1>
             <div className="header-actions">
               {!isToolPanelOpen && (
-                <button type="button" className="tool-trigger" onClick={() => setIsToolPanelOpen(true)} aria-expanded="false" aria-label="打开工具面板">
+                <button
+                  type="button"
+                  className="btn btn-ghost tool-trigger"
+                  onClick={() => setIsToolPanelOpen(true)}
+                  aria-expanded="false"
+                  aria-label="打开工具面板"
+                >
                   <MoreHorizontal size={22} />
                 </button>
               )}

@@ -1,5 +1,10 @@
 import type Database from 'better-sqlite3'
-import { buildIcs, createRemoteEvent, updateRemoteEvent, deleteRemoteEvent } from './caldav-client.js'
+import {
+  buildIcs,
+  createRemoteEvent,
+  updateRemoteEvent,
+  deleteRemoteEvent,
+} from './caldav-client.js'
 import type { CalDAVConfig } from './caldav-client.js'
 import type { CaldavConfigRow, CaldavSyncMapRow } from './types.js'
 
@@ -55,12 +60,18 @@ function getConfig(db: Database.Database) {
 }
 
 function getBlocksWithTasks(db: Database.Database): BlockWithTask[] {
-  return (db.prepare(`
+  return (
+    db
+      .prepare(
+        `
     SELECT b.id as block_id, b.task_id, b.date, b.start_min, b.end_min, b.note,
            t.title, t.done, t.project_id
     FROM schedule_blocks b
     JOIN tasks t ON t.id = b.task_id
-  `).all() as BlockWithTaskRow[]).map(r => ({
+  `,
+      )
+      .all() as BlockWithTaskRow[]
+  ).map(r => ({
     blockId: r.block_id,
     taskId: r.task_id,
     date: r.date,
@@ -170,7 +181,16 @@ export async function runSync(db: Database.Database): Promise<{
           upsertMap.run(block.blockId, result.eventUrl, uid, result.etag, hash, 'synced', now, '')
           created++
         } else {
-          upsertMap.run(block.blockId, '', uid, '', hash, 'error', now, result.message || 'Create failed')
+          upsertMap.run(
+            block.blockId,
+            '',
+            uid,
+            '',
+            hash,
+            'error',
+            now,
+            result.message || 'Create failed',
+          )
           errors++
         }
       } catch (err: unknown) {
@@ -192,22 +212,52 @@ export async function runSync(db: Database.Database): Promise<{
       try {
         const result = await updateRemoteEvent(config, existing.eventUrl, existing.etag, ics)
         if (result.ok) {
-          upsertMap.run(block.blockId, existing.eventUrl, existing.eventUid, result.etag, hash, 'synced', now, '')
+          upsertMap.run(
+            block.blockId,
+            existing.eventUrl,
+            existing.eventUid,
+            result.etag,
+            hash,
+            'synced',
+            now,
+            '',
+          )
           updated++
         } else {
-          upsertMap.run(block.blockId, existing.eventUrl, existing.eventUid, existing.etag, hash, 'error', now, result.message || 'Update failed')
+          upsertMap.run(
+            block.blockId,
+            existing.eventUrl,
+            existing.eventUid,
+            existing.etag,
+            hash,
+            'error',
+            now,
+            result.message || 'Update failed',
+          )
           errors++
         }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err)
-        upsertMap.run(block.blockId, existing.eventUrl, existing.eventUid, existing.etag, hash, 'error', now, msg)
+        upsertMap.run(
+          block.blockId,
+          existing.eventUrl,
+          existing.eventUid,
+          existing.etag,
+          hash,
+          'error',
+          now,
+          msg,
+        )
         errors++
       }
     }
   }
 
   const errorMsg = errors > 0 ? `${errors} items failed` : ''
-  db.prepare('UPDATE caldav_config SET last_sync_at = ?, last_sync_error = ? WHERE id = 1').run(now, errorMsg)
+  db.prepare('UPDATE caldav_config SET last_sync_at = ?, last_sync_error = ? WHERE id = 1').run(
+    now,
+    errorMsg,
+  )
 
   return { created, updated, deleted, errors }
 }

@@ -4,8 +4,7 @@ import { useApp } from '../hooks/useAppContext'
 import { seedState } from '../seed'
 import { useState, useEffect, useCallback, type FormEvent } from 'react'
 import { settingsApi } from '../api/settings'
-import { projectsApi, tasksApi, blocksApi, habitsApi, habitEntriesApi, thesisStudentsApi, researchLogsApi, pomodoroApi } from '../api'
-import type { PageName } from '../../shared/types'
+import type { AppState, PageName } from '../../shared/types'
 
 interface CalDAVConfigForm {
   serverUrl: string
@@ -37,7 +36,22 @@ const pageOptions: { value: PageName; label: string }[] = [
 type SectionId = 'data' | 'pomodoro' | 'sleep' | 'ui' | 'caldav'
 
 export function SettingsPage() {
-  const { projects, tasks, blocks, habits, habitEntries, thesisStudents, researchLogs, pomodoroSessions, setProjectFilterId, setProjectDetailId, setPage, persistenceStatus, settings, updateSettings } = useApp()
+  const {
+    projects,
+    tasks,
+    blocks,
+    habits,
+    habitEntries,
+    thesisStudents,
+    researchLogs,
+    pomodoroSessions,
+    setProjectFilterId,
+    setProjectDetailId,
+    setPage,
+    persistenceStatus,
+    settings,
+    updateSettings,
+  } = useApp()
 
   // Local draft for form editing — initialized from context settings.
   // The useEffect below fetches fresh settings from the server on mount.
@@ -48,7 +62,11 @@ export function SettingsPage() {
 
   // CalDAV state
   const [config, setConfig] = useState<CalDAVConfigForm>({
-    serverUrl: '', username: '', password: '', calendarUrl: '', syncEnabled: false,
+    serverUrl: '',
+    username: '',
+    password: '',
+    calendarUrl: '',
+    syncEnabled: false,
   })
   const [passwordModified, setPasswordModified] = useState(false)
   const [hasConfiguredPassword, setHasConfiguredPassword] = useState(false)
@@ -63,17 +81,23 @@ export function SettingsPage() {
 
   useEffect(() => {
     settingsApi.get().then(setDraft).catch(reportApiError)
-    fetch('/api/caldav/config').then(r => r.json()).then(data => {
-      setConfig({
-        serverUrl: data.serverUrl || '',
-        username: data.username || '',
-        password: data.password ? '' : '',
-        calendarUrl: data.calendarUrl || '',
-        syncEnabled: data.syncEnabled || false,
+    fetch('/api/caldav/config')
+      .then(r => r.json())
+      .then(data => {
+        setConfig({
+          serverUrl: data.serverUrl || '',
+          username: data.username || '',
+          password: data.password ? '' : '',
+          calendarUrl: data.calendarUrl || '',
+          syncEnabled: data.syncEnabled || false,
+        })
+        setHasConfiguredPassword(!!data.password)
       })
-      setHasConfiguredPassword(!!data.password)
-    }).catch(reportApiError)
-    fetch('/api/caldav/status').then(r => r.json()).then(setStatus).catch(reportApiError)
+      .catch(reportApiError)
+    fetch('/api/caldav/status')
+      .then(r => r.json())
+      .then(setStatus)
+      .catch(reportApiError)
   }, [])
 
   const toggleSection = useCallback((id: SectionId) => {
@@ -86,7 +110,10 @@ export function SettingsPage() {
   }, [])
 
   const refreshStatus = () => {
-    fetch('/api/caldav/status').then(r => r.json()).then(setStatus).catch(reportApiError)
+    fetch('/api/caldav/status')
+      .then(r => r.json())
+      .then(setStatus)
+      .catch(reportApiError)
   }
 
   const saveSettings = async (e: FormEvent) => {
@@ -148,9 +175,18 @@ export function SettingsPage() {
     try {
       const res = await fetch('/api/caldav/sync', { method: 'POST' })
       const data = await res.json()
-      setMessage(data.ok
-        ? '同步完成: 新建 ' + data.created + ', 更新 ' + data.updated + ', 删除 ' + data.deleted + ', 失败 ' + data.errors
-        : '同步失败')
+      setMessage(
+        data.ok
+          ? '同步完成: 新建 ' +
+              data.created +
+              ', 更新 ' +
+              data.updated +
+              ', 删除 ' +
+              data.deleted +
+              ', 失败 ' +
+              data.errors
+          : '同步失败',
+      )
       refreshStatus()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -162,36 +198,19 @@ export function SettingsPage() {
   const resetData = async () => {
     if (!window.confirm('确定要清空本地数据并恢复初始示例吗？')) return
     const seeded = seedState()
-    // Use full-state replacement endpoint (transactional on the backend)
-    let serverOk = false
+    // PUT /api/state now returns the full canonical state after replacement
     try {
-      await api.put('/state', seeded)
-      serverOk = true
+      const state = await api.put<AppState>('/state', seeded)
+      projects.setItems(state.projects)
+      tasks.setItems(state.tasks)
+      blocks.setItems(state.blocks)
+      habits.setItems(state.habits)
+      habitEntries.setItems(state.habitEntries)
+      thesisStudents.setItems(state.thesisStudents)
+      researchLogs.setItems(state.researchLogs)
+      pomodoroSessions.setItems(state.pomodoroSessions)
     } catch {
       // Server unavailable — fall back to local-only reset
-    }
-    // Update local entity state from server (or seed if server was unavailable)
-    if (serverOk) {
-      const [p, t, b, h, he, ts, rl, ps] = await Promise.all([
-        projectsApi.list().catch(() => seeded.projects),
-        tasksApi.list().catch(() => seeded.tasks),
-        blocksApi.list().catch(() => seeded.blocks),
-        habitsApi.list().catch(() => seeded.habits),
-        habitEntriesApi.list().catch(() => seeded.habitEntries),
-        thesisStudentsApi.list().catch(() => seeded.thesisStudents),
-        researchLogsApi.list().catch(() => seeded.researchLogs),
-        pomodoroApi.list().catch(() => seeded.pomodoroSessions),
-      ])
-      projects.setItems(p)
-      tasks.setItems(t)
-      blocks.setItems(b)
-      habits.setItems(h)
-      habitEntries.setItems(he)
-      thesisStudents.setItems(ts)
-      researchLogs.setItems(rl)
-      pomodoroSessions.setItems(ps)
-    } else {
-      // Server unavailable: write seed directly to localStorage so entity hooks pick it up on reload
       localStorage.setItem('focus-planner-state', JSON.stringify(seeded))
       window.location.reload()
       return
@@ -226,7 +245,11 @@ export function SettingsPage() {
                       : '未连接本地后端，当前仅保存在浏览器本地。'}
             </span>
           </div>
-          <button type="button" className="outline-action danger" onClick={resetData}>
+          <button
+            type="button"
+            className="btn btn-danger outline-action danger"
+            onClick={resetData}
+          >
             <RotateCcw size={16} />
             恢复初始数据
           </button>
@@ -272,7 +295,9 @@ export function SettingsPage() {
               min={1}
               max={60}
               value={draft.longBreakDuration}
-              onChange={e => setDraft({ ...draft, longBreakDuration: Number(e.target.value) || 15 })}
+              onChange={e =>
+                setDraft({ ...draft, longBreakDuration: Number(e.target.value) || 15 })
+              }
             />
           </div>
           <div className="settings-row">
@@ -287,7 +312,7 @@ export function SettingsPage() {
             />
           </div>
           <div className="settings-form-actions">
-            <button type="submit" disabled={settingsSaving}>
+            <button type="submit" className="btn btn-primary" disabled={settingsSaving}>
               {settingsSaving ? '保存中...' : '保存番茄钟设置'}
             </button>
           </div>
@@ -324,7 +349,7 @@ export function SettingsPage() {
           </div>
           <div className="caldav-hint">在免打扰时段内，番茄钟自动暂停，不会发送通知。</div>
           <div className="settings-form-actions">
-            <button type="submit" disabled={settingsSaving}>
+            <button type="submit" className="btn btn-primary" disabled={settingsSaving}>
               {settingsSaving ? '保存中...' : '保存作息设置'}
             </button>
           </div>
@@ -348,7 +373,9 @@ export function SettingsPage() {
               onChange={e => setDraft({ ...draft, defaultPage: e.target.value as PageName })}
             >
               {pageOptions.map(p => (
-                <option key={p.value} value={p.value}>{p.label}</option>
+                <option key={p.value} value={p.value}>
+                  {p.label}
+                </option>
               ))}
             </select>
           </div>
@@ -361,7 +388,7 @@ export function SettingsPage() {
             每次保存后自动同步 CalDAV
           </label>
           <div className="settings-form-actions">
-            <button type="submit" disabled={settingsSaving}>
+            <button type="submit" className="btn btn-primary" disabled={settingsSaving}>
               {settingsSaving ? '保存中...' : '保存界面设置'}
             </button>
           </div>
@@ -378,11 +405,19 @@ export function SettingsPage() {
       >
         <div className="caldav-form">
           <div className="caldav-status">
-            {status?.configured && status?.syncEnabled
-              ? <><span className="caldav-dot green" /> 已启用同步</>
-              : status?.configured
-                ? <><span className="caldav-dot yellow" /> 已配置但未启用</>
-                : <><span className="caldav-dot gray" /> 未配置</>}
+            {status?.configured && status?.syncEnabled ? (
+              <>
+                <span className="caldav-dot green" /> 已启用同步
+              </>
+            ) : status?.configured ? (
+              <>
+                <span className="caldav-dot yellow" /> 已配置但未启用
+              </>
+            ) : (
+              <>
+                <span className="caldav-dot gray" /> 未配置
+              </>
+            )}
           </div>
 
           <form onSubmit={saveConfig}>
@@ -406,11 +441,19 @@ export function SettingsPage() {
             <label>应用专用密码</label>
             <input
               type="password"
-              placeholder={hasConfiguredPassword ? '已配置（留空则保持不变）' : 'iCloud 应用专用密码'}
+              placeholder={
+                hasConfiguredPassword ? '已配置（留空则保持不变）' : 'iCloud 应用专用密码'
+              }
               value={config.password}
-              onChange={e => { setConfig({ ...config, password: e.target.value }); setPasswordModified(true) }}
+              onChange={e => {
+                setConfig({ ...config, password: e.target.value })
+                setPasswordModified(true)
+              }}
             />
-            <div className="caldav-hint">iCloud 需要在 appleid.apple.com 生成应用专用密码{hasConfiguredPassword ? '。已配置密码，留空保存不会覆盖。' : ''}</div>
+            <div className="caldav-hint">
+              iCloud 需要在 appleid.apple.com 生成应用专用密码
+              {hasConfiguredPassword ? '。已配置密码，留空保存不会覆盖。' : ''}
+            </div>
 
             <label>日历 URL</label>
             <input
@@ -431,13 +474,13 @@ export function SettingsPage() {
             </label>
 
             <div className="caldav-actions">
-              <button type="submit" disabled={saving}>
+              <button type="submit" className="btn btn-primary" disabled={saving}>
                 {saving ? '保存中...' : '保存设置'}
               </button>
-              <button type="button" disabled={testing} onClick={testConn}>
+              <button type="button" className="btn btn-ghost" disabled={testing} onClick={testConn}>
                 {testing ? '测试中...' : '测试连接'}
               </button>
-              <button type="button" disabled={syncing} onClick={syncNow}>
+              <button type="button" className="btn btn-ghost" disabled={syncing} onClick={syncNow}>
                 {syncing ? '同步中...' : '立即同步'}
               </button>
             </div>
@@ -451,7 +494,11 @@ export function SettingsPage() {
               {status.pendingCreate > 0 && ' | ' + status.pendingCreate + ' 条待创建'}
               {status.errors > 0 && ' | ' + status.errors + ' 条失败'}
               {status.lastSyncAt && (
-                <> — 上次同步: {new Date(status.lastSyncAt).toLocaleString('zh-CN', { hour12: false })}</>
+                <>
+                  {' '}
+                  — 上次同步:{' '}
+                  {new Date(status.lastSyncAt).toLocaleString('zh-CN', { hour12: false })}
+                </>
               )}
               {status.lastSyncError && (
                 <div className="caldav-error">错误: {status.lastSyncError}</div>
@@ -484,7 +531,7 @@ function SettingsSection({
     <div className={`card wide settings-section ${open ? 'open' : ''}`}>
       <button
         type="button"
-        className="settings-section-header"
+        className="btn btn-ghost settings-section-header"
         onClick={() => onToggle(id)}
         aria-expanded={open ? 'true' : 'false'}
       >
@@ -494,11 +541,7 @@ function SettingsSection({
         </div>
         <span className={`settings-chevron ${open ? 'open' : ''}`}>›</span>
       </button>
-      {open && (
-        <div className="settings-section-body">
-          {children}
-        </div>
-      )}
+      {open && <div className="settings-section-body">{children}</div>}
     </div>
   )
 }

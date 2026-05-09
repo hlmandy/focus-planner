@@ -19,20 +19,32 @@ export function HabitsPage() {
   const today = todayKey()
 
   const habitEntryKeys = useMemo(
-    () => new Set(habitEntries.items.filter(entry => entry.done).map(entry => `${entry.habitId}:${entry.date}`)),
+    () =>
+      new Set(
+        habitEntries.items
+          .filter(entry => entry.done)
+          .map(entry => `${entry.habitId}:${entry.date}`),
+      ),
     [habitEntries.items],
   )
 
   const addHabit = () => {
     const title = newHabitTitle.trim()
     if (!title) return
-    const habit = { id: uid(), title, color: colors[habits.items.length % colors.length], createdAt: date }
+    const habit = {
+      id: uid(),
+      title,
+      color: colors[habits.items.length % colors.length],
+      createdAt: date,
+    }
     habits.create(habit).catch(reportApiError)
     setNewHabitTitle('')
   }
 
   const toggleHabit = (habitId: string, habitDate: string) => {
-    const existing = habitEntries.items.find(entry => entry.habitId === habitId && entry.date === habitDate)
+    const existing = habitEntries.items.find(
+      entry => entry.habitId === habitId && entry.date === habitDate,
+    )
     if (existing) {
       habitEntries.update(existing.id, { done: !existing.done }).catch(reportApiError)
     } else {
@@ -43,7 +55,9 @@ export function HabitsPage() {
   const deleteHabit = (habitId: string) => {
     habits.remove(habitId).catch(reportApiError)
     // Also delete entries for this habit
-    habitEntries.items.filter(e => e.habitId === habitId).forEach(e => habitEntries.remove(e.id).catch(reportApiError))
+    habitEntries.items
+      .filter(e => e.habitId === habitId)
+      .forEach(e => habitEntries.remove(e.id).catch(reportApiError))
   }
 
   const startEdit = (habitId: string, currentTitle: string) => {
@@ -76,10 +90,26 @@ export function HabitsPage() {
   return (
     <div className="habit-page">
       <div className="habit-week-header">
-        <button type="button" onClick={() => setDate(toDateKey(addDays(fromDateKey(date), -7)))}>‹</button>
-        <strong>{weekStart} - {weekEnd}</strong>
-        <button type="button" onClick={() => setDate(toDateKey(addDays(fromDateKey(date), 7)))}>›</button>
-        <button type="button" onClick={() => setDate(todayKey())}>今天</button>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => setDate(toDateKey(addDays(fromDateKey(date), -7)))}
+        >
+          ‹
+        </button>
+        <strong>
+          {weekStart} - {weekEnd}
+        </strong>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => setDate(toDateKey(addDays(fromDateKey(date), 7)))}
+        >
+          ›
+        </button>
+        <button type="button" className="btn btn-ghost" onClick={() => setDate(todayKey())}>
+          今天
+        </button>
       </div>
       <div className="habit-week-days">
         {weekDays.map(weekDate => {
@@ -124,21 +154,39 @@ export function HabitsPage() {
                 const done = habitEntryKeys.has(`${habit.id}:${dayKey}`)
                 const isToday = dayKey === today
                 return (
-                  <button key={dayKey} type="button" className={[done ? 'done' : '', isToday ? 'today' : ''].filter(Boolean).join(' ')} onClick={() => toggleHabit(habit.id, dayKey)} title={`${habit.title} ${dayKey}`}>
+                  <button
+                    key={dayKey}
+                    type="button"
+                    className={['btn btn-ghost', done ? 'done' : '', isToday ? 'today' : '']
+                      .filter(Boolean)
+                      .join(' ')}
+                    onClick={() => toggleHabit(habit.id, dayKey)}
+                    title={`${habit.title} ${dayKey}`}
+                  >
                     {done ? <Check size={15} /> : ''}
                   </button>
                 )
               })}
             </div>
-            <button type="button" className="habit-delete" onClick={() => deleteHabit(habit.id)} aria-label="删除习惯">
+            <button
+              type="button"
+              className="btn btn-danger habit-delete"
+              onClick={() => deleteHabit(habit.id)}
+              aria-label="删除习惯"
+            >
               <Trash2 size={14} />
             </button>
           </div>
         ))}
       </div>
       <div className="new-habit-inline">
-        <input value={newHabitTitle} onChange={event => setNewHabitTitle(event.target.value)} onKeyDown={event => event.key === 'Enter' && addHabit()} placeholder="输入习惯名称" />
-        <button type="button" onClick={addHabit}>
+        <input
+          value={newHabitTitle}
+          onChange={event => setNewHabitTitle(event.target.value)}
+          onKeyDown={event => event.key === 'Enter' && addHabit()}
+          placeholder="输入习惯名称"
+        />
+        <button type="button" className="btn btn-primary" onClick={addHabit}>
           <ListTodo size={17} />
           添加新习惯
         </button>

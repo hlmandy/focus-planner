@@ -29,7 +29,10 @@ function dateCompact(date: string): string {
 }
 
 function nowStamp(): string {
-  return new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z')
+  return new Date()
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}Z$/, 'Z')
 }
 
 export function buildIcs(params: {
@@ -98,13 +101,14 @@ export function parseMultistatusXml(xml: string): MultistatusItem[] {
   while ((match = responseRegex.exec(xml)) !== null) {
     const block = match[0]
     const href = decodeXmlEntities(
-      block.match(/<(?:\w+:)?href\b[^>]*>([\s\S]*?)<\/(?:\w+:)?href>/i)?.[1] || ''
+      block.match(/<(?:\w+:)?href\b[^>]*>([\s\S]*?)<\/(?:\w+:)?href>/i)?.[1] || '',
     ).trim()
     const etag = decodeXmlEntities(
-      block.match(/<(?:\w+:)?getetag\b[^>]*>([\s\S]*?)<\/(?:\w+:)?getetag>/i)?.[1] || ''
+      block.match(/<(?:\w+:)?getetag\b[^>]*>([\s\S]*?)<\/(?:\w+:)?getetag>/i)?.[1] || '',
     ).trim()
     const calData = decodeXmlEntities(
-      block.match(/<(?:\w+:)?calendar-data\b[^>]*>([\s\S]*?)<\/(?:\w+:)?calendar-data>/i)?.[1] || ''
+      block.match(/<(?:\w+:)?calendar-data\b[^>]*>([\s\S]*?)<\/(?:\w+:)?calendar-data>/i)?.[1] ||
+        '',
     )
     if (href) {
       results.push({ href, etag, icalendar: calData })
@@ -118,7 +122,7 @@ async function caldavRequest(
   method: string,
   url: string,
   headers: Record<string, string> = {},
-  body?: string
+  body?: string,
 ): Promise<{ status: number; headers: Headers; body: string }> {
   const resp = await fetch(url, {
     method,
@@ -133,11 +137,19 @@ async function caldavRequest(
   return { status: resp.status, headers: resp.headers, body: text }
 }
 
-export async function testConnection(config: CalDAVConfig): Promise<{ ok: boolean; message: string }> {
+export async function testConnection(
+  config: CalDAVConfig,
+): Promise<{ ok: boolean; message: string }> {
   try {
-    const resp = await caldavRequest(config, 'PROPFIND', config.calendarUrl, {
-      Depth: '0',
-    }, '<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:"><d:prop><d:displayname/></d:prop></d:propfind>')
+    const resp = await caldavRequest(
+      config,
+      'PROPFIND',
+      config.calendarUrl,
+      {
+        Depth: '0',
+      },
+      '<?xml version="1.0" encoding="utf-8"?><d:propfind xmlns:d="DAV:"><d:prop><d:displayname/></d:prop></d:propfind>',
+    )
     if (resp.status >= 200 && resp.status < 300) {
       return { ok: true, message: `连接成功 (HTTP ${resp.status})` }
     }
@@ -148,12 +160,18 @@ export async function testConnection(config: CalDAVConfig): Promise<{ ok: boolea
 }
 
 export async function listRemoteEvents(config: CalDAVConfig): Promise<MultistatusItem[]> {
-  const resp = await caldavRequest(config, 'PROPFIND', config.calendarUrl, {
-    Depth: '1',
-  }, `<?xml version="1.0" encoding="utf-8"?>
+  const resp = await caldavRequest(
+    config,
+    'PROPFIND',
+    config.calendarUrl,
+    {
+      Depth: '1',
+    },
+    `<?xml version="1.0" encoding="utf-8"?>
 <d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
   <d:prop><d:getetag/><c:calendar-data/></d:prop>
-</d:propfind>`)
+</d:propfind>`,
+  )
   if (resp.status < 200 || resp.status >= 300) {
     throw new Error(`PROPFIND failed: HTTP ${resp.status}`)
   }
@@ -163,14 +181,20 @@ export async function listRemoteEvents(config: CalDAVConfig): Promise<Multistatu
 export async function createRemoteEvent(
   config: CalDAVConfig,
   uid: string,
-  ics: string
+  ics: string,
 ): Promise<{ ok: boolean; eventUrl: string; etag: string; message?: string }> {
   const calendarUrl = config.calendarUrl.replace(/\/+$/, '')
   const eventUrl = `${calendarUrl}/${uid}.ics`
-  const resp = await caldavRequest(config, 'PUT', eventUrl, {
-    'Content-Type': 'text/calendar; charset=utf-8',
-    'If-None-Match': '*',
-  }, ics)
+  const resp = await caldavRequest(
+    config,
+    'PUT',
+    eventUrl,
+    {
+      'Content-Type': 'text/calendar; charset=utf-8',
+      'If-None-Match': '*',
+    },
+    ics,
+  )
   if (resp.status >= 200 && resp.status < 300) {
     const etag = resp.headers.get('etag') || ''
     return { ok: true, eventUrl, etag }
@@ -182,7 +206,7 @@ export async function updateRemoteEvent(
   config: CalDAVConfig,
   eventUrl: string,
   etag: string,
-  ics: string
+  ics: string,
 ): Promise<{ ok: boolean; etag: string; message?: string }> {
   const headers: Record<string, string> = {
     'Content-Type': 'text/calendar; charset=utf-8',
@@ -199,7 +223,7 @@ export async function updateRemoteEvent(
 export async function deleteRemoteEvent(
   config: CalDAVConfig,
   eventUrl: string,
-  etag: string
+  etag: string,
 ): Promise<{ ok: boolean; message?: string }> {
   const headers: Record<string, string> = {}
   if (etag) headers['If-Match'] = etag

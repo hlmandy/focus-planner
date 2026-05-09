@@ -119,19 +119,20 @@ focus-planner/
 
 前端通过 `src/api/` 按实体调用细粒度 REST API：
 
-| 实体 | 列出 | 创建 | 更新 | 删除 |
-|------|------|------|------|------|
-| Project | `GET /api/projects` | `POST /api/projects` | `PUT /api/projects/:id` | `DELETE /api/projects/:id` |
-| Task | `GET /api/tasks` | `POST /api/tasks` | `PUT /api/tasks/:id` | `DELETE /api/tasks/:id` |
-| Block | `GET /api/blocks` | `POST /api/blocks` | `PUT /api/blocks/:id` | `DELETE /api/blocks/:id` |
-| Habit | `GET /api/habits` | `POST /api/habits` | `PUT /api/habits/:id` | `DELETE /api/habits/:id` |
-| HabitEntry | `GET /api/habit-entries` | `POST /api/habit-entries` | `PUT /api/habit-entries/:id` | `DELETE /api/habit-entries/:id` |
-| ThesisStudent | `GET /api/thesis-students` | `POST /api/thesis-students` | `PUT /api/thesis-students/:id` | `DELETE /api/thesis-students/:id` |
-| ResearchLog | `GET /api/research-logs` | `POST /api/research-logs` | `PUT /api/research-logs/:id` | `DELETE /api/research-logs/:id` |
+| 实体            | 列出                         | 创建                          | 更新                             | 删除                                |
+| --------------- | ---------------------------- | ----------------------------- | -------------------------------- | ----------------------------------- |
+| Project         | `GET /api/projects`          | `POST /api/projects`          | `PUT /api/projects/:id`          | `DELETE /api/projects/:id`          |
+| Task            | `GET /api/tasks`             | `POST /api/tasks`             | `PUT /api/tasks/:id`             | `DELETE /api/tasks/:id`             |
+| Block           | `GET /api/blocks`            | `POST /api/blocks`            | `PUT /api/blocks/:id`            | `DELETE /api/blocks/:id`            |
+| Habit           | `GET /api/habits`            | `POST /api/habits`            | `PUT /api/habits/:id`            | `DELETE /api/habits/:id`            |
+| HabitEntry      | `GET /api/habit-entries`     | `POST /api/habit-entries`     | `PUT /api/habit-entries/:id`     | `DELETE /api/habit-entries/:id`     |
+| ThesisStudent   | `GET /api/thesis-students`   | `POST /api/thesis-students`   | `PUT /api/thesis-students/:id`   | `DELETE /api/thesis-students/:id`   |
+| ResearchLog     | `GET /api/research-logs`     | `POST /api/research-logs`     | `PUT /api/research-logs/:id`     | `DELETE /api/research-logs/:id`     |
 | PomodoroSession | `GET /api/pomodoro-sessions` | `POST /api/pomodoro-sessions` | `PUT /api/pomodoro-sessions/:id` | `DELETE /api/pomodoro-sessions/:id` |
-| UserSettings | `GET /api/settings` | `PUT /api/settings` | — | — |
+| UserSettings    | `GET /api/settings`          | `PUT /api/settings`           | —                                | —                                   |
 
 另有：
+
 - `GET/PUT /api/state` — 全量同步（兼容/备份）
 - `GET /api/search?q=` — 全局搜索（跨项目/任务/日记/学生）
 - `GET/PUT /api/caldav/config` — CalDAV 配置

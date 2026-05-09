@@ -139,7 +139,9 @@
 
 .hours {
   position: relative;
-  height: calc(var(--planner-header-height) + var(--planner-hour-height) * var(--planner-visible-hours));
+  height: calc(
+    var(--planner-header-height) + var(--planner-hour-height) * var(--planner-visible-hours)
+  );
   color: #748698;
   font-size: 12px;
 }
@@ -155,7 +157,9 @@
 .timeline {
   position: relative;
   min-width: 0;
-  height: calc(var(--planner-header-height) + var(--planner-hour-height) * var(--planner-visible-hours));
+  height: calc(
+    var(--planner-header-height) + var(--planner-hour-height) * var(--planner-visible-hours)
+  );
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -329,9 +333,10 @@
   text-decoration: line-through;
 }
 
-
 .time-block.now {
-  box-shadow: 0 0 0 2px rgba(184, 75, 63, 0.28), 0 10px 20px rgba(32, 34, 38, 0.13);
+  box-shadow:
+    0 0 0 2px rgba(184, 75, 63, 0.28),
+    0 10px 20px rgba(32, 34, 38, 0.13);
 }
 
 .drag-create-preview {

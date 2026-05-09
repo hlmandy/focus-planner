@@ -1,4 +1,11 @@
-import type { PageName, ProjectKind, ProjectStatus, ThesisStage, BlockViewStatus, Project } from './types'
+import type {
+  PageName,
+  ProjectKind,
+  ProjectStatus,
+  ThesisStage,
+  BlockViewStatus,
+  Project,
+} from './types'
 
 export const STORAGE_KEY = 'focus-planner-state-v1'
 export const DAY_START = 6 * 60
@@ -46,7 +53,10 @@ export const projectTemplateGoals: Record<ProjectKind, string> = {
   admin: '集中处理会议、邮件、报销、材料、申请和其他支持性事务。',
 }
 
-export const projectTaskTemplates: Record<ProjectKind, Array<{ title: string; children?: string[] }>> = {
+export const projectTaskTemplates: Record<
+  ProjectKind,
+  Array<{ title: string; children?: string[] }>
+> = {
   research: [
     { title: '研究问题与假设', children: ['明确核心问题', '列出可验证假设'] },
     { title: '文献与理论基础', children: ['整理关键文献', '提炼方法与空白'] },
@@ -176,13 +186,16 @@ export const china2026AdjustedWorkdays = new Set([
   '2026-10-10',
 ])
 
-const _calendarDayInfoCache = new Map<string, {
-  holidayName: string | undefined
-  isAdjustedWorkday: boolean
-  isRestDay: boolean
-  label: string
-  marker: string
-}>()
+const _calendarDayInfoCache = new Map<
+  string,
+  {
+    holidayName: string | undefined
+    isAdjustedWorkday: boolean
+    isRestDay: boolean
+    label: string
+    marker: string
+  }
+>()
 
 export const getCalendarDayInfo = (dateKey: string) => {
   const cached = _calendarDayInfoCache.get(dateKey)

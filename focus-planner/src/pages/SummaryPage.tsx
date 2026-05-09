@@ -1,30 +1,54 @@
 import { useMemo } from 'react'
 import { Copy, RotateCcw, Save } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
-import { durationText, timeText, blockTitleText, researchLogKindLabels, isProjectTask } from '../utils'
+import {
+  durationText,
+  timeText,
+  blockTitleText,
+  researchLogKindLabels,
+  isProjectTask,
+} from '../utils'
 
 export function SummaryPage() {
-  const { date, mode, setMode, setSecondsLeft, setIsRunning,
-    projects, tasks, blocks, habits, habitEntries, researchLogs, pomodoroSessions,
-    projectFilterId, setProjectFilterId } = useApp()
+  const {
+    date,
+    mode,
+    setMode,
+    setSecondsLeft,
+    setIsRunning,
+    projects,
+    tasks,
+    blocks,
+    habits,
+    habitEntries,
+    researchLogs,
+    pomodoroSessions,
+    projectFilterId,
+    setProjectFilterId,
+  } = useApp()
 
   const habitEntryKeys = useMemo(
-    () => new Set(habitEntries.items.filter((entry) => entry.done).map((entry) => `${entry.habitId}:${entry.date}`)),
+    () =>
+      new Set(
+        habitEntries.items
+          .filter(entry => entry.done)
+          .map(entry => `${entry.habitId}:${entry.date}`),
+      ),
     [habitEntries.items],
   )
 
   const tasksById = useMemo(
-    () => Object.fromEntries(tasks.items.map((task) => [task.id, task])),
+    () => Object.fromEntries(tasks.items.map(task => [task.id, task])),
     [tasks.items],
   )
 
   const projectsById = useMemo(
-    () => Object.fromEntries(projects.items.map((project) => [project.id, project])),
+    () => Object.fromEntries(projects.items.map(project => [project.id, project])),
     [projects.items],
   )
 
   const selectedDayBlocks = useMemo(
-    () => blocks.items.filter((block) => block.date === date),
+    () => blocks.items.filter(block => block.date === date),
     [blocks.items, date],
   )
 
@@ -34,28 +58,30 @@ export function SummaryPage() {
   )
 
   const selectedDayLogs = useMemo(
-    () => researchLogs.items
-      .filter((entry) => entry.date === date)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    () =>
+      researchLogs.items
+        .filter(entry => entry.date === date)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [researchLogs.items, date],
   )
 
-  const visibleTasks = useMemo(
-    () => tasks.items.filter((task) => isProjectTask(task)),
-    [tasks.items],
-  )
+  const visibleTasks = useMemo(() => tasks.items.filter(task => isProjectTask(task)), [tasks.items])
 
   // Daily summary markdown
   const markdown = useMemo(() => {
     const allBlocks = blocks.items
     const doneTasks = visibleTasks.filter(
-      (task) =>
+      task =>
         task.done &&
-        (task.createdAt === date || allBlocks.some((block) => block.taskId === task.id && block.date === date)),
+        (task.createdAt === date ||
+          allBlocks.some(block => block.taskId === task.id && block.date === date)),
     )
-    const completedBlocks = selectedDayBlocks.filter((block) => tasksById[block.taskId]?.done)
-    const completedMinutes = completedBlocks.reduce((sum, block) => sum + block.end - block.start, 0)
-    const doneHabits = habits.items.filter((habit) => habitEntryKeys.has(`${habit.id}:${date}`))
+    const completedBlocks = selectedDayBlocks.filter(block => tasksById[block.taskId]?.done)
+    const completedMinutes = completedBlocks.reduce(
+      (sum, block) => sum + block.end - block.start,
+      0,
+    )
+    const doneHabits = habits.items.filter(habit => habitEntryKeys.has(`${habit.id}:${date}`))
     const lines = [
       `# 今日总结 ${date}`,
       '',
@@ -68,22 +94,23 @@ export function SummaryPage() {
       '',
       '## 今日安排',
       ...(selectedDayBlocks.length
-        ? selectedDayBlocks.map((block) => {
+        ? selectedDayBlocks.map(block => {
             const task = tasksById[block.taskId]
-            const project = projectsById[task?.projectId ?? projects.items[0]?.id ?? 'academic-admin']
+            const project =
+              projectsById[task?.projectId ?? projects.items[0]?.id ?? 'academic-admin']
             const done = task?.done ? '[x]' : '[ ]'
-            const tags = task?.tags.length ? ` ${task.tags.map((tag) => `#${tag}`).join(' ')}` : ''
+            const tags = task?.tags.length ? ` ${task.tags.map(tag => `#${tag}`).join(' ')}` : ''
             const note = block.note.trim() ? `：${block.note.trim()}` : ''
             return `- ${done} ${timeText(block.start)}-${timeText(block.end)} ${blockTitleText(block, task)} (${project?.name ?? '工作项目'})${tags}${note}`
           })
         : ['- 无安排']),
       '',
       '## 已完成',
-      ...(doneTasks.length ? doneTasks.map((task) => `- [x] ${task.title}`) : ['- 无']),
+      ...(doneTasks.length ? doneTasks.map(task => `- [x] ${task.title}`) : ['- 无']),
       '',
       '## 研究日记',
       ...(selectedDayLogs.length
-        ? selectedDayLogs.map((entry) => {
+        ? selectedDayLogs.map(entry => {
             const project = projectsById[entry.projectId]
             const attachments = entry.attachments.length
               ? `；附件：${entry.attachments.join('，')}`
@@ -98,13 +125,26 @@ export function SummaryPage() {
       '',
       '## 习惯',
       ...(habits.items.length
-        ? habits.items.map((habit) =>
-            `${habitEntryKeys.has(`${habit.id}:${date}`) ? '- [x]' : '- [ ]'} ${habit.title}`,
+        ? habits.items.map(
+            habit =>
+              `${habitEntryKeys.has(`${habit.id}:${date}`) ? '- [x]' : '- [ ]'} ${habit.title}`,
           )
         : ['- 无']),
     ]
     return lines.join('\n')
-  }, [visibleTasks, date, blocks.items, habits.items, projects.items, selectedDayBlocks, selectedDayMinutes, selectedDayLogs, tasksById, projectsById, habitEntryKeys])
+  }, [
+    visibleTasks,
+    date,
+    blocks.items,
+    habits.items,
+    projects.items,
+    selectedDayBlocks,
+    selectedDayMinutes,
+    selectedDayLogs,
+    tasksById,
+    projectsById,
+    habitEntryKeys,
+  ])
 
   // Project export markdown
   const projectMarkdown = useMemo(() => {
@@ -112,12 +152,16 @@ export function SummaryPage() {
     const project = projectsById[projectFilterId]
     if (!project) return ''
 
-    const projectTasks = tasks.items.filter(t => t.projectId === projectFilterId && isProjectTask(t))
+    const projectTasks = tasks.items.filter(
+      t => t.projectId === projectFilterId && isProjectTask(t),
+    )
     const projectBlocks = blocks.items.filter(b => {
       const task = tasksById[b.taskId]
       return task?.projectId === projectFilterId
     })
-    const projectLogs = researchLogs.items.filter(e => e.projectId === projectFilterId).sort((a, b) => b.date.localeCompare(a.date))
+    const projectLogs = researchLogs.items
+      .filter(e => e.projectId === projectFilterId)
+      .sort((a, b) => b.date.localeCompare(a.date))
     const projectPomodoros = pomodoroSessions.items.filter(s => s.projectId === projectFilterId)
     const totalMinutes = projectPomodoros.reduce((sum, s) => sum + s.minutes, 0)
 
@@ -141,7 +185,9 @@ export function SummaryPage() {
       '## 研究日记',
       ...(projectLogs.length
         ? projectLogs.map(entry => {
-            const attachments = entry.attachments.length ? `；附件：${entry.attachments.join('，')}` : ''
+            const attachments = entry.attachments.length
+              ? `；附件：${entry.attachments.join('，')}`
+              : ''
             const source = entry.source ? `；来源：${entry.source}` : ''
             const note = entry.note ? `\n  > ${entry.note}` : ''
             const findings = entry.keyFindings ? `\n  > 关键结论：${entry.keyFindings}` : ''
@@ -153,14 +199,24 @@ export function SummaryPage() {
       '',
       '## 时间块记录',
       ...(projectBlocks.length
-        ? projectBlocks.sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start).map(b => {
-            const task = tasksById[b.taskId]
-            return `- ${b.date} ${timeText(b.start)}-${timeText(b.end)} ${task?.title ?? '未命名'}${b.note ? `：${b.note}` : ''}`
-          })
+        ? projectBlocks
+            .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start)
+            .map(b => {
+              const task = tasksById[b.taskId]
+              return `- ${b.date} ${timeText(b.start)}-${timeText(b.end)} ${task?.title ?? '未命名'}${b.note ? `：${b.note}` : ''}`
+            })
         : ['- 暂无时间块']),
     ]
     return lines.filter((l, i) => !(l === '' && i === 0)).join('\n')
-  }, [projectFilterId, projectsById, tasks.items, blocks.items, researchLogs.items, pomodoroSessions.items, tasksById])
+  }, [
+    projectFilterId,
+    projectsById,
+    tasks.items,
+    blocks.items,
+    researchLogs.items,
+    pomodoroSessions.items,
+    tasksById,
+  ])
 
   const resetPomodoro = (nextMode = mode) => {
     setMode(nextMode)
@@ -184,31 +240,55 @@ export function SummaryPage() {
     <div className="summary-page">
       {/* Project selector */}
       <div className="summary-controls">
-        <select value={projectFilterId} onChange={e => setProjectFilterId(e.target.value)} aria-label="选择项目">
+        <select
+          value={projectFilterId}
+          onChange={e => setProjectFilterId(e.target.value)}
+          aria-label="选择项目"
+        >
           <option value="all">今日总结</option>
-          {projects.items.filter(p => p.status !== 'archived').map(p => (
-            <option key={p.id} value={p.id}>{p.name} — 项目报告</option>
-          ))}
+          {projects.items
+            .filter(p => p.status !== 'archived')
+            .map(p => (
+              <option key={p.id} value={p.id}>
+                {p.name} — 项目报告
+              </option>
+            ))}
         </select>
         {projectFilterId !== 'all' && (
-          <button type="button" className="outline-action" onClick={() => setProjectFilterId('all')}>回到今日总结</button>
+          <button
+            type="button"
+            className="btn btn-ghost outline-action"
+            onClick={() => setProjectFilterId('all')}
+          >
+            回到今日总结
+          </button>
         )}
       </div>
 
       <textarea readOnly value={projectFilterId === 'all' ? markdown : projectMarkdown} />
       <div className="summary-actions">
-        <button onClick={() => copyToClipboard(projectFilterId === 'all' ? markdown : projectMarkdown)}>
+        <button
+          className="btn btn-ghost"
+          onClick={() => copyToClipboard(projectFilterId === 'all' ? markdown : projectMarkdown)}
+        >
           <Copy size={16} />
           复制
         </button>
-        <button onClick={() => exportMarkdown(
-          projectFilterId === 'all' ? markdown : projectMarkdown,
-          projectFilterId === 'all' ? `daily-summary-${date}.md` : `project-${projectsById[projectFilterId]?.id ?? 'export'}.md`
-        )}>
+        <button
+          className="btn btn-ghost"
+          onClick={() =>
+            exportMarkdown(
+              projectFilterId === 'all' ? markdown : projectMarkdown,
+              projectFilterId === 'all'
+                ? `daily-summary-${date}.md`
+                : `project-${projectsById[projectFilterId]?.id ?? 'export'}.md`,
+            )
+          }
+        >
           <Save size={16} />
           导出
         </button>
-        <button onClick={() => resetPomodoro()}>
+        <button className="btn btn-ghost" onClick={() => resetPomodoro()}>
           <RotateCcw size={16} />
           重置番茄钟
         </button>
@@ -217,7 +297,11 @@ export function SummaryPage() {
   )
 }
 
-function renderTaskTree(task: { id: string; title: string; done: boolean; parentId?: string }, allTasks: { id: string; title: string; done: boolean; parentId?: string }[], depth: number): string {
+function renderTaskTree(
+  task: { id: string; title: string; done: boolean; parentId?: string },
+  allTasks: { id: string; title: string; done: boolean; parentId?: string }[],
+  depth: number,
+): string {
   const prefix = '  '.repeat(depth)
   const marker = task.done ? '[x]' : '[ ]'
   const children = allTasks.filter(t => t.parentId === task.id)

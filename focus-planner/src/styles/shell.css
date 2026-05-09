@@ -4,8 +4,7 @@
   grid-template-columns: 218px minmax(0, 1fr);
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(250, 255, 247, 0.94), rgba(238, 248, 233, 0.98)),
-    var(--bg);
+    linear-gradient(180deg, rgba(250, 255, 247, 0.94), rgba(238, 248, 233, 0.98)), var(--bg);
   color: var(--ink);
 }
 

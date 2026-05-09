@@ -5,7 +5,14 @@
 export const PROJECT_KINDS = ['research', 'paper', 'student', 'admin'] as const
 export const PROJECT_STATUSES = ['active', 'paused', 'done', 'archived'] as const
 export const THESIS_STAGES = ['topic', 'proposal', 'draft', 'revision', 'final'] as const
-export const RESEARCH_LOG_KINDS = ['literature', 'experiment', 'analysis', 'writing', 'meeting', 'admin'] as const
+export const RESEARCH_LOG_KINDS = [
+  'literature',
+  'experiment',
+  'analysis',
+  'writing',
+  'meeting',
+  'admin',
+] as const
 export const TASK_SOURCES = ['task', 'schedule'] as const
 export const READING_STATUSES = ['unread', 'reading', 'read', 'reviewed'] as const
 
@@ -109,18 +116,25 @@ export interface AppState {
 }
 
 export type PersistenceStatus = 'checking' | 'server' | 'local' | 'saving' | 'error'
-export type PageName = 'today' | 'planner' | 'projects' | 'research-log' | 'habits' | 'summary' | 'settings'
+export type PageName =
+  | 'today'
+  | 'planner'
+  | 'projects'
+  | 'research-log'
+  | 'habits'
+  | 'summary'
+  | 'settings'
 export type BlockViewStatus = 'done' | 'now' | 'todo'
 
 export interface UserSettings {
-  workDuration: number        // pomodoro work duration in minutes (default 25)
-  breakDuration: number       // short break in minutes (default 5)
-  longBreakDuration: number   // long break in minutes (default 15)
-  longBreakInterval: number   // sessions before long break (default 4)
-  sleepStart: string          // do-not-disturb start, HH:mm (default '22:00')
-  sleepEnd: string            // do-not-disturb end, HH:mm (default '07:00')
-  defaultPage: PageName       // page to show on startup (default 'today')
-  autoSyncCalDAV: boolean     // auto-sync on state change (default false)
+  workDuration: number // pomodoro work duration in minutes (default 25)
+  breakDuration: number // short break in minutes (default 5)
+  longBreakDuration: number // long break in minutes (default 15)
+  longBreakInterval: number // sessions before long break (default 4)
+  sleepStart: string // do-not-disturb start, HH:mm (default '22:00')
+  sleepEnd: string // do-not-disturb end, HH:mm (default '07:00')
+  defaultPage: PageName // page to show on startup (default 'today')
+  autoSyncCalDAV: boolean // auto-sync on state change (default false)
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {

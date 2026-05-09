@@ -3,27 +3,31 @@ import { reportApiError } from '../api/client'
 import { CalendarClock, Check, Circle, Clock, ListTodo, Plus, Save, Trash2, X } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import {
-  isProjectTask, getTaskDescendantIds, timeText, durationText,
-  getBlockViewStatus, uid, parseQuickInput, clamp, snap, getFallbackProjectId,
+  isProjectTask,
+  getTaskDescendantIds,
+  timeText,
+  durationText,
+  getBlockViewStatus,
+  uid,
+  parseQuickInput,
+  clamp,
+  snap,
+  getFallbackProjectId,
 } from '../utils'
 import { DAY_START, DAY_END, MIN_BLOCK } from '../constants'
 import type { ScheduleBlock, Task } from '../../shared/types'
 
 interface BlockEditForm {
   title: string
-  start: string  // HH:mm
-  end: string    // HH:mm
+  start: string // HH:mm
+  end: string // HH:mm
   projectId: string
   note: string
   done: boolean
 }
 
 export function TodayPage() {
-  const {
-    tasks, blocks, projects, date,
-    setPage, projectFilterId,
-    pomodoroSessions,
-  } = useApp()
+  const { tasks, blocks, projects, date, setPage, projectFilterId, pomodoroSessions } = useApp()
 
   // --- Quick-add state ---
   const [quickInput, setQuickInput] = useState('')
@@ -32,12 +36,18 @@ export function TodayPage() {
   // --- Inline editor state ---
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<BlockEditForm>({
-    title: '', start: '', end: '', projectId: '', note: '', done: false,
+    title: '',
+    start: '',
+    end: '',
+    projectId: '',
+    note: '',
+    done: false,
   })
 
   // --- Derived data ---
   const visibleTasks = tasks.items.filter(
-    (task) => isProjectTask(task) && (projectFilterId === 'all' || task.projectId === projectFilterId),
+    task =>
+      isProjectTask(task) && (projectFilterId === 'all' || task.projectId === projectFilterId),
   )
 
   const todayBlocks = useMemo(() => {
@@ -66,10 +76,7 @@ export function TodayPage() {
   })()
 
   // Block IDs that already have tasks scheduled today
-  const scheduledTaskIds = useMemo(
-    () => new Set(todayBlocks.map(b => b.taskId)),
-    [todayBlocks],
-  )
+  const scheduledTaskIds = useMemo(() => new Set(todayBlocks.map(b => b.taskId)), [todayBlocks])
 
   // Unscheduled tasks: project tasks not yet in today's blocks
   const unscheduledTasks = useMemo(() => {
@@ -91,18 +98,33 @@ export function TodayPage() {
 
   // --- Actions ---
 
-  const effectiveQuickProject = quickProject || (projectFilterId !== 'all' ? projectFilterId : getFallbackProjectId(projects.items, projects.items[0]?.id ?? ''))
+  const effectiveQuickProject =
+    quickProject ||
+    (projectFilterId !== 'all'
+      ? projectFilterId
+      : getFallbackProjectId(projects.items, projects.items[0]?.id ?? ''))
 
   const addQuickItem = () => {
     if (!quickInput.trim()) return
     const fallbackStart = clamp(snap(nowMinutes + 30), DAY_START, DAY_END - 30)
     const parsed = parseQuickInput(quickInput, fallbackStart, DAY_START, DAY_END)
     const task: Task = {
-      id: uid(), title: parsed.title, projectId: effectiveQuickProject,
-      parentId: undefined, tags: parsed.tags, done: false, createdAt: date, source: 'task',
+      id: uid(),
+      title: parsed.title,
+      projectId: effectiveQuickProject,
+      parentId: undefined,
+      tags: parsed.tags,
+      done: false,
+      createdAt: date,
+      source: 'task',
     }
     const block: ScheduleBlock = {
-      id: uid(), taskId: task.id, date, start: parsed.start, end: parsed.start + 30, note: '',
+      id: uid(),
+      taskId: task.id,
+      date,
+      start: parsed.start,
+      end: parsed.start + 30,
+      note: '',
     }
     tasks.create(task).catch(reportApiError)
     blocks.create(block).catch(reportApiError)
@@ -175,18 +197,22 @@ export function TodayPage() {
     const promoteSource = task.source === 'schedule' && editForm.title.trim() !== ''
     const newTitle = editForm.title.trim() || task.title
 
-    tasks.update(task.id, {
-      title: newTitle,
-      projectId: editForm.projectId,
-      done: editForm.done,
-      ...(promoteSource ? { source: 'task' as const } : {}),
-    }).catch(reportApiError)
+    tasks
+      .update(task.id, {
+        title: newTitle,
+        projectId: editForm.projectId,
+        done: editForm.done,
+        ...(promoteSource ? { source: 'task' as const } : {}),
+      })
+      .catch(reportApiError)
 
-    blocks.update(block.id, {
-      start: clamp(newStart, DAY_START, newEnd - MIN_BLOCK),
-      end: clamp(newEnd, newStart + MIN_BLOCK, DAY_END),
-      note: editForm.note,
-    }).catch(reportApiError)
+    blocks
+      .update(block.id, {
+        start: clamp(newStart, DAY_START, newEnd - MIN_BLOCK),
+        end: clamp(newEnd, newStart + MIN_BLOCK, DAY_END),
+        note: editForm.note,
+      })
+      .catch(reportApiError)
 
     setEditingBlockId(null)
   }
@@ -195,12 +221,15 @@ export function TodayPage() {
 
   const scheduleTaskQuick = (taskId: string) => {
     // Find the next available 30-min slot after the last block, or now+30
-    const lastEnd = todayBlocks.length > 0
-      ? Math.max(...todayBlocks.map(b => b.end))
-      : nowMinutes
+    const lastEnd = todayBlocks.length > 0 ? Math.max(...todayBlocks.map(b => b.end)) : nowMinutes
     const start = clamp(snap(lastEnd + 30), DAY_START, DAY_END - 30)
     const block: ScheduleBlock = {
-      id: uid(), taskId, date, start, end: start + 30, note: '',
+      id: uid(),
+      taskId,
+      date,
+      start,
+      end: start + 30,
+      note: '',
     }
     blocks.create(block).catch(reportApiError)
   }
@@ -225,7 +254,9 @@ export function TodayPage() {
         >
           <option value="">— 项目 —</option>
           {projects.items.map(p => (
-            <option key={p.id} value={p.id}>{p.name}</option>
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
           ))}
         </select>
         <button type="button" className="btn btn-primary" onClick={addQuickItem} aria-label="添加">
@@ -242,7 +273,9 @@ export function TodayPage() {
         </div>
         <div className="today-stat-pill">
           <Check size={14} />
-          <span>{completedBlocks}/{todayBlocks.length} 完成</span>
+          <span>
+            {completedBlocks}/{todayBlocks.length} 完成
+          </span>
         </div>
         <div className="today-stat-pill">
           <Clock size={14} />
@@ -285,21 +318,23 @@ export function TodayPage() {
                     <button
                       type="button"
                       className="btn btn-ghost today-block-status"
-                      onClick={e => { e.stopPropagation(); toggleBlockTask(block.id) }}
+                      onClick={e => {
+                        e.stopPropagation()
+                        toggleBlockTask(block.id)
+                      }}
                       aria-label="切换完成状态"
                     >
                       {isDone ? <Check size={17} /> : <Circle size={17} />}
                     </button>
                     <span className="today-block-title">{task?.title || '未命名'}</span>
-                    {project && (
-                      <span className="today-block-project">
-                        {project.name}
-                      </span>
-                    )}
+                    {project && <span className="today-block-project">{project.name}</span>}
                     <button
                       type="button"
                       className="btn btn-danger today-block-delete"
-                      onClick={e => { e.stopPropagation(); deleteBlock(block.id) }}
+                      onClick={e => {
+                        e.stopPropagation()
+                        deleteBlock(block.id)
+                      }}
                       aria-label="删除时间块"
                     >
                       <Trash2 size={14} />
@@ -322,7 +357,9 @@ export function TodayPage() {
                           aria-label="项目"
                         >
                           {projects.items.map(p => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -360,13 +397,25 @@ export function TodayPage() {
                         rows={2}
                       />
                       <div className="editor-actions">
-                        <button type="button" className="btn btn-primary editor-save" onClick={saveEditBlock}>
+                        <button
+                          type="button"
+                          className="btn btn-primary editor-save"
+                          onClick={saveEditBlock}
+                        >
                           <Save size={14} /> 保存
                         </button>
-                        <button type="button" className="btn btn-ghost editor-cancel" onClick={cancelEditBlock}>
+                        <button
+                          type="button"
+                          className="btn btn-ghost editor-cancel"
+                          onClick={cancelEditBlock}
+                        >
                           <X size={14} /> 取消
                         </button>
-                        <button type="button" className="btn btn-danger editor-delete" onClick={() => deleteBlock(block.id)}>
+                        <button
+                          type="button"
+                          className="btn btn-danger editor-delete"
+                          onClick={() => deleteBlock(block.id)}
+                        >
                           <Trash2 size={14} /> 删除
                         </button>
                       </div>
@@ -377,7 +426,11 @@ export function TodayPage() {
             })}
           </div>
         )}
-        <button type="button" className="btn btn-ghost outline-action small" onClick={() => setPage('planner')}>
+        <button
+          type="button"
+          className="btn btn-ghost outline-action small"
+          onClick={() => setPage('planner')}
+        >
           <CalendarClock size={15} />
           去规划表
         </button>
@@ -388,7 +441,9 @@ export function TodayPage() {
         <div className="today-section-header">
           <ListTodo size={18} />
           <span>待办事项</span>
-          <em>{visibleTasks.filter(t => t.done).length}/{visibleTasks.length} 已完成</em>
+          <em>
+            {visibleTasks.filter(t => t.done).length}/{visibleTasks.length} 已完成
+          </em>
         </div>
 
         {/* Unscheduled tasks with quick-schedule */}
@@ -398,16 +453,22 @@ export function TodayPage() {
             {unscheduledTasks.map(task => {
               const project = projectsById[task.projectId]
               return (
-                <div key={task.id} className="todo" draggable onDragStart={event => event.dataTransfer.setData('text/plain', task.id)}>
-                  <button type="button" className="btn btn-ghost" onClick={() => toggleTodo(task.id)} aria-label="切换完成状态">
+                <div
+                  key={task.id}
+                  className="todo"
+                  draggable
+                  onDragStart={event => event.dataTransfer.setData('text/plain', task.id)}
+                >
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => toggleTodo(task.id)}
+                    aria-label="切换完成状态"
+                  >
                     {task.done ? <Check size={17} /> : <Circle size={17} />}
                   </button>
                   <span>{task.title}</span>
-                  {project && (
-                    <span className="today-block-project">
-                      {project.name}
-                    </span>
-                  )}
+                  {project && <span className="today-block-project">{project.name}</span>}
                   <button
                     type="button"
                     className="btn btn-ghost today-schedule-btn"
@@ -416,7 +477,12 @@ export function TodayPage() {
                   >
                     <CalendarClock size={13} />
                   </button>
-                  <button type="button" className="btn btn-danger" onClick={() => deleteTodo(task.id)} aria-label="删除 TODO">
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() => deleteTodo(task.id)}
+                    aria-label="删除 TODO"
+                  >
                     <Trash2 size={15} />
                   </button>
                 </div>
@@ -428,17 +494,34 @@ export function TodayPage() {
         {/* Already-scheduled tasks (done or not) that are in the task list */}
         {visibleTasks.filter(t => scheduledTaskIds.has(t.id)).length > 0 && (
           <div className="task-strip">
-            {visibleTasks.filter(t => scheduledTaskIds.has(t.id)).map(task => (
-              <div key={task.id} className={`todo ${task.done ? 'done' : ''}`} draggable onDragStart={event => event.dataTransfer.setData('text/plain', task.id)}>
-                <button type="button" className="btn btn-ghost" onClick={() => toggleTodo(task.id)} aria-label="切换完成状态">
-                  {task.done ? <Check size={17} /> : <Circle size={17} />}
-                </button>
-                <span>{task.title}</span>
-                <button type="button" className="btn btn-danger" onClick={() => deleteTodo(task.id)} aria-label="删除 TODO">
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            ))}
+            {visibleTasks
+              .filter(t => scheduledTaskIds.has(t.id))
+              .map(task => (
+                <div
+                  key={task.id}
+                  className={`todo ${task.done ? 'done' : ''}`}
+                  draggable
+                  onDragStart={event => event.dataTransfer.setData('text/plain', task.id)}
+                >
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => toggleTodo(task.id)}
+                    aria-label="切换完成状态"
+                  >
+                    {task.done ? <Check size={17} /> : <Circle size={17} />}
+                  </button>
+                  <span>{task.title}</span>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() => deleteTodo(task.id)}
+                    aria-label="删除 TODO"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              ))}
           </div>
         )}
 

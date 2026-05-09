@@ -10,6 +10,7 @@ export const pomodoroApi = {
     const suffix = qs.toString() ? `?${qs}` : ''
     return api.get<{ items: PomodoroSession[] }>(`/pomodoro-sessions${suffix}`).then(r => r.items)
   },
-  create: (body: Omit<PomodoroSession, 'id'> & { id: string }) => api.post<{ ok: true }>('/pomodoro-sessions', body),
+  create: (body: Omit<PomodoroSession, 'id'> & { id: string }) =>
+    api.post<{ ok: true }>('/pomodoro-sessions', body),
   delete: (id: string) => api.delete(`/pomodoro-sessions/${id}`),
 }

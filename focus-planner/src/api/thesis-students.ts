@@ -8,7 +8,9 @@ export const thesisStudentsApi = {
     const suffix = qs.toString() ? `?${qs}` : ''
     return api.get<{ items: ThesisStudent[] }>(`/thesis-students${suffix}`).then(r => r.items)
   },
-  create: (body: Omit<ThesisStudent, 'id'> & { id: string }) => api.post<{ ok: true }>('/thesis-students', body),
-  update: (id: string, body: Partial<ThesisStudent>) => api.patch<{ ok: true }>(`/thesis-students/${id}`, body),
+  create: (body: Omit<ThesisStudent, 'id'> & { id: string }) =>
+    api.post<{ ok: true }>('/thesis-students', body),
+  update: (id: string, body: Partial<ThesisStudent>) =>
+    api.patch<{ ok: true }>(`/thesis-students/${id}`, body),
   delete: (id: string) => api.delete(`/thesis-students/${id}`),
 }

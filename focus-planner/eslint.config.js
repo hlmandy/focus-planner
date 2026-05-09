@@ -21,10 +21,7 @@ export default defineConfig([
   },
   {
     files: ['server/**/*.ts'],
-    extends: [
-      js.configs.recommended,
-      tseslint.configs.recommended,
-    ],
+    extends: [js.configs.recommended, tseslint.configs.recommended],
     languageOptions: {
       globals: globals.node,
     },
@@ -34,9 +31,6 @@ export default defineConfig([
   },
   {
     files: ['shared/**/*.ts'],
-    extends: [
-      js.configs.recommended,
-      tseslint.configs.recommended,
-    ],
+    extends: [js.configs.recommended, tseslint.configs.recommended],
   },
 ])

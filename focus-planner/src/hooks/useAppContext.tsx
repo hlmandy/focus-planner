@@ -1,4 +1,12 @@
-import { createContext, useContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
 import type { AppState, PageName, PersistenceStatus, UserSettings } from '../../shared/types'
 import { DEFAULT_USER_SETTINGS } from '../../shared/types'
 import { settingsApi } from '../api/settings'
@@ -72,7 +80,26 @@ export function AppProvider({
   children,
   initial,
 }: {
-  value: Omit<AppContextValue, 'state' | 'projects' | 'tasks' | 'blocks' | 'habits' | 'habitEntries' | 'thesisStudents' | 'researchLogs' | 'pomodoroSessions' | 'settings' | 'updateSettings' | 'stopwatchSeconds' | 'setStopwatchSeconds' | 'stopwatchRunning' | 'setStopwatchRunning' | 'stopwatchProjectId' | 'setStopwatchProjectId'>
+  value: Omit<
+    AppContextValue,
+    | 'state'
+    | 'projects'
+    | 'tasks'
+    | 'blocks'
+    | 'habits'
+    | 'habitEntries'
+    | 'thesisStudents'
+    | 'researchLogs'
+    | 'pomodoroSessions'
+    | 'settings'
+    | 'updateSettings'
+    | 'stopwatchSeconds'
+    | 'setStopwatchSeconds'
+    | 'stopwatchRunning'
+    | 'setStopwatchRunning'
+    | 'stopwatchProjectId'
+    | 'setStopwatchProjectId'
+  >
   children: ReactNode
   initial: AppState
 }) {
@@ -99,41 +126,57 @@ export function AppProvider({
   // Stopwatch state
   const [stopwatchSeconds, setStopwatchSeconds] = useState(0)
   const [stopwatchRunning, setStopwatchRunning] = useState(false)
-  const [stopwatchProjectId, setStopwatchProjectId] = useState(initial.projects[0]?.id ?? 'research-topic-a')
+  const [stopwatchProjectId, setStopwatchProjectId] = useState(
+    initial.projects[0]?.id ?? 'research-topic-a',
+  )
 
   // Backward-compat flat state — memoized but only exposed for legacy consumers.
-  const state = useMemo<AppState>(() => ({
-    projects: projects.items,
-    tasks: tasks.items,
-    blocks: blocks.items,
-    habits: habits.items,
-    habitEntries: habitEntries.items,
-    thesisStudents: thesisStudents.items,
-    researchLogs: researchLogs.items,
-    pomodoroSessions: pomodoroSessions.items,
-  }), [projects.items, tasks.items, blocks.items, habits.items, habitEntries.items, thesisStudents.items, researchLogs.items, pomodoroSessions.items])
+  const state = useMemo<AppState>(
+    () => ({
+      projects: projects.items,
+      tasks: tasks.items,
+      blocks: blocks.items,
+      habits: habits.items,
+      habitEntries: habitEntries.items,
+      thesisStudents: thesisStudents.items,
+      researchLogs: researchLogs.items,
+      pomodoroSessions: pomodoroSessions.items,
+    }),
+    [
+      projects.items,
+      tasks.items,
+      blocks.items,
+      habits.items,
+      habitEntries.items,
+      thesisStudents.items,
+      researchLogs.items,
+      pomodoroSessions.items,
+    ],
+  )
 
   return (
-    <AppContext.Provider value={{
-      state,
-      projects,
-      tasks,
-      blocks,
-      habits,
-      habitEntries,
-      thesisStudents,
-      researchLogs,
-      pomodoroSessions,
-      settings,
-      updateSettings,
-      stopwatchSeconds,
-      setStopwatchSeconds,
-      stopwatchRunning,
-      setStopwatchRunning,
-      stopwatchProjectId,
-      setStopwatchProjectId,
-      ...value,
-    }}>
+    <AppContext.Provider
+      value={{
+        state,
+        projects,
+        tasks,
+        blocks,
+        habits,
+        habitEntries,
+        thesisStudents,
+        researchLogs,
+        pomodoroSessions,
+        settings,
+        updateSettings,
+        stopwatchSeconds,
+        setStopwatchSeconds,
+        stopwatchRunning,
+        setStopwatchRunning,
+        stopwatchProjectId,
+        setStopwatchProjectId,
+        ...value,
+      }}
+    >
       {children}
     </AppContext.Provider>
   )
