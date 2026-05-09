@@ -20,32 +20,35 @@ export function reportApiError(error: unknown) {
   }
 }
 
+function tryParseJson(text: string): unknown {
+  try {
+    return text ? JSON.parse(text) : null
+  } catch {
+    return null
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, {
     headers: { 'content-type': 'application/json', ...init?.headers },
     ...init,
   })
+
+  const text = await response.text()
+  const body = tryParseJson(text) as Record<string, unknown> | null
+
   if (!response.ok) {
-    const text = await response.text()
-    let errorMsg = `API error ${response.status}`
-    if (text) {
-      try {
-        const body = JSON.parse(text) as Record<string, unknown>
-        errorMsg =
-          typeof body.error === 'string'
-            ? body.error
-            : typeof body.error === 'object' && body.error !== null && 'message' in body.error
-              ? String((body.error as Record<string, unknown>).message)
-              : errorMsg
-      } catch {
-        /* non-JSON error body — use default message */
-      }
-    }
+    const error = body?.error
+    const errorMsg =
+      typeof error === 'string'
+        ? error
+        : typeof error === 'object' && error !== null && 'message' in error
+          ? String((error as Record<string, unknown>).message)
+          : `API error ${response.status}`
     throw new ApiError(response.status, errorMsg)
   }
-  // Handle empty responses (e.g. 204 No Content)
-  const text = await response.text()
-  return text ? (JSON.parse(text) as T) : (null as T)
+
+  return body as T
 }
 
 export const api = {

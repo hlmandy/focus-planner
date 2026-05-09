@@ -23,10 +23,7 @@ export function useEntityResource<T extends { id: string }>(
   const commitItems = useCallback(
     (updater: T[] | ((prev: T[]) => T[])) => {
       setItems(prev => {
-        const next =
-          typeof updater === 'function'
-            ? (updater as (prev: T[]) => T[])(prev)
-            : updater
+        const next = typeof updater === 'function' ? (updater as (prev: T[]) => T[])(prev) : updater
         itemsRef.current = next
         localStorage.setItem(`cache_${key}`, JSON.stringify(next))
         return next
