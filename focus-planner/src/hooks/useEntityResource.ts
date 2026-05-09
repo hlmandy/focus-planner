@@ -18,11 +18,19 @@ export function useEntityResource<T extends { id: string }>(
     itemsRef.current = items
   })
 
-  // Sync to localStorage whenever items change (cache for offline fallback)
+  // Sync to localStorage whenever items change (cache for offline fallback).
+  // Supports both direct array and functional updater to avoid concurrent-overwrite.
   const commitItems = useCallback(
-    (next: T[]) => {
-      setItems(next)
-      localStorage.setItem(`cache_${key}`, JSON.stringify(next))
+    (updater: T[] | ((prev: T[]) => T[])) => {
+      setItems(prev => {
+        const next =
+          typeof updater === 'function'
+            ? (updater as (prev: T[]) => T[])(prev)
+            : updater
+        itemsRef.current = next
+        localStorage.setItem(`cache_${key}`, JSON.stringify(next))
+        return next
+      })
     },
     [key],
   )
@@ -62,12 +70,12 @@ export function useEntityResource<T extends { id: string }>(
 
   const create = useCallback(
     async (body: T) => {
-      commitItems([...itemsRef.current, body])
+      commitItems(prev => [...prev, body])
       try {
         await apiCreate(body)
       } catch (err) {
         // Rollback: remove the item we just added
-        commitItems(itemsRef.current.filter(x => x.id !== body.id))
+        commitItems(prev => prev.filter(x => x.id !== body.id))
         setError(err instanceof ApiError ? err.message : 'Create failed')
         throw err
       }
@@ -79,7 +87,7 @@ export function useEntityResource<T extends { id: string }>(
     async (id: string, body: Partial<T>) => {
       // Snapshot from ref for rollback (always latest)
       const snapshot = itemsRef.current
-      commitItems(itemsRef.current.map(x => (x.id === id ? { ...x, ...body } : x)))
+      commitItems(prev => prev.map(x => (x.id === id ? { ...x, ...body } : x)))
       try {
         await apiUpdate(id, body)
       } catch (err) {
@@ -95,7 +103,7 @@ export function useEntityResource<T extends { id: string }>(
   const remove = useCallback(
     async (id: string) => {
       const snapshot = itemsRef.current
-      commitItems(itemsRef.current.filter(x => x.id !== id))
+      commitItems(prev => prev.filter(x => x.id !== id))
       try {
         await apiDelete(id)
       } catch (err) {
@@ -107,5 +115,5 @@ export function useEntityResource<T extends { id: string }>(
     [apiDelete, commitItems],
   )
 
-  return { items, setItems, error, create, update, remove }
+  return { items, setItems: commitItems, error, create, update, remove }
 }
