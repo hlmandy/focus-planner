@@ -57,6 +57,15 @@
   font-style: normal;
 }
 
+.habit-week-days span.today strong {
+  color: var(--blue);
+}
+
+.habit-week-days span.today em {
+  color: var(--blue);
+  font-weight: 600;
+}
+
 .habit-board {
   display: grid;
   gap: 8px;
@@ -98,4 +107,36 @@
 .habit-days button.done {
   border-color: #a6cfc7;
   background: var(--teal-soft);
+}
+
+.habit-days button.today {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 1px var(--blue) inset;
+}
+
+.habit-days button.today.done {
+  border-color: var(--blue);
+  background: var(--teal-soft);
+  box-shadow: 0 0 0 1px var(--blue) inset;
+}
+
+.habit-name .habit-edit-input {
+  border: 1px solid var(--blue);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  background: #fff;
+  outline: none;
+  width: 100%;
+  max-width: 140px;
+}
+
+.habit-name strong {
+  cursor: pointer;
+}
+
+.habit-name strong:hover {
+  text-decoration: underline dotted var(--ink-soft);
 }

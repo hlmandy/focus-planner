@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { Check, ListTodo, Trash2 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { toDateKey, todayKey, addDays, fromDateKey, getWeekDays, weekDayText, uid } from '../utils'
@@ -7,11 +7,15 @@ import { colors } from '../constants'
 export function HabitsPage() {
   const { habits, habitEntries, date, setDate } = useApp()
   const [newHabitTitle, setNewHabitTitle] = useState('')
+  const [editingHabitId, setEditingHabitId] = useState<string | null>(null)
+  const [editingTitle, setEditingTitle] = useState('')
+  const editInputRef = useRef<HTMLInputElement>(null)
 
   const weekDays = getWeekDays(date)
   const weekKeys = weekDays.map(toDateKey)
   const weekStart = weekKeys[0]
   const weekEnd = weekKeys[6]
+  const today = todayKey()
 
   const habitEntryKeys = useMemo(
     () => new Set(habitEntries.items.filter(entry => entry.done).map(entry => `${entry.habitId}:${entry.date}`)),
@@ -41,6 +45,33 @@ export function HabitsPage() {
     habitEntries.items.filter(e => e.habitId === habitId).forEach(e => habitEntries.remove(e.id).catch(() => {}))
   }
 
+  const startEdit = (habitId: string, currentTitle: string) => {
+    setEditingHabitId(habitId)
+    setEditingTitle(currentTitle)
+  }
+
+  const commitEdit = () => {
+    if (!editingHabitId) return
+    const title = editingTitle.trim()
+    if (title) {
+      habits.update(editingHabitId, { title }).catch(() => {})
+    }
+    setEditingHabitId(null)
+    setEditingTitle('')
+  }
+
+  const cancelEdit = () => {
+    setEditingHabitId(null)
+    setEditingTitle('')
+  }
+
+  useEffect(() => {
+    if (editingHabitId && editInputRef.current) {
+      editInputRef.current.focus()
+      editInputRef.current.select()
+    }
+  }, [editingHabitId])
+
   return (
     <div className="habit-page">
       <div className="habit-week-header">
@@ -50,26 +81,49 @@ export function HabitsPage() {
         <button type="button" onClick={() => setDate(todayKey())}>今天</button>
       </div>
       <div className="habit-week-days">
-        {weekDays.map(weekDate => (
-          <span key={toDateKey(weekDate)}>
-            <strong>{weekDayText(weekDate)}</strong>
-            <em>{weekDate.getDate()}</em>
-          </span>
-        ))}
+        {weekDays.map(weekDate => {
+          const dayKey = toDateKey(weekDate)
+          const isToday = dayKey === today
+          return (
+            <span key={dayKey} className={isToday ? 'today' : ''}>
+              <strong>{weekDayText(weekDate)}</strong>
+              <em>{weekDate.getDate()}</em>
+            </span>
+          )
+        })}
       </div>
       <div className="habit-board">
         {habits.items.map(habit => (
           <div key={habit.id} className="habit-row">
             <div className="habit-name">
               <span className="dot" style={{ background: habit.color }} />
-              <strong>{habit.title}</strong>
+              {editingHabitId === habit.id ? (
+                <input
+                  ref={editInputRef}
+                  className="habit-edit-input"
+                  value={editingTitle}
+                  onChange={e => setEditingTitle(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') commitEdit()
+                    if (e.key === 'Escape') cancelEdit()
+                  }}
+                  onBlur={commitEdit}
+                  placeholder="习惯名称"
+                  aria-label="编辑习惯名称"
+                />
+              ) : (
+                <strong onDoubleClick={() => startEdit(habit.id, habit.title)} title="双击编辑">
+                  {habit.title}
+                </strong>
+              )}
             </div>
             <div className="habit-days">
               {weekDays.map(weekDate => {
                 const dayKey = toDateKey(weekDate)
                 const done = habitEntryKeys.has(`${habit.id}:${dayKey}`)
+                const isToday = dayKey === today
                 return (
-                  <button key={dayKey} type="button" className={done ? 'done' : ''} onClick={() => toggleHabit(habit.id, dayKey)} title={`${habit.title} ${dayKey}`}>
+                  <button key={dayKey} type="button" className={[done ? 'done' : '', isToday ? 'today' : ''].filter(Boolean).join(' ')} onClick={() => toggleHabit(habit.id, dayKey)} title={`${habit.title} ${dayKey}`}>
                     {done ? <Check size={15} /> : ''}
                   </button>
                 )

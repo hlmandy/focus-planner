@@ -8,12 +8,21 @@ import {
 import { DAY_START, DAY_END, getCalendarDayInfo } from '../constants'
 import type { ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
 
+type TabId = 'timer' | 'search' | 'quick-add' | 'quick-log'
+
+const tabs: { id: TabId; label: string; icon: typeof Timer }[] = [
+  { id: 'timer',      label: '计时',     icon: Timer },
+  { id: 'search',     label: '搜索',     icon: Search },
+  { id: 'quick-add',  label: 'TODO',     icon: Plus },
+  { id: 'quick-log',  label: '记录',     icon: FileText },
+]
+
 export function ToolPanel() {
   const {
     projects, tasks, blocks, pomodoroSessions, researchLogs,
     date, setDate, setPage,
     projectFilterId, setProjectFilterId, setProjectDetailId,
-    setIsToolPanelOpen, toolPanelWidth, setToolPanelWidth,
+    toolPanelWidth, setToolPanelWidth,
     mode, setMode, secondsLeft, setSecondsLeft, isRunning, setIsRunning,
     pomodoroProjectId, setPomodoroProjectId,
     settings,
@@ -21,6 +30,7 @@ export function ToolPanel() {
     stopwatchProjectId, setStopwatchProjectId,
   } = useApp()
 
+  const [activeTab, setActiveTab] = useState<TabId | null>('timer')
   const [quick, setQuick] = useState('')
   const [quickLog, setQuickLog] = useState('')
   const [quickLogKind, setQuickLogKind] = useState<ResearchLogKind>('literature')
@@ -37,7 +47,6 @@ export function ToolPanel() {
   const monthDate = fromDateKey(date)
   const monthLabel = `${monthDate.getFullYear()}年${monthDate.getMonth() + 1}月`
 
-  // Stopwatch display
   const swHours = Math.floor(stopwatchSeconds / 3600)
   const swMinutes = Math.floor((stopwatchSeconds % 3600) / 60)
   const swSecs = stopwatchSeconds % 60
@@ -59,7 +68,6 @@ export function ToolPanel() {
     return clamp(snap(current), DAY_START, DAY_END - 30)
   }, [date])
 
-  // Today's pomodoro sessions
   const todayPomodoros = useMemo(
     () => pomodoroSessions.items
       .filter(s => s.date === todayKey())
@@ -159,255 +167,320 @@ export function ToolPanel() {
     window.addEventListener('pointerup', onUp)
   }
 
+  const toggleTab = (id: TabId) => {
+    setActiveTab(prev => prev === id ? null : id)
+  }
+
   return (
     <aside className="tool-panel">
-      <button className="tool-panel-resizer" onPointerDown={startToolPanelResize} aria-label="调整工具栏宽度" title="拖拽调整宽度" />
-      <div className="tool-panel-head">
-        <strong>工具</strong>
-        <button type="button" onClick={() => setIsToolPanelOpen(false)} aria-label="关闭工具面板">×</button>
+      <button type="button" className="tool-panel-resizer" onPointerDown={startToolPanelResize} aria-label="调整工具栏宽度" title="拖拽调整宽度" />
+
+      {/* Tab bar */}
+      <div className="tool-tabs">
+        {tabs.map(t => {
+          const Icon = t.icon
+          const isActive = activeTab === t.id
+          const badge = t.id === 'timer' && (isRunning || stopwatchRunning)
+            ? isRunning
+              ? `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+              : `${String(swMinutes).padStart(2, '0')}:${String(swSecs).padStart(2, '0')}`
+            : undefined
+          return (
+            <button
+              key={t.id}
+              type="button"
+              className={`tool-tab ${isActive ? 'active' : ''}`}
+              onClick={() => toggleTab(t.id)}
+              title={t.label}
+            >
+              <Icon size={18} />
+              <span className="tool-tab-label">{t.label}</span>
+              {badge && <em className="tool-tab-badge">{badge}</em>}
+            </button>
+          )
+        })}
       </div>
-      <div className="tool-card pomodoro-tool">
-        <div className="tool-card-title">
-          <span>番茄钟</span>
-          <em>{mode === 'work' ? `专注 ${settings.workDuration}min` : `休息 ${settings.breakDuration}min`}</em>
-        </div>
-        <div className="pomodoro-time">
-          {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-        </div>
-        <label htmlFor="pomodoro-project-select">关联项目</label>
-        <select id="pomodoro-project-select" value={pomodoroProjectId} onChange={e => setPomodoroProjectId(e.target.value)} aria-label="番茄钟关联项目">
-          {projects.items.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
-        </select>
-        <div className="pomodoro-mode-actions">
-          <button type="button" className={mode === 'work' ? 'active' : ''} onClick={() => resetPomodoro('work')}>专注</button>
-          <button type="button" className={mode === 'break' ? 'active' : ''} onClick={() => resetPomodoro('break')}>休息</button>
-        </div>
-        <div className="pomodoro-actions">
-          <button type="button" onClick={() => setIsRunning(!isRunning)}>
-            {isRunning ? <Pause size={16} /> : <Play size={16} />}
-            {isRunning ? '暂停' : '开始'}
-          </button>
-          <button type="button" onClick={() => resetPomodoro()}>
-            <RotateCcw size={16} />
-            重置
-          </button>
-        </div>
-        {/* Today's pomodoro summary & history */}
-        <div className="pomodoro-summary">
-          <button type="button" className="pomodoro-history-toggle" onClick={() => setShowPomodoroHistory(v => !v)}>
-            <span>今日专注 {todayPomodoroCount} 次 · {todayPomodoroMinutes} 分钟</span>
-            <span className={`chevron ${showPomodoroHistory ? 'open' : ''}`}>›</span>
-          </button>
-          {showPomodoroHistory && (
-            <div className="pomodoro-history">
-              {todayPomodoros.length === 0 ? (
-                <div className="pomodoro-history-empty">今天还没有专注记录</div>
-              ) : (
-                todayPomodoros.map(session => {
-                  const project = projectsById[session.projectId]
-                  const isEditing = editingPomodoroId === session.id
-                  if (isEditing) {
-                    return (
-                      <div key={session.id} className="pomodoro-history-item pomodoro-edit">
-                        <select value={editProjectId} onChange={e => setEditProjectId(e.target.value)} aria-label="编辑项目">
-                          {projects.items.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
-                        </select>
-                        <input type="number" min={1} max={120} value={editMinutes} onChange={e => setEditMinutes(Number(e.target.value))} aria-label="编辑分钟" />
-                        <span>分钟</span>
-                        <button type="button" className="pomodoro-history-delete" onClick={savePomodoroEdit} aria-label="保存修改">
-                          <Check size={12} />
-                        </button>
-                        <button type="button" className="pomodoro-history-delete" onClick={cancelPomodoroEdit} aria-label="取消修改">
-                          <X size={12} />
-                        </button>
-                      </div>
-                    )
-                  }
-                  return (
-                    <div key={session.id} className="pomodoro-history-item">
-                      <span className="pomodoro-history-dot" style={{ '--dot-color': project?.color ?? '#3a7afe' } as React.CSSProperties} />
-                      <span className="pomodoro-history-project">{project?.name ?? '未知项目'}</span>
-                      <span className="pomodoro-history-minutes">{session.minutes}m</span>
-                      <span className="pomodoro-history-time">{new Date(session.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-                      <button type="button" className="pomodoro-history-delete" onClick={() => startPomodoroEdit(session)} aria-label="编辑专注记录">
-                        <Pencil size={12} />
-                      </button>
-                      <button type="button" className="pomodoro-history-delete" onClick={() => deletePomodoro(session.id)} aria-label="删除专注记录">
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  )
-                })
+
+      {/* Scrollable content area */}
+      <div className="tool-panel-content">
+
+        {/* ===== 计时面板（番茄钟 + 直接计时） ===== */}
+        {activeTab === 'timer' && (
+          <div className="tool-card">
+            {/* 今日总览 — 番茄钟 + 直接计时合并统计 */}
+            <div className="tool-card-title">
+              <span>今日专注</span>
+              <em>{todayPomodoroCount} 次 · {todayPomodoroMinutes} 分钟</em>
+            </div>
+
+            {/* 番茄钟区 */}
+            <div className="tool-card-title">
+              <span>🍅 番茄钟</span>
+              <em>{mode === 'work' ? `专注 ${settings.workDuration}min` : `休息 ${settings.breakDuration}min`}</em>
+            </div>
+            <div className="pomodoro-time">
+              {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+            </div>
+            <label htmlFor="pomodoro-project-select">关联项目</label>
+            <select id="pomodoro-project-select" value={pomodoroProjectId} onChange={e => setPomodoroProjectId(e.target.value)} aria-label="番茄钟关联项目">
+              {projects.items.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
+            </select>
+            <div className="pomodoro-mode-actions">
+              <button type="button" className={mode === 'work' ? 'active' : ''} onClick={() => resetPomodoro('work')}>专注</button>
+              <button type="button" className={mode === 'break' ? 'active' : ''} onClick={() => resetPomodoro('break')}>休息</button>
+            </div>
+            <div className="pomodoro-actions">
+              <button type="button" onClick={() => setIsRunning(!isRunning)}>
+                {isRunning ? <Pause size={16} /> : <Play size={16} />}
+                {isRunning ? '暂停' : '开始'}
+              </button>
+              <button type="button" onClick={() => resetPomodoro()}>
+                <RotateCcw size={16} />
+                重置
+              </button>
+            </div>
+
+            {/* 分隔线 */}
+            <div className="tool-card-sep" />
+
+            {/* 直接计时区 */}
+            <div className="tool-card-title">
+              <span>⏱️ 直接计时</span>
+              <em>自由计时</em>
+            </div>
+            <div className="stopwatch-time">
+              {swHours > 0 && <>{String(swHours).padStart(2, '0')}:</>}
+              {String(swMinutes).padStart(2, '0')}:{String(swSecs).padStart(2, '0')}
+            </div>
+            <label htmlFor="stopwatch-project-select">关联项目</label>
+            <select id="stopwatch-project-select" value={stopwatchProjectId} onChange={e => setStopwatchProjectId(e.target.value)} aria-label="计时关联项目">
+              {projects.items.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
+            </select>
+            <div className="stopwatch-actions">
+              <button type="button" className={stopwatchRunning ? 'active' : ''} onClick={() => setStopwatchRunning(!stopwatchRunning)}>
+                {stopwatchRunning ? <Pause size={16} /> : <Play size={16} />}
+                {stopwatchRunning ? '暂停' : '开始'}
+              </button>
+              <button type="button" onClick={() => { setStopwatchRunning(false); setStopwatchSeconds(0); }}>
+                <RotateCcw size={16} />
+                重置
+              </button>
+            </div>
+            {stopwatchSeconds > 0 && (
+              <button
+                type="button"
+                className="stopwatch-save"
+                onClick={() => {
+                  const mins = Math.max(1, Math.round(stopwatchSeconds / 60))
+                  pomodoroSessions.create({
+                    id: uid(), projectId: stopwatchProjectId,
+                    date: todayKey(), minutes: mins, createdAt: new Date().toISOString(),
+                  }).catch(() => {})
+                  setStopwatchRunning(false)
+                  setStopwatchSeconds(0)
+                }}
+              >
+                <Square size={14} />
+                记录 {Math.max(1, Math.round(stopwatchSeconds / 60))} 分钟
+              </button>
+            )}
+
+            {/* 分隔线 */}
+            <div className="tool-card-sep" />
+
+            {/* 历史记录 */}
+            <div className="pomodoro-summary">
+              <button type="button" className="pomodoro-history-toggle" onClick={() => setShowPomodoroHistory(v => !v)}>
+                <span>历史记录</span>
+                <span className={`chevron ${showPomodoroHistory ? 'open' : ''}`}>›</span>
+              </button>
+              {showPomodoroHistory && (
+                <div className="pomodoro-history">
+                  {todayPomodoros.length === 0 ? (
+                    <div className="pomodoro-history-empty">今天还没有专注记录</div>
+                  ) : (
+                    todayPomodoros.map(session => {
+                      const project = projectsById[session.projectId]
+                      const isEditing = editingPomodoroId === session.id
+                      if (isEditing) {
+                        return (
+                          <div key={session.id} className="pomodoro-history-item pomodoro-edit">
+                            <select value={editProjectId} onChange={e => setEditProjectId(e.target.value)} aria-label="编辑项目">
+                              {projects.items.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                            </select>
+                            <input type="number" min={1} max={120} value={editMinutes} onChange={e => setEditMinutes(Number(e.target.value))} aria-label="编辑分钟" />
+                            <span>分钟</span>
+                            <button type="button" className="pomodoro-history-delete" onClick={savePomodoroEdit} aria-label="保存修改">
+                              <Check size={12} />
+                            </button>
+                            <button type="button" className="pomodoro-history-delete" onClick={cancelPomodoroEdit} aria-label="取消修改">
+                              <X size={12} />
+                            </button>
+                          </div>
+                        )
+                      }
+                      return (
+                        <div key={session.id} className="pomodoro-history-item">
+                          <span className="pomodoro-history-dot" style={{ '--dot-color': project?.color ?? '#3a7afe' } as React.CSSProperties} />
+                          <span className="pomodoro-history-project">{project?.name ?? '未知项目'}</span>
+                          <span className="pomodoro-history-minutes">{session.minutes}m</span>
+                          <span className="pomodoro-history-time">{new Date(session.createdAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                          <button type="button" className="pomodoro-history-delete" onClick={() => startPomodoroEdit(session)} aria-label="编辑专注记录">
+                            <Pencil size={12} />
+                          </button>
+                          <button type="button" className="pomodoro-history-delete" onClick={() => deletePomodoro(session.id)} aria-label="删除专注记录">
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
-      </div>
-      <div className="tool-card stopwatch-tool">
-        <div className="tool-card-title">
-          <span>直接计时</span>
-          <Timer size={14} className="stopwatch-icon" />
-        </div>
-        <div className="stopwatch-time">
-          {swHours > 0 && <>{String(swHours).padStart(2, '0')}:</>}
-          {String(swMinutes).padStart(2, '0')}:{String(swSecs).padStart(2, '0')}
-        </div>
-        <label htmlFor="stopwatch-project-select">关联项目</label>
-        <select id="stopwatch-project-select" value={stopwatchProjectId} onChange={e => setStopwatchProjectId(e.target.value)} aria-label="计时关联项目">
-          {projects.items.map(p => (<option key={p.id} value={p.id}>{p.name}</option>))}
-        </select>
-        <div className="stopwatch-actions">
-          <button type="button" className={stopwatchRunning ? 'active' : ''} onClick={() => setStopwatchRunning(!stopwatchRunning)}>
-            {stopwatchRunning ? <Pause size={16} /> : <Play size={16} />}
-            {stopwatchRunning ? '暂停' : '开始'}
-          </button>
-          <button type="button" onClick={() => { setStopwatchRunning(false); setStopwatchSeconds(0); }}>
-            <RotateCcw size={16} />
-            重置
-          </button>
-        </div>
-        {stopwatchSeconds > 0 && (
-          <button
-            type="button"
-            className="stopwatch-save"
-            onClick={() => {
-              const mins = Math.max(1, Math.round(stopwatchSeconds / 60))
-              pomodoroSessions.create({
-                id: uid(), projectId: stopwatchProjectId,
-                date: todayKey(), minutes: mins, createdAt: new Date().toISOString(),
-              }).catch(() => {})
-              setStopwatchRunning(false)
-              setStopwatchSeconds(0)
-            }}
-          >
-            <Square size={14} />
-            记录 {Math.max(1, Math.round(stopwatchSeconds / 60))} 分钟
-          </button>
+          </div>
         )}
-      </div>
-      <div className="tool-card search-tool">
-        <div className="tool-card-title">
-          <span>全局搜索</span>
-        </div>
-        <div className="tool-quick-add">
-          <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="搜索项目 / 任务 / 日记 / 学生..." />
-          <button type="button" onClick={() => handleSearch(searchQuery)} aria-label="搜索"><Search size={16} /></button>
-        </div>
-        {isSearching && <div className="search-loading">搜索中...</div>}
-        {searchResults && (
-          <div className="search-results">
-            {searchResults.projects.length > 0 && (
-              <div className="search-group">
-                <span className="search-group-title">项目</span>
-                {(searchResults.projects as { id: string; name: string; kind: string }[]).map(p => (
-                  <button key={p.id} type="button" className="search-result-item" onClick={() => { setProjectFilterId(p.id); setProjectDetailId(p.id); setPage('planner'); handleSearch(''); }}>
-                    <span className={`kind-pill ${p.kind}`}>{p.kind === 'research' ? '科研' : p.kind === 'paper' ? '论文' : p.kind === 'student' ? '指导' : '事务'}</span>
-                    <span>{p.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            {searchResults.tasks.length > 0 && (
-              <div className="search-group">
-                <span className="search-group-title">任务</span>
-                {(searchResults.tasks as { id: string; title: string; done: boolean }[]).map(t => (
-                  <div key={t.id} className="search-result-item">
-                    {t.done ? <Check size={14} /> : <span className="search-task-dot" />}
-                    <span>{t.title}</span>
+
+        {/* ===== 全局搜索 ===== */}
+        {activeTab === 'search' && (
+          <div className="tool-card">
+            <div className="tool-card-title">
+              <span>全局搜索</span>
+            </div>
+            <div className="tool-quick-add">
+              <input value={searchQuery} onChange={e => handleSearch(e.target.value)} placeholder="搜索项目 / 任务 / 日记 / 学生..." />
+              <button type="button" onClick={() => handleSearch(searchQuery)} aria-label="搜索"><Search size={16} /></button>
+            </div>
+            {isSearching && <div className="search-loading">搜索中...</div>}
+            {searchResults && (
+              <div className="search-results">
+                {searchResults.projects.length > 0 && (
+                  <div className="search-group">
+                    <span className="search-group-title">项目</span>
+                    {(searchResults.projects as { id: string; name: string; kind: string }[]).map(p => (
+                      <button key={p.id} type="button" className="search-result-item" onClick={() => { setProjectFilterId(p.id); setProjectDetailId(p.id); setPage('planner'); handleSearch(''); }}>
+                        <span className={`kind-pill ${p.kind}`}>{p.kind === 'research' ? '科研' : p.kind === 'paper' ? '论文' : p.kind === 'student' ? '指导' : '事务'}</span>
+                        <span>{p.name}</span>
+                      </button>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-            {searchResults.researchLogs.length > 0 && (
-              <div className="search-group">
-                <span className="search-group-title">研究日记</span>
-                {(searchResults.researchLogs as { id: string; title: string; date: string; kind: string }[]).map(l => (
-                  <div key={l.id} className="search-result-item">
-                    <FileText size={14} />
-                    <span>{l.title}</span>
-                    <em>{l.date}</em>
+                )}
+                {searchResults.tasks.length > 0 && (
+                  <div className="search-group">
+                    <span className="search-group-title">任务</span>
+                    {(searchResults.tasks as { id: string; title: string; done: boolean }[]).map(t => (
+                      <div key={t.id} className="search-result-item">
+                        {t.done ? <Check size={14} /> : <span className="search-task-dot" />}
+                        <span>{t.title}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-            {searchResults.thesisStudents.length > 0 && (
-              <div className="search-group">
-                <span className="search-group-title">指导学生</span>
-                {(searchResults.thesisStudents as { id: string; name: string; topic: string }[]).map(s => (
-                  <div key={s.id} className="search-result-item">
-                    <User size={14} />
-                    <span>{s.name}</span>
-                    <em>{s.topic}</em>
+                )}
+                {searchResults.researchLogs.length > 0 && (
+                  <div className="search-group">
+                    <span className="search-group-title">研究日记</span>
+                    {(searchResults.researchLogs as { id: string; title: string; date: string; kind: string }[]).map(l => (
+                      <div key={l.id} className="search-result-item">
+                        <FileText size={14} />
+                        <span>{l.title}</span>
+                        <em>{l.date}</em>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
+                {searchResults.thesisStudents.length > 0 && (
+                  <div className="search-group">
+                    <span className="search-group-title">指导学生</span>
+                    {(searchResults.thesisStudents as { id: string; name: string; topic: string }[]).map(s => (
+                      <div key={s.id} className="search-result-item">
+                        <User size={14} />
+                        <span>{s.name}</span>
+                        <em>{s.topic}</em>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {searchResults.projects.length === 0 && searchResults.tasks.length === 0 && searchResults.researchLogs.length === 0 && searchResults.thesisStudents.length === 0 && (
+                  <div className="search-empty">没有找到匹配结果</div>
+                )}
               </div>
-            )}
-            {searchResults.projects.length === 0 && searchResults.tasks.length === 0 && searchResults.researchLogs.length === 0 && searchResults.thesisStudents.length === 0 && (
-              <div className="search-empty">没有找到匹配结果</div>
             )}
           </div>
         )}
-      </div>
-      <div className="tool-card quick-todo-tool">
-        <div className="tool-card-title">
-          <span>新增 TODO</span>
-          <em>{blockDateText(date)}</em>
+
+        {/* ===== 新增 TODO ===== */}
+        {activeTab === 'quick-add' && (
+          <div className="tool-card">
+            <div className="tool-card-title">
+              <span>新增 TODO</span>
+              <em>{blockDateText(date)}</em>
+            </div>
+            <div className="tool-quick-add">
+              <input value={quick} onChange={e => setQuick(e.target.value)} onKeyDown={e => e.key === 'Enter' && addQuickItem()} placeholder="读文献 #文献 @10:00" />
+              <button type="button" onClick={addQuickItem} aria-label="新增 TODO"><Plus size={16} /></button>
+            </div>
+          </div>
+        )}
+
+        {/* ===== 快速记录 ===== */}
+        {activeTab === 'quick-log' && (
+          <div className="tool-card">
+            <div className="tool-card-title">
+              <span>快速记录</span>
+            </div>
+            <div className="tool-quick-add">
+              <input value={quickLog} onChange={e => setQuickLog(e.target.value)} onKeyDown={e => e.key === 'Enter' && addQuickLog()} placeholder="记一笔想法、发现…" />
+              <button type="button" onClick={addQuickLog} aria-label="快速记录"><Plus size={16} /></button>
+            </div>
+            <select value={quickLogKind} onChange={e => setQuickLogKind(e.target.value as ResearchLogKind)} className="quick-log-kind" aria-label="记录类型">
+              <option value="literature">文献</option><option value="experiment">实验</option><option value="analysis">分析</option>
+              <option value="writing">写作</option><option value="meeting">讨论</option><option value="admin">事务</option>
+            </select>
+          </div>
+        )}
+
+        {/* ===== 分隔 + 日历（始终显示） ===== */}
+        {activeTab !== null && <div className="tool-panel-sep" />}
+
+        <div className="tool-card">
+          <div className="tool-card-title">
+            <span>日历</span>
+            <em>{monthLabel}</em>
+          </div>
+          <div className="month-calendar-head">
+            <button type="button" onClick={() => setDate(toDateKey(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1)))} aria-label="上一月">‹</button>
+            <strong>{monthLabel}</strong>
+            <button type="button" onClick={() => setDate(toDateKey(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1)))} aria-label="下一月">›</button>
+          </div>
+          <div className="month-calendar-weekdays">
+            {['一', '二', '三', '四', '五', '六', '日'].map(w => (<span key={w}>{w}</span>))}
+          </div>
+          <div className="month-calendar-grid">
+            {monthDays.map(monthDay => {
+              const dayKey = toDateKey(monthDay)
+              const isCurrentMonth = monthDay.getMonth() === monthDate.getMonth()
+              const hasBlocks = blocks.items.some(b => b.date === dayKey)
+              const dayInfo = getCalendarDayInfo(dayKey)
+              return (
+                <button
+                  key={dayKey}
+                  type="button"
+                  className={`${date === dayKey ? 'active' : ''} ${dayKey === todayKey() ? 'today' : ''} ${isCurrentMonth ? '' : 'outside'} ${dayInfo.isRestDay ? 'rest-day' : ''} ${dayInfo.isAdjustedWorkday ? 'workday-adjusted' : ''}`}
+                  onClick={() => { setDate(dayKey); setPage('planner') }}
+                  title={dayInfo.label}
+                >
+                  <span>{monthDay.getDate()}</span>
+                  {dayInfo.marker && <strong>{dayInfo.marker}</strong>}
+                  {hasBlocks && <em />}
+                </button>
+              )
+            })}
+          </div>
+          <div className="tool-calendar-actions">
+            <button type="button" onClick={() => setDate(todayKey())}>今天</button>
+          </div>
         </div>
-        <div className="tool-quick-add">
-          <input value={quick} onChange={e => setQuick(e.target.value)} onKeyDown={e => e.key === 'Enter' && addQuickItem()} placeholder="读文献 #文献 @10:00" />
-          <button type="button" onClick={addQuickItem} aria-label="新增 TODO"><Plus size={16} /></button>
-        </div>
-      </div>
-      <div className="tool-card quick-todo-tool">
-        <div className="tool-card-title">
-          <span>快速记录</span>
-        </div>
-        <div className="tool-quick-add">
-          <input value={quickLog} onChange={e => setQuickLog(e.target.value)} onKeyDown={e => e.key === 'Enter' && addQuickLog()} placeholder="记一笔想法、发现…" />
-          <select value={quickLogKind} onChange={e => setQuickLogKind(e.target.value as ResearchLogKind)} className="quick-log-kind" aria-label="记录类型">
-            <option value="literature">文献</option><option value="experiment">实验</option><option value="analysis">分析</option>
-            <option value="writing">写作</option><option value="meeting">讨论</option><option value="admin">事务</option>
-          </select>
-          <button type="button" onClick={addQuickLog} aria-label="快速记录"><Plus size={16} /></button>
-        </div>
-      </div>
-      <div className="tool-card calendar-tool">
-        <div className="tool-card-title">
-          <span>日历</span>
-          <em>{monthLabel}</em>
-        </div>
-        <div className="month-calendar-head">
-          <button type="button" onClick={() => setDate(toDateKey(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1)))} aria-label="上一月">‹</button>
-          <strong>{monthLabel}</strong>
-          <button type="button" onClick={() => setDate(toDateKey(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1)))} aria-label="下一月">›</button>
-        </div>
-        <div className="month-calendar-weekdays">
-          {['一', '二', '三', '四', '五', '六', '日'].map(w => (<span key={w}>{w}</span>))}
-        </div>
-        <div className="month-calendar-grid">
-          {monthDays.map(monthDay => {
-            const dayKey = toDateKey(monthDay)
-            const isCurrentMonth = monthDay.getMonth() === monthDate.getMonth()
-            const hasBlocks = blocks.items.some(b => b.date === dayKey)
-            const dayInfo = getCalendarDayInfo(dayKey)
-            return (
-              <button
-                key={dayKey}
-                type="button"
-                className={`${date === dayKey ? 'active' : ''} ${dayKey === todayKey() ? 'today' : ''} ${isCurrentMonth ? '' : 'outside'} ${dayInfo.isRestDay ? 'rest-day' : ''} ${dayInfo.isAdjustedWorkday ? 'workday-adjusted' : ''}`}
-                onClick={() => { setDate(dayKey); setPage('planner') }}
-                title={dayInfo.label}
-              >
-                <span>{monthDay.getDate()}</span>
-                {dayInfo.marker && <strong>{dayInfo.marker}</strong>}
-                {hasBlocks && <em />}
-              </button>
-            )
-          })}
-        </div>
-        <div className="tool-calendar-actions">
-          <button type="button" onClick={() => setDate(todayKey())}>今天</button>
-        </div>
+
       </div>
     </aside>
   )

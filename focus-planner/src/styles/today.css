@@ -194,3 +194,278 @@
   color: var(--muted);
   text-decoration: line-through;
 }
+
+/* ===== Quick-add bar ===== */
+.today-quick-add {
+  width: min(600px, 100%);
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.today-quick-add input {
+  min-width: 0;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.today-quick-add input::placeholder {
+  color: var(--muted);
+}
+
+.today-quick-add input:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(56, 150, 100, 0.12);
+}
+
+.today-quick-project {
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.today-quick-add button {
+  display: grid;
+  place-items: center;
+  height: 36px;
+  width: 36px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--teal);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.today-quick-add button:hover {
+  opacity: 0.85;
+}
+
+/* ===== Daily stats ===== */
+.today-stats {
+  width: min(600px, 100%);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.today-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.today-stat-pill em {
+  font-style: normal;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.today-stat-pill svg {
+  color: var(--teal);
+}
+
+/* ===== Block editing ===== */
+.today-block.editing {
+  border-color: var(--teal);
+  background: rgba(56, 150, 100, 0.04);
+  cursor: default;
+}
+
+.today-block-editor {
+  border: 1px solid var(--teal);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  background: var(--surface);
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+  margin-top: -1px;
+}
+
+.editor-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.editor-title {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2, #fff);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.editor-title:focus {
+  outline: none;
+  border-color: var(--teal);
+}
+
+.editor-row select {
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2, #fff);
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.editor-time-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.editor-time-label input[type="time"] {
+  height: 32px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2, #fff);
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.editor-done-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.editor-note {
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2, #fff);
+  color: var(--ink);
+  font-size: 12px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.editor-note:focus {
+  outline: none;
+  border-color: var(--teal);
+}
+
+.editor-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.editor-save {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--teal);
+  border-radius: var(--radius-sm);
+  background: var(--teal);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.editor-save:hover {
+  opacity: 0.85;
+}
+
+.editor-cancel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.editor-delete {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.editor-delete:hover {
+  color: var(--coral);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* ===== Unscheduled tasks ===== */
+.today-unscheduled {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.today-unscheduled-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.today-schedule-btn {
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+
+.today-schedule-btn:hover {
+  background: rgba(56, 150, 100, 0.1);
+  color: var(--teal);
+}
