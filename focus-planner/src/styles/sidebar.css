@@ -46,6 +46,7 @@
   min-height: 32px;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 8px;
   border-radius: var(--radius-sm);
   background: transparent;
