@@ -28,7 +28,7 @@ export function requireFields(body: Record<string, unknown>, fields: string[]): 
   return null
 }
 
-export function checkEnum(value: unknown, allowed: string[], fieldName: string): string | null {
+export function checkEnum(value: unknown, allowed: readonly string[], fieldName: string): string | null {
   if (typeof value !== 'string') return `${fieldName} must be a string`
   if (!allowed.includes(value)) return `${fieldName} must be one of: ${allowed.join(', ')}`
   return null

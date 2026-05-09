@@ -69,7 +69,7 @@ export function caldavRoutes(app: Hono, db: Database.Database) {
         SUM(CASE WHEN sync_status = 'pending_create' THEN 1 ELSE 0 END) as pendingCreate,
         SUM(CASE WHEN sync_status = 'error' THEN 1 ELSE 0 END) as errorCount
       FROM caldav_sync_map
-    `).get() as CaldavConfigRow | undefined
+    `).get() as { total: number; synced: number; pendingCreate: number; errorCount: number } | undefined
 
     return c.json({
       configured: !!(row?.calendar_url && row?.username),

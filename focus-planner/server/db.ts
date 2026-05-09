@@ -2,7 +2,7 @@ import Database from 'better-sqlite3'
 import { existsSync, readFileSync, renameSync, mkdirSync, readdirSync, copyFileSync, unlinkSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { AppState, ProjectRow, TaskRow, ScheduleBlockRow, HabitRow, HabitEntryRow, ThesisStudentRow, ResearchLogRow, PomodoroSessionRow } from './types.js'
+import type { AppState, Project, Task, ThesisStudent, ResearchLogEntry, ProjectRow, TaskRow, ScheduleBlockRow, HabitRow, HabitEntryRow, ThesisStudentRow, ResearchLogRow, PomodoroSessionRow } from './types.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
@@ -283,14 +283,17 @@ export function rotateBackups(maxBackups = 30): void {
 
 export function loadFullState(db: Database.Database): AppState {
   const projects = (db.prepare('SELECT * FROM projects').all() as ProjectRow[]).map(row => ({
-    id: row.id, name: row.name, color: row.color, kind: row.kind,
-    status: row.status, goal: row.goal, dueDate: row.due_date,
+    id: row.id, name: row.name, color: row.color,
+    kind: row.kind as Project['kind'],
+    status: row.status as Project['status'],
+    goal: row.goal, dueDate: row.due_date,
   }))
 
   const tasks = (db.prepare('SELECT * FROM tasks').all() as TaskRow[]).map(row => ({
     id: row.id, title: row.title, projectId: row.project_id,
-    parentId: row.parent_id ?? undefined, tags: JSON.parse(row.tags),
-    done: !!row.done, createdAt: row.created_at, source: row.source,
+    parentId: row.parent_id ?? undefined, tags: JSON.parse(row.tags) as string[],
+    done: !!row.done, createdAt: row.created_at,
+    source: row.source as Task['source'],
   }))
 
   const blocks = (db.prepare('SELECT * FROM schedule_blocks').all() as ScheduleBlockRow[]).map(row => ({
@@ -308,15 +311,19 @@ export function loadFullState(db: Database.Database): AppState {
 
   const thesisStudents = (db.prepare('SELECT * FROM thesis_students').all() as ThesisStudentRow[]).map(row => ({
     id: row.id, projectId: row.project_id, name: row.name, topic: row.topic,
-    stage: row.stage, nextMilestone: row.next_milestone, dueDate: row.due_date,
+    stage: row.stage as ThesisStudent['stage'],
+    nextMilestone: row.next_milestone, dueDate: row.due_date,
     notes: row.notes, updatedAt: row.updated_at,
   }))
 
   const researchLogs = (db.prepare('SELECT * FROM research_logs').all() as ResearchLogRow[]).map(row => ({
-    id: row.id, date: row.date, projectId: row.project_id, kind: row.kind,
+    id: row.id, date: row.date, projectId: row.project_id,
+    kind: row.kind as ResearchLogEntry['kind'],
     title: row.title, source: row.source, note: row.note,
-    attachments: JSON.parse(row.attachments), createdAt: row.created_at,
-    readingStatus: row.reading_status ?? 'unread', keyFindings: row.key_findings ?? '', nextAction: row.next_action ?? '',
+    attachments: JSON.parse(row.attachments) as string[],
+    createdAt: row.created_at,
+    readingStatus: (row.reading_status ?? 'unread') as ResearchLogEntry['readingStatus'],
+    keyFindings: row.key_findings ?? '', nextAction: row.next_action ?? '',
   }))
 
   const pomodoroSessions = (db.prepare('SELECT * FROM pomodoro_sessions').all() as PomodoroSessionRow[]).map(row => ({

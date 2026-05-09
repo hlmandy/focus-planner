@@ -1,14 +1,13 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
 import type { Task, TaskRow } from '../types.js'
+import { TASK_SOURCES } from '../types.js'
 import { requireFields, checkEnum, jsonStrArray, jsonBool, safeJsonParse } from '../validate.js'
-
-const VALID_SOURCES = ['task', 'schedule']
 
 function toTask(r: TaskRow): Task {
   return {
     id: r.id, title: r.title, projectId: r.project_id,
-    parentId: r.parent_id ?? undefined, tags: safeJsonParse(r.tags, []),
+    parentId: r.parent_id ?? undefined, tags: safeJsonParse(r.tags, []) as string[],
     done: !!r.done, createdAt: r.created_at, source: r.source as Task['source'],
   }
 }
@@ -37,7 +36,7 @@ export function taskRoutes(app: Hono, db: Database.Database) {
   app.post('/api/tasks', async (c) => {
     const body = await c.req.json()
     const err = requireFields(body, ['id', 'title', 'projectId'])
-      || checkEnum(body.source, VALID_SOURCES, 'source')
+      || checkEnum(body.source, TASK_SOURCES, 'source')
     if (err) return c.json({ error: err }, 400)
     db.prepare(`INSERT INTO tasks (id, title, project_id, parent_id, tags, done, created_at, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
       body.id, body.title, body.projectId, body.parentId ?? null,
@@ -49,7 +48,7 @@ export function taskRoutes(app: Hono, db: Database.Database) {
 
   app.put('/api/tasks/:id', async (c) => {
     const body = await c.req.json()
-    const err = checkEnum(body.source, VALID_SOURCES, 'source')
+    const err = checkEnum(body.source, TASK_SOURCES, 'source')
     if (err) return c.json({ error: err }, 400)
     const r = db.prepare(`UPDATE tasks SET title = ?, project_id = ?, parent_id = ?, tags = ?, done = ?, source = ? WHERE id = ?`).run(
       body.title, body.projectId, body.parentId ?? null,

@@ -1,15 +1,14 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
 import type { ResearchLogEntry, ResearchLogRow } from '../types.js'
+import { RESEARCH_LOG_KINDS } from '../types.js'
 import { requireFields, checkEnum, jsonStrArray, safeJsonParse } from '../validate.js'
-
-const VALID_KINDS = ['literature', 'experiment', 'analysis', 'writing', 'meeting', 'admin']
 
 function toLog(r: ResearchLogRow): ResearchLogEntry {
   return {
     id: r.id, date: r.date, projectId: r.project_id, kind: r.kind as ResearchLogEntry['kind'],
     title: r.title, source: r.source, note: r.note,
-    attachments: safeJsonParse(r.attachments, []), createdAt: r.created_at,
+    attachments: safeJsonParse(r.attachments, []) as string[], createdAt: r.created_at,
     readingStatus: (r.reading_status ?? 'unread') as ResearchLogEntry['readingStatus'],
     keyFindings: r.key_findings ?? '', nextAction: r.next_action ?? '',
   }
@@ -40,7 +39,7 @@ export function researchLogRoutes(app: Hono, db: Database.Database) {
   app.post('/api/research-logs', async (c) => {
     const body = await c.req.json()
     const err = requireFields(body, ['id', 'date', 'projectId', 'kind', 'title'])
-      || checkEnum(body.kind, VALID_KINDS, 'kind')
+      || checkEnum(body.kind, RESEARCH_LOG_KINDS, 'kind')
     if (err) return c.json({ error: err }, 400)
     db.prepare(`INSERT INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       body.id, body.date, body.projectId, body.kind, body.title,
@@ -53,7 +52,7 @@ export function researchLogRoutes(app: Hono, db: Database.Database) {
 
   app.put('/api/research-logs/:id', async (c) => {
     const body = await c.req.json()
-    const err = checkEnum(body.kind, VALID_KINDS, 'kind')
+    const err = checkEnum(body.kind, RESEARCH_LOG_KINDS, 'kind')
     if (err) return c.json({ error: err }, 400)
     const r = db.prepare(`UPDATE research_logs SET date = ?, project_id = ?, kind = ?, title = ?, source = ?, note = ?, attachments = ?, reading_status = ?, key_findings = ?, next_action = ? WHERE id = ?`).run(
       body.date, body.projectId, body.kind, body.title,

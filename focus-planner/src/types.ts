@@ -1,11 +1,13 @@
 // Re-export shared types for backward compatibility
 export type {
+  // Enum types
   ProjectKind,
   ProjectStatus,
   ThesisStage,
   ResearchLogKind,
   TaskSource,
   ReadingStatus,
+  // Entity types
   Project,
   Task,
   ScheduleBlock,
@@ -15,9 +17,44 @@ export type {
   ResearchLogEntry,
   PomodoroSession,
   AppState,
+  UserSettings,
+  // UI types
   PersistenceStatus,
   PageName,
   BlockViewStatus,
+  // API types
+  ApiList,
+  ApiItem,
+  ApiOk,
+  ApiErrorBody,
+  ProjectCreateInput,
+  ProjectUpdateInput,
+  TaskCreateInput,
+  TaskUpdateInput,
+  ScheduleBlockCreateInput,
+  ScheduleBlockUpdateInput,
+  HabitCreateInput,
+  HabitUpdateInput,
+  HabitEntryCreateInput,
+  HabitEntryUpdateInput,
+  ThesisStudentCreateInput,
+  ThesisStudentUpdateInput,
+  ResearchLogCreateInput,
+  ResearchLogUpdateInput,
+  PomodoroSessionCreateInput,
+  PomodoroSessionUpdateInput,
+  UserSettingsUpdateInput,
+} from '../shared/types'
+
+// Re-export shared enum constants
+export {
+  PROJECT_KINDS,
+  PROJECT_STATUSES,
+  THESIS_STAGES,
+  RESEARCH_LOG_KINDS,
+  TASK_SOURCES,
+  READING_STATUSES,
+  DEFAULT_USER_SETTINGS,
 } from '../shared/types'
 
 // Legacy migration types (frontend-only, uses re-exported types above)

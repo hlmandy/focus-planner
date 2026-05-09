@@ -1,10 +1,22 @@
 // Shared types — used by both frontend (src/) and backend (server/)
 
-export type ProjectKind = 'research' | 'paper' | 'student' | 'admin'
-export type ProjectStatus = 'active' | 'paused' | 'done' | 'archived'
-export type ThesisStage = 'topic' | 'proposal' | 'draft' | 'revision' | 'final'
-export type ResearchLogKind = 'literature' | 'experiment' | 'analysis' | 'writing' | 'meeting' | 'admin'
-export type TaskSource = 'task' | 'schedule'
+// ── Enum constants (runtime values derived from `as const` arrays) ──────────
+
+export const PROJECT_KINDS = ['research', 'paper', 'student', 'admin'] as const
+export const PROJECT_STATUSES = ['active', 'paused', 'done', 'archived'] as const
+export const THESIS_STAGES = ['topic', 'proposal', 'draft', 'revision', 'final'] as const
+export const RESEARCH_LOG_KINDS = ['literature', 'experiment', 'analysis', 'writing', 'meeting', 'admin'] as const
+export const TASK_SOURCES = ['task', 'schedule'] as const
+export const READING_STATUSES = ['unread', 'reading', 'read', 'reviewed'] as const
+
+// ── Enum types (derived from constants above — single source of truth) ──────
+
+export type ProjectKind = (typeof PROJECT_KINDS)[number]
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number]
+export type ThesisStage = (typeof THESIS_STAGES)[number]
+export type ResearchLogKind = (typeof RESEARCH_LOG_KINDS)[number]
+export type TaskSource = (typeof TASK_SOURCES)[number]
+export type ReadingStatus = (typeof READING_STATUSES)[number]
 
 export interface Project {
   id: string
@@ -61,8 +73,6 @@ export interface ThesisStudent {
   notes: string
   updatedAt: string
 }
-
-export type ReadingStatus = 'unread' | 'reading' | 'read' | 'reviewed'
 
 export interface ResearchLogEntry {
   id: string
@@ -123,3 +133,54 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   defaultPage: 'today',
   autoSyncCalDAV: false,
 }
+
+// ── API request / response wrapper types ─────────────────────────────────────
+
+/** Generic list response: `GET /api/<entity>` */
+export type ApiList<T> = {
+  items: T[]
+}
+
+/** Generic single-item response: `GET /api/<entity>/:id` */
+export type ApiItem<T> = {
+  item: T
+}
+
+/** Generic success response for write operations */
+export type ApiOk = {
+  ok: true
+  savedAt?: string
+}
+
+/** Generic error response body */
+export type ApiErrorBody = {
+  error: string
+}
+
+// ── Per-entity create / update input types ───────────────────────────────────
+
+export type ProjectCreateInput = Omit<Project, 'id'>
+export type ProjectUpdateInput = Partial<Omit<Project, 'id'>>
+
+export type TaskCreateInput = Omit<Task, 'id' | 'createdAt'>
+export type TaskUpdateInput = Partial<Omit<Task, 'id' | 'createdAt'>>
+
+export type ScheduleBlockCreateInput = Omit<ScheduleBlock, 'id'>
+export type ScheduleBlockUpdateInput = Partial<Omit<ScheduleBlock, 'id'>>
+
+export type HabitCreateInput = Omit<Habit, 'id' | 'createdAt'>
+export type HabitUpdateInput = Partial<Omit<Habit, 'id' | 'createdAt'>>
+
+export type HabitEntryCreateInput = Omit<HabitEntry, 'id'>
+export type HabitEntryUpdateInput = Partial<Omit<HabitEntry, 'id'>>
+
+export type ThesisStudentCreateInput = Omit<ThesisStudent, 'id' | 'updatedAt'>
+export type ThesisStudentUpdateInput = Partial<Omit<ThesisStudent, 'id' | 'updatedAt'>>
+
+export type ResearchLogCreateInput = Omit<ResearchLogEntry, 'id' | 'createdAt'>
+export type ResearchLogUpdateInput = Partial<Omit<ResearchLogEntry, 'id' | 'createdAt'>>
+
+export type PomodoroSessionCreateInput = Omit<PomodoroSession, 'id' | 'createdAt'>
+export type PomodoroSessionUpdateInput = Partial<Omit<PomodoroSession, 'id' | 'createdAt'>>
+
+export type UserSettingsUpdateInput = Partial<UserSettings>

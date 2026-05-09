@@ -1,9 +1,8 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
 import type { ThesisStudent, ThesisStudentRow } from '../types.js'
+import { THESIS_STAGES } from '../types.js'
 import { requireFields, checkEnum } from '../validate.js'
-
-const VALID_STAGES = ['topic', 'proposal', 'draft', 'revision', 'final']
 
 function toStudent(r: ThesisStudentRow): ThesisStudent {
   return {
@@ -31,7 +30,7 @@ export function thesisStudentRoutes(app: Hono, db: Database.Database) {
   app.post('/api/thesis-students', async (c) => {
     const body = await c.req.json()
     const err = requireFields(body, ['id', 'projectId', 'name'])
-      || checkEnum(body.stage, VALID_STAGES, 'stage')
+      || checkEnum(body.stage, THESIS_STAGES, 'stage')
     if (err) return c.json({ error: err }, 400)
     db.prepare(`INSERT INTO thesis_students (id, project_id, name, topic, stage, next_milestone, due_date, notes, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       body.id, body.projectId, body.name, body.topic ?? '', body.stage ?? 'topic',
@@ -42,7 +41,7 @@ export function thesisStudentRoutes(app: Hono, db: Database.Database) {
 
   app.put('/api/thesis-students/:id', async (c) => {
     const body = await c.req.json()
-    const err = checkEnum(body.stage, VALID_STAGES, 'stage')
+    const err = checkEnum(body.stage, THESIS_STAGES, 'stage')
     if (err) return c.json({ error: err }, 400)
     const r = db.prepare(`UPDATE thesis_students SET name = ?, topic = ?, stage = ?, next_milestone = ?, due_date = ?, notes = ?, updated_at = ? WHERE id = ?`).run(
       body.name, body.topic ?? '', body.stage ?? 'topic', body.nextMilestone ?? '',
