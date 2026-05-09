@@ -13,6 +13,7 @@ import { pomodoroRoutes } from './routes/pomodoro.js'
 import { searchRoutes } from './routes/search.js'
 import { backupRoutes } from './routes/backups.js'
 import { caldavRoutes } from './routes/caldav.js'
+import { settingsRoutes } from './routes/settings.js'
 
 const port = Number(process.env.FOCUS_PLANNER_PORT ?? 8787)
 
@@ -34,6 +35,7 @@ pomodoroRoutes(app, db)
 searchRoutes(app, db)
 backupRoutes(app)
 caldavRoutes(app, db)
+settingsRoutes(app, db)
 
 app.onError((err, c) => {
   console.error('Server error:', err)

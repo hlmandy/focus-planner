@@ -300,44 +300,22 @@
 }
 
 .time-block.todo {
-  border: 1px solid rgba(60, 150, 56, 0.72);
+  border: 1px solid rgba(58, 122, 254, 0.3);
   background: rgba(255, 255, 255, 0.96) !important;
-  box-shadow: 0 8px 18px rgba(60, 150, 56, 0.14);
-}
-
-.time-block.todo::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 4px;
-  background: rgba(60, 150, 56, 0.88);
-  pointer-events: none;
+  box-shadow: 0 8px 18px rgba(58, 122, 254, 0.1);
 }
 
 .time-block.todo .drag-area {
-  color: #264f2c;
-  padding-left: 18px;
-}
-
-.time-block.todo .drag-area strong {
-  color: #264f2c;
-  font-size: 11px;
-}
-
-.time-block.todo .drag-area span,
-.time-block.todo .drag-area em {
-  color: #55745b;
+  padding-left: 10px;
 }
 
 .time-block.todo .drag-area em b {
-  background: #e4f5dc;
-  color: #3c9638;
+  background: #e0ecff;
+  color: #3a7afe;
 }
 
 .time-block.todo .delete-block {
-  color: #5f7d63;
+  color: #7b8ca2;
 }
 
 .time-block.done {
@@ -355,8 +333,8 @@
 
 .drag-create-preview {
   position: absolute;
-  left: 7px;
-  right: 7px;
+  left: 4px;
+  right: 4px;
   z-index: 4;
   display: grid;
   place-items: center;
@@ -367,6 +345,10 @@
   font-size: 11px;
   transform: translateY(52px);
   pointer-events: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0 4px;
 }
 
 .drag-area {
@@ -376,7 +358,7 @@
   display: grid;
   align-content: center;
   gap: 1px;
-  padding: 4px 4px 4px 7px;
+  padding: 5px 6px 5px 10px;
   background: transparent;
   color: var(--ink);
   text-align: left;
@@ -392,10 +374,10 @@
 .drag-area strong {
   display: block;
   overflow: hidden;
-  line-height: 1.2;
+  line-height: 1.3;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 650;
 }
 
@@ -476,9 +458,9 @@
   color: #766f65;
 }
 
-.time-block:not(.compact) .drag-area {
+/* .time-block:not(.compact) .drag-area {
   padding-right: 30px;
-}
+} */
 
 .delete-block:hover {
   background: rgba(255, 255, 255, 0.95);

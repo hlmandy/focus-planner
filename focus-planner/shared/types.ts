@@ -62,6 +62,8 @@ export interface ThesisStudent {
   updatedAt: string
 }
 
+export type ReadingStatus = 'unread' | 'reading' | 'read' | 'reviewed'
+
 export interface ResearchLogEntry {
   id: string
   date: string
@@ -72,6 +74,9 @@ export interface ResearchLogEntry {
   note: string
   attachments: string[]
   createdAt: string
+  readingStatus: ReadingStatus
+  keyFindings: string
+  nextAction: string
 }
 
 export interface PomodoroSession {
@@ -96,3 +101,25 @@ export interface AppState {
 export type PersistenceStatus = 'checking' | 'server' | 'local' | 'saving' | 'error'
 export type PageName = 'today' | 'planner' | 'projects' | 'diary' | 'literature' | 'habits' | 'summary' | 'settings'
 export type BlockViewStatus = 'done' | 'now' | 'todo'
+
+export interface UserSettings {
+  workDuration: number        // pomodoro work duration in minutes (default 25)
+  breakDuration: number       // short break in minutes (default 5)
+  longBreakDuration: number   // long break in minutes (default 15)
+  longBreakInterval: number   // sessions before long break (default 4)
+  sleepStart: string          // do-not-disturb start, HH:mm (default '22:00')
+  sleepEnd: string            // do-not-disturb end, HH:mm (default '07:00')
+  defaultPage: PageName       // page to show on startup (default 'today')
+  autoSyncCalDAV: boolean     // auto-sync on state change (default false)
+}
+
+export const DEFAULT_USER_SETTINGS: UserSettings = {
+  workDuration: 25,
+  breakDuration: 5,
+  longBreakDuration: 15,
+  longBreakInterval: 4,
+  sleepStart: '22:00',
+  sleepEnd: '07:00',
+  defaultPage: 'today',
+  autoSyncCalDAV: false,
+}

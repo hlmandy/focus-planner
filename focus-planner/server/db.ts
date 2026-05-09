@@ -83,6 +83,9 @@ CREATE TABLE IF NOT EXISTS research_logs (
   note TEXT NOT NULL DEFAULT '',
   attachments TEXT NOT NULL DEFAULT '[]',
   created_at TEXT NOT NULL,
+  reading_status TEXT NOT NULL DEFAULT 'unread',
+  key_findings TEXT NOT NULL DEFAULT '',
+  next_action TEXT NOT NULL DEFAULT '',
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
 
@@ -124,6 +127,18 @@ CREATE TABLE IF NOT EXISTS caldav_sync_map (
   sync_status TEXT NOT NULL DEFAULT 'pending_create',
   last_synced_at TEXT NOT NULL DEFAULT '',
   error_message TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS user_config (
+  id INTEGER PRIMARY KEY CHECK(id = 1),
+  work_duration INTEGER NOT NULL DEFAULT 25,
+  break_duration INTEGER NOT NULL DEFAULT 5,
+  long_break_duration INTEGER NOT NULL DEFAULT 15,
+  long_break_interval INTEGER NOT NULL DEFAULT 4,
+  sleep_start TEXT NOT NULL DEFAULT '22:00',
+  sleep_end TEXT NOT NULL DEFAULT '07:00',
+  default_page TEXT NOT NULL DEFAULT 'today',
+  auto_sync_caldav INTEGER NOT NULL DEFAULT 0
 );
 `
 
@@ -194,10 +209,11 @@ function migrateFromJson(db: Database.Database): void {
     }
 
     for (const r of state.researchLogs ?? []) {
-      db.prepare(`INSERT OR IGNORE INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      db.prepare(`INSERT OR IGNORE INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
         r.id, r.date, r.projectId, r.kind, r.title, r.source ?? '',
-        r.note ?? '', JSON.stringify(r.attachments ?? []), r.createdAt ?? new Date().toISOString()
+        r.note ?? '', JSON.stringify(r.attachments ?? []), r.createdAt ?? new Date().toISOString(),
+        r.readingStatus ?? 'unread', r.keyFindings ?? '', r.nextAction ?? ''
       )
     }
 
@@ -231,6 +247,7 @@ export function initDatabase(): Database.Database {
   db.exec(SCHEMA)
 
   db.prepare('INSERT OR IGNORE INTO caldav_config (id) VALUES (1)').run()
+  db.prepare('INSERT OR IGNORE INTO user_config (id) VALUES (1)').run()
 
   const hasData = db.prepare('SELECT COUNT(*) as c FROM projects').get() as { c: number }
   if (hasData.c === 0) {
@@ -299,6 +316,7 @@ export function loadFullState(db: Database.Database): AppState {
     id: row.id, date: row.date, projectId: row.project_id, kind: row.kind,
     title: row.title, source: row.source, note: row.note,
     attachments: JSON.parse(row.attachments), createdAt: row.created_at,
+    readingStatus: row.reading_status ?? 'unread', keyFindings: row.key_findings ?? '', nextAction: row.next_action ?? '',
   }))
 
   const pomodoroSessions = (db.prepare('SELECT * FROM pomodoro_sessions').all() as PomodoroSessionRow[]).map(row => ({
@@ -330,8 +348,8 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
     const insHabitEntry = db.prepare(`INSERT INTO habit_entries (id, habit_id, date, done) VALUES (?, ?, ?, ?)`)
     const insStudent = db.prepare(`INSERT INTO thesis_students (id, project_id, name, topic, stage, next_milestone, due_date, notes, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    const insLog = db.prepare(`INSERT INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    const insLog = db.prepare(`INSERT INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     const insPomodoro = db.prepare(`INSERT INTO pomodoro_sessions (id, project_id, date, minutes, created_at)
       VALUES (?, ?, ?, ?, ?)`)
 
@@ -357,7 +375,8 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
     }
     for (const r of state.researchLogs ?? []) {
       insLog.run(r.id, r.date, r.projectId, r.kind, r.title, r.source,
-        r.note, JSON.stringify(r.attachments), r.createdAt)
+        r.note, JSON.stringify(r.attachments), r.createdAt,
+        r.readingStatus ?? 'unread', r.keyFindings ?? '', r.nextAction ?? '')
     }
     for (const ps of state.pomodoroSessions ?? []) {
       insPomodoro.run(ps.id, ps.projectId, ps.date, ps.minutes, ps.createdAt)

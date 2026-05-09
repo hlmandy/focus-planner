@@ -83,6 +83,9 @@ export interface ResearchLogRow {
   note: string
   attachments: string
   created_at: string
+  reading_status: string
+  key_findings: string
+  next_action: string
 }
 
 export interface PomodoroSessionRow {

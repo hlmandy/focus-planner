@@ -112,7 +112,7 @@ focus-planner/
 | HabitEntry | `GET /api/habit-entries` | `POST /api/habit-entries` | `PUT /api/habit-entries/:id` | `DELETE /api/habit-entries/:id` |
 | ThesisStudent | `GET /api/thesis-students` | `POST /api/thesis-students` | `PUT /api/thesis-students/:id` | `DELETE /api/thesis-students/:id` |
 | ResearchLog | `GET /api/research-logs` | `POST /api/research-logs` | `PUT /api/research-logs/:id` | `DELETE /api/research-logs/:id` |
-| PomodoroSession | `GET /api/pomodoro-sessions` | `POST /api/pomodoro-sessions` | — | `DELETE /api/pomodoro-sessions/:id` |
+| PomodoroSession | `GET /api/pomodoro-sessions` | `POST /api/pomodoro-sessions` | `PUT /api/pomodoro-sessions/:id` | `DELETE /api/pomodoro-sessions/:id` |
 
 另有 `GET/PUT /api/state`（全量同步）保留用于兼容和备份导入导出。
 
@@ -141,6 +141,12 @@ blocks.update(id, finalPatch)
   - 在编辑器中填写标题后自动提升为 `source: 'task'`
   - 删除时间块时，无其他 block 引用的 `source: 'schedule'` Task 一并清除
 - **Project.kind** 决定模板和 UI 呈现：research/paper/student/admin
+- **ResearchLogEntry** 新增字段：`readingStatus`（unread/reading/read/reviewed）、`keyFindings`（关键结论）、`nextAction`（下一步行动）
+- **项目管理筛选器**（kind/status）持久化到 localStorage，刷新不丢失
+- **侧栏**支持展开/折叠已归档项目列表（localStorage 持久化）
+- **SummaryPage** 支持单项目 Markdown 导出（任务树 + 日记 + 时间块 + 新字段）
+- **ToolPanel** 包含全局搜索（跨项目/任务/日记/学生）和番茄钟历史管理（编辑/删除）
+- **DiaryPage/LiteraturePage** 支持编辑已有记录（标题/来源/笔记/附件/阅读状态/关键结论/下一步）
 - **CSS** 在 `styles/` 目录按组件拆分，通过 `App.css` 的 `@import` 汇总
 - **ESLint** 分两套配置：`src/` 用 browser globals + React 插件，`server/` 用 node globals
 - **后端路由**按实体拆分为独立文件，保持这个模式

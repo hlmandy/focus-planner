@@ -1,10 +1,31 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import { Check, Circle, FileText, Paperclip, Plus, Trash2 } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, Circle, FileText, Paperclip, Plus, Trash2 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { todayKey, uid, durationText, getTaskDescendantIds, isWebLink, researchLogKindLabels, isProjectTask } from '../utils'
 import { colors, projectKindLabels, projectStatusLabels, thesisStageLabels, projectTemplateGoals } from '../constants'
 import { createTasksFromTemplate } from '../seed'
 import type { ProjectKind, ProjectStatus, ThesisStage, Project, Task, ThesisStudent } from '../../shared/types'
+
+const KIND_FILTER_KEY = 'focus-planner-project-kind-filter'
+const STATUS_FILTER_KEY = 'focus-planner-project-status-filter'
+
+function loadFilter<T extends string>(key: string, fallback: T): T {
+  const stored = localStorage.getItem(key)
+  return (stored as T) ?? fallback
+}
+
+function ProjectDetailSection({ title, count, defaultOpen = false, children }: { title: string; count: number; defaultOpen?: boolean; children: ReactNode }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen)
+  return (
+    <section className="project-panel">
+      <button type="button" className="project-section-toggle" onClick={() => setIsOpen(v => !v)} aria-expanded={isOpen ? 'true' : 'false'}>
+        {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        <h3>{title} <span className="project-section-count">{count}</span></h3>
+      </button>
+      {isOpen && children}
+    </section>
+  )
+}
 
 export function ProjectsPage() {
   const {
@@ -13,8 +34,8 @@ export function ProjectsPage() {
     projectDetailId, setProjectDetailId, setPage, setPomodoroProjectId, pomodoroProjectId,
   } = useApp()
 
-  const [projectKindFilter, setProjectKindFilter] = useState<ProjectKind | 'all'>('all')
-  const [projectStatusFilter, setProjectStatusFilter] = useState<ProjectStatus | 'all'>('active')
+  const [projectKindFilter, setProjectKindFilter] = useState<ProjectKind | 'all'>(() => loadFilter(KIND_FILTER_KEY, 'all'))
+  const [projectStatusFilter, setProjectStatusFilter] = useState<ProjectStatus | 'all'>(() => loadFilter(STATUS_FILTER_KEY, 'active'))
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectKind, setNewProjectKind] = useState<ProjectKind>('research')
@@ -158,10 +179,10 @@ export function ProjectsPage() {
           <strong>项目管理</strong>
           <span>{managedProjectStats.length}/{projectStats.length} 个项目</span>
         </div>
-        <select value={projectKindFilter} onChange={e => setProjectKindFilter(e.target.value as ProjectKind | 'all')} aria-label="按类型筛选">
+        <select value={projectKindFilter} onChange={e => { const v = e.target.value as ProjectKind | 'all'; setProjectKindFilter(v); localStorage.setItem(KIND_FILTER_KEY, v); }} aria-label="按类型筛选">
           <option value="all">全部类型</option><option value="research">科研</option><option value="paper">论文</option><option value="student">指导</option><option value="admin">事务</option>
         </select>
-        <select value={projectStatusFilter} onChange={e => setProjectStatusFilter(e.target.value as ProjectStatus | 'all')} aria-label="按状态筛选">
+        <select value={projectStatusFilter} onChange={e => { const v = e.target.value as ProjectStatus | 'all'; setProjectStatusFilter(v); localStorage.setItem(STATUS_FILTER_KEY, v); }} aria-label="按状态筛选">
           <option value="all">全部状态</option><option value="active">进行中</option><option value="paused">暂停</option><option value="done">完成</option><option value="archived">归档</option>
         </select>
       </div>
@@ -326,10 +347,9 @@ export function ProjectsPage() {
               </section>
             )}
             {activeProjectStats.kind !== 'student' && (
-              <section className="project-panel">
-                <h3>最近研究日记</h3>
+              <ProjectDetailSection title="最近研究日记" count={activeProjectLogs.length} defaultOpen>
                 {activeProjectLogs.length ? (
-                  activeProjectLogs.slice(0, 5).map(entry => (
+                  activeProjectLogs.map(entry => (
                     <div key={entry.id} className="project-log-row">
                       <span className={`kind-pill ${entry.kind}`}>{researchLogKindLabels[entry.kind]}</span>
                       <strong>{entry.title}</strong>
@@ -337,26 +357,24 @@ export function ProjectsPage() {
                     </div>
                   ))
                 ) : <div className="project-empty">还没有研究日记</div>}
-              </section>
+              </ProjectDetailSection>
             )}
             {activeProjectStats.kind !== 'student' && (
-              <section className="project-panel">
-                <h3>文献</h3>
+              <ProjectDetailSection title="文献" count={activeProjectLiterature.length} defaultOpen>
                 {activeProjectLiterature.length ? (
-                  activeProjectLiterature.slice(0, 5).map(entry => (
+                  activeProjectLiterature.map(entry => (
                     <div key={entry.id} className="project-log-row">
                       <FileText size={15} /><strong>{entry.title}</strong><em>{entry.source || entry.date}</em>
                     </div>
                   ))
                 ) : <div className="project-empty">还没有文献记录</div>}
-              </section>
+              </ProjectDetailSection>
             )}
             {activeProjectStats.kind !== 'student' && (
-              <section className="project-panel">
-                <h3>附件</h3>
+              <ProjectDetailSection title="附件" count={activeProjectAttachments.length}>
                 {activeProjectAttachments.length ? (
                   <div className="project-attachment-list">
-                    {activeProjectAttachments.slice(0, 10).map(attachment => (
+                    {activeProjectAttachments.map(attachment => (
                       isWebLink(attachment.name) ? (
                         <a key={attachment.id} href={attachment.name} target="_blank" rel="noreferrer"><Paperclip size={13} /><span>{attachment.name}</span><em>{attachment.entryTitle}</em></a>
                       ) : (
@@ -365,7 +383,7 @@ export function ProjectsPage() {
                     ))}
                   </div>
                 ) : <div className="project-empty">还没有附件索引</div>}
-              </section>
+              </ProjectDetailSection>
             )}
           </div>
         </section>

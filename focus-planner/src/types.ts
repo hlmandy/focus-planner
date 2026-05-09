@@ -5,6 +5,7 @@ export type {
   ThesisStage,
   ResearchLogKind,
   TaskSource,
+  ReadingStatus,
   Project,
   Task,
   ScheduleBlock,

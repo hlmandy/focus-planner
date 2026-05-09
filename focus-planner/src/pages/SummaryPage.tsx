@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 import { Copy, RotateCcw, Save } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
-import { durationText, timeText, blockTitleText, researchLogKindLabels } from '../utils'
+import { durationText, timeText, blockTitleText, researchLogKindLabels, isProjectTask } from '../utils'
 
 export function SummaryPage() {
   const { date, mode, setMode, setSecondsLeft, setIsRunning,
-    projects, tasks, blocks, habits, habitEntries, researchLogs } = useApp()
+    projects, tasks, blocks, habits, habitEntries, researchLogs, pomodoroSessions,
+    projectFilterId, setProjectFilterId } = useApp()
 
   const habitEntryKeys = useMemo(
     () => new Set(habitEntries.items.filter((entry) => entry.done).map((entry) => `${entry.habitId}:${entry.date}`)),
@@ -40,10 +41,11 @@ export function SummaryPage() {
   )
 
   const visibleTasks = useMemo(
-    () => tasks.items.filter((task) => task.source !== 'schedule'),
+    () => tasks.items.filter((task) => isProjectTask(task)),
     [tasks.items],
   )
 
+  // Daily summary markdown
   const markdown = useMemo(() => {
     const allBlocks = blocks.items
     const doneTasks = visibleTasks.filter(
@@ -88,7 +90,9 @@ export function SummaryPage() {
               : ''
             const source = entry.source ? `；来源：${entry.source}` : ''
             const note = entry.note ? `\n  - ${entry.note}` : ''
-            return `- ${researchLogKindLabels[entry.kind]}｜${entry.title}（${project?.name ?? '工作项目'}${source}${attachments}）${note}`
+            const findings = entry.keyFindings ? `\n  - 关键结论：${entry.keyFindings}` : ''
+            const next = entry.nextAction ? `\n  - 下一步：${entry.nextAction}` : ''
+            return `- ${researchLogKindLabels[entry.kind]}｜${entry.title}（${project?.name ?? '工作项目'}${source}${attachments}）${note}${findings}${next}`
           })
         : ['- 无']),
       '',
@@ -102,31 +106,105 @@ export function SummaryPage() {
     return lines.join('\n')
   }, [visibleTasks, date, blocks.items, habits.items, projects.items, selectedDayBlocks, selectedDayMinutes, selectedDayLogs, tasksById, projectsById, habitEntryKeys])
 
+  // Project export markdown
+  const projectMarkdown = useMemo(() => {
+    if (projectFilterId === 'all') return ''
+    const project = projectsById[projectFilterId]
+    if (!project) return ''
+
+    const projectTasks = tasks.items.filter(t => t.projectId === projectFilterId && isProjectTask(t))
+    const projectBlocks = blocks.items.filter(b => {
+      const task = tasksById[b.taskId]
+      return task?.projectId === projectFilterId
+    })
+    const projectLogs = researchLogs.items.filter(e => e.projectId === projectFilterId).sort((a, b) => b.date.localeCompare(a.date))
+    const projectPomodoros = pomodoroSessions.items.filter(s => s.projectId === projectFilterId)
+    const totalMinutes = projectPomodoros.reduce((sum, s) => sum + s.minutes, 0)
+
+    const lines = [
+      `# 项目报告：${project.name}`,
+      '',
+      `> 类型：${project.kind === 'research' ? '科研' : project.kind === 'paper' ? '论文' : project.kind === 'student' ? '指导' : '事务'} · 状态：${project.status === 'active' ? '进行中' : project.status === 'paused' ? '暂停' : project.status === 'done' ? '完成' : '归档'}`,
+      project.goal ? `> ${project.goal}` : '',
+      '',
+      `## 概览`,
+      `- 任务：${projectTasks.filter(t => t.done).length}/${projectTasks.length} 完成`,
+      `- 专注时长：${durationText(totalMinutes)}`,
+      `- 研究日记：${projectLogs.length} 条`,
+      `- 时间块：${projectBlocks.length} 个`,
+      '',
+      '## 任务树',
+      ...(projectTasks.length
+        ? projectTasks.filter(t => !t.parentId).map(t => renderTaskTree(t, projectTasks, 0))
+        : ['- 暂无任务']),
+      '',
+      '## 研究日记',
+      ...(projectLogs.length
+        ? projectLogs.map(entry => {
+            const attachments = entry.attachments.length ? `；附件：${entry.attachments.join('，')}` : ''
+            const source = entry.source ? `；来源：${entry.source}` : ''
+            const note = entry.note ? `\n  > ${entry.note}` : ''
+            const findings = entry.keyFindings ? `\n  > 关键结论：${entry.keyFindings}` : ''
+            const next = entry.nextAction ? `\n  > 下一步：${entry.nextAction}` : ''
+            const status = ` [${entry.readingStatus === 'unread' ? '未读' : entry.readingStatus === 'reading' ? '阅读中' : entry.readingStatus === 'read' ? '已读' : '已复盘'}]`
+            return `- **${entry.title}** (${entry.date}) [${researchLogKindLabels[entry.kind]}]${status}${source}${attachments}${note}${findings}${next}`
+          })
+        : ['- 暂无日记']),
+      '',
+      '## 时间块记录',
+      ...(projectBlocks.length
+        ? projectBlocks.sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start).map(b => {
+            const task = tasksById[b.taskId]
+            return `- ${b.date} ${timeText(b.start)}-${timeText(b.end)} ${task?.title ?? '未命名'}${b.note ? `：${b.note}` : ''}`
+          })
+        : ['- 暂无时间块']),
+    ]
+    return lines.filter((l, i) => !(l === '' && i === 0)).join('\n')
+  }, [projectFilterId, projectsById, tasks.items, blocks.items, researchLogs.items, pomodoroSessions.items, tasksById])
+
   const resetPomodoro = (nextMode = mode) => {
     setMode(nextMode)
     setSecondsLeft(nextMode === 'work' ? 25 * 60 : 5 * 60)
     setIsRunning(false)
   }
 
+  const copyToClipboard = (text: string) => navigator.clipboard.writeText(text)
+
+  const exportMarkdown = (text: string, filename: string) => {
+    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="summary-page">
-      <textarea readOnly value={markdown} />
+      {/* Project selector */}
+      <div className="summary-controls">
+        <select value={projectFilterId} onChange={e => setProjectFilterId(e.target.value)} aria-label="选择项目">
+          <option value="all">今日总结</option>
+          {projects.items.filter(p => p.status !== 'archived').map(p => (
+            <option key={p.id} value={p.id}>{p.name} — 项目报告</option>
+          ))}
+        </select>
+        {projectFilterId !== 'all' && (
+          <button type="button" className="outline-action" onClick={() => setProjectFilterId('all')}>回到今日总结</button>
+        )}
+      </div>
+
+      <textarea readOnly value={projectFilterId === 'all' ? markdown : projectMarkdown} />
       <div className="summary-actions">
-        <button onClick={() => navigator.clipboard.writeText(markdown)}>
+        <button onClick={() => copyToClipboard(projectFilterId === 'all' ? markdown : projectMarkdown)}>
           <Copy size={16} />
           复制
         </button>
-        <button
-          onClick={() => {
-            const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' })
-            const url = URL.createObjectURL(blob)
-            const link = document.createElement('a')
-            link.href = url
-            link.download = `daily-summary-${date}.md`
-            link.click()
-            URL.revokeObjectURL(url)
-          }}
-        >
+        <button onClick={() => exportMarkdown(
+          projectFilterId === 'all' ? markdown : projectMarkdown,
+          projectFilterId === 'all' ? `daily-summary-${date}.md` : `project-${projectsById[projectFilterId]?.id ?? 'export'}.md`
+        )}>
           <Save size={16} />
           导出
         </button>
@@ -137,4 +215,13 @@ export function SummaryPage() {
       </div>
     </div>
   )
+}
+
+function renderTaskTree(task: { id: string; title: string; done: boolean; parentId?: string }, allTasks: { id: string; title: string; done: boolean; parentId?: string }[], depth: number): string {
+  const prefix = '  '.repeat(depth)
+  const marker = task.done ? '[x]' : '[ ]'
+  const children = allTasks.filter(t => t.parentId === task.id)
+  const lines = [`${prefix}- ${marker} ${task.title}`]
+  children.forEach(child => lines.push(renderTaskTree(child, allTasks, depth + 1)))
+  return lines.join('\n')
 }

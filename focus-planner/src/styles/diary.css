@@ -71,3 +71,136 @@
   display: grid;
   gap: 3px;
 }
+
+/* Diary date label */
+.diary-date-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.diary-date-label input {
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+/* Entry edit mode */
+.diary-entry-actions,
+.diary-edit-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.diary-entry-actions button,
+.diary-edit-actions button {
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.diary-entry-actions button:hover,
+.diary-edit-actions button:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+
+.diary-edit-actions .save-btn:hover {
+  color: #22c55e;
+}
+
+.diary-edit-actions .cancel-btn:hover {
+  color: #ef4444;
+}
+
+.diary-edit-input,
+.diary-edit-textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.diary-edit-input:focus,
+.diary-edit-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.diary-edit-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.diary-entry.editing,
+.literature-entry.editing {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.diary-status-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.reading-status {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.reading-status.unread {
+  background: rgba(160, 174, 192, 0.18);
+  color: #718096;
+}
+
+.reading-status.reading {
+  background: rgba(66, 153, 225, 0.18);
+  color: #2b6cb0;
+}
+
+.reading-status.read {
+  background: rgba(72, 187, 120, 0.18);
+  color: #276749;
+}
+
+.reading-status.reviewed {
+  background: rgba(128, 90, 213, 0.18);
+  color: #553c9a;
+}
+
+.diary-findings,
+.diary-next-action {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.58;
+  font-size: 13px;
+}
+
+.diary-findings strong,
+.diary-next-action strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.diary-edit-textarea.compact {
+  min-height: 50px;
+}

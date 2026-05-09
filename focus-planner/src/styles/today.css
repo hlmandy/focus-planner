@@ -18,7 +18,7 @@
   gap: 9px;
 }
 
-.todo,
+.task-strip .todo,
 .project-task {
   min-height: 42px;
   display: grid;
@@ -32,11 +32,11 @@
   box-shadow: var(--shadow-sm);
 }
 
-.todo {
+.task-strip .todo {
   cursor: grab;
 }
 
-.todo button,
+.task-strip .todo button,
 .project-task button {
   display: grid;
   place-items: center;
@@ -44,7 +44,7 @@
   color: var(--muted);
 }
 
-.todo span,
+.task-strip .todo span,
 .project-task span {
   min-width: 0;
   overflow: hidden;
@@ -52,7 +52,7 @@
   white-space: nowrap;
 }
 
-.todo.done span,
+.task-strip .todo.done span,
 .project-task.done span {
   color: var(--muted);
   text-decoration: line-through;

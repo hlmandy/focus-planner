@@ -177,3 +177,51 @@
   gap: 6px;
   padding: 6px 2px 0;
 }
+
+/* Sidebar archive toggle */
+.sidebar-archive-toggle {
+  width: 100%;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  padding: 0 8px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+  border-top: 1px solid rgba(60, 150, 56, 0.14);
+  padding-top: 6px;
+}
+
+.sidebar-archive-toggle:hover {
+  color: var(--ink);
+}
+
+.sidebar-archive-toggle .chevron {
+  margin-left: auto;
+  transition: transform 0.2s;
+  font-size: 16px;
+}
+
+.sidebar-archive-toggle .chevron.open {
+  transform: rotate(90deg);
+}
+
+/* Archived project filter */
+.project-filter.archived {
+  opacity: 0.65;
+}
+
+.project-filter.archived:hover,
+.project-filter.archived.active {
+  opacity: 1;
+}
+
+/* Dynamic dot colors via data attribute */
+.project-filter[data-color] .dot {
+  background: attr(data-color);
+}

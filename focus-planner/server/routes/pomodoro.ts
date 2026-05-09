@@ -37,6 +37,14 @@ export function pomodoroRoutes(app: Hono, db: Database.Database) {
     return c.json({ ok: true }, 201)
   })
 
+  app.put('/api/pomodoro-sessions/:id', async (c) => {
+    const body = await c.req.json()
+    db.prepare('UPDATE pomodoro_sessions SET project_id = ?, minutes = ? WHERE id = ?').run(
+      body.projectId, body.minutes, c.req.param('id')
+    )
+    return c.json({ ok: true })
+  })
+
   app.delete('/api/pomodoro-sessions/:id', (c) => {
     db.prepare('DELETE FROM pomodoro_sessions WHERE id = ?').run(c.req.param('id'))
     return c.json({ ok: true })

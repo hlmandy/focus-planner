@@ -1,15 +1,18 @@
 import { useState } from 'react'
-import { Plus, Settings, CalendarDays, TimerReset, FolderKanban, Flame, Save } from 'lucide-react'
+import { Archive, Plus, Settings, CalendarDays, TimerReset, FolderKanban, Flame, Save } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { uid } from '../utils'
 import { colors, projectTemplateGoals } from '../constants'
 import { createTasksFromTemplate } from '../seed'
 import type { ProjectKind } from '../../shared/types'
 
+const ARCHIVED_STORAGE_KEY = 'focus-planner-show-archived'
+
 export function Sidebar() {
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectKind, setNewProjectKind] = useState<ProjectKind>('research')
   const [isSidebarProjectComposerOpen, setIsSidebarProjectComposerOpen] = useState(false)
+  const [showArchived, setShowArchived] = useState(() => localStorage.getItem(ARCHIVED_STORAGE_KEY) === 'true')
 
   const {
     projects, tasks,
@@ -19,6 +22,12 @@ export function Sidebar() {
     isSidebarOpen, setIsSidebarOpen,
     setPomodoroProjectId,
   } = useApp()
+
+  const toggleArchived = () => {
+    const next = !showArchived
+    setShowArchived(next)
+    localStorage.setItem(ARCHIVED_STORAGE_KEY, String(next))
+  }
 
   const openProject = (id: string) => {
     setProjectFilterId(id)
@@ -57,6 +66,9 @@ export function Sidebar() {
     setNewProjectKind('research')
   }
 
+  const activeProjects = projects.items.filter(p => p.status !== 'archived')
+  const archivedProjects = projects.items.filter(p => p.status === 'archived')
+
   return (
     <aside className="sidebar">
       <button type="button" className="collapse-button" onClick={() => setIsSidebarOpen(!isSidebarOpen)} aria-label={isSidebarOpen ? '折叠侧栏' : '展开侧栏'}>
@@ -90,11 +102,25 @@ export function Sidebar() {
           <button type="button" className={`project-filter ${projectFilterId === 'all' ? 'active' : ''}`} onClick={() => openProject('all')}>
             <span className="dot muted" />全部项目
           </button>
-          {projects.items.map(project => (
-            <button key={project.id} type="button" className={`project-filter ${projectFilterId === project.id ? 'active' : ''}`} onClick={() => openProject(project.id)}>
-              <span className="dot" style={{ background: project.color }} />{project.name}
+          {activeProjects.map(project => (
+            <button key={project.id} type="button" className={`project-filter ${projectFilterId === project.id ? 'active' : ''}`} onClick={() => openProject(project.id)} style={{ '--dot-color': project.color } as React.CSSProperties}>
+              <span className="dot" />{project.name}
             </button>
           ))}
+          {archivedProjects.length > 0 && (
+            <>
+              <button type="button" className="sidebar-archive-toggle" onClick={toggleArchived} aria-expanded={showArchived ? 'true' : 'false'}>
+                <Archive size={14} />
+                <span>已归档 ({archivedProjects.length})</span>
+                <span className={`chevron ${showArchived ? 'open' : ''}`}>›</span>
+              </button>
+              {showArchived && archivedProjects.map(project => (
+                <button key={project.id} type="button" className={`project-filter archived ${projectFilterId === project.id ? 'active' : ''}`} onClick={() => openProject(project.id)} data-color={project.color}>
+                  <span className="dot" />{project.name}
+                </button>
+              ))}
+            </>
+          )}
           {isSidebarProjectComposerOpen && (
             <div className="sidebar-project-composer">
               <input className="project-input" value={newProjectName} onChange={e => setNewProjectName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addProject()} placeholder="新项目名称" autoFocus />

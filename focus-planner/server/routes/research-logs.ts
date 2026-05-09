@@ -10,6 +10,8 @@ function toLog(r: ResearchLogRow): ResearchLogEntry {
     id: r.id, date: r.date, projectId: r.project_id, kind: r.kind as ResearchLogEntry['kind'],
     title: r.title, source: r.source, note: r.note,
     attachments: safeJsonParse(r.attachments, []), createdAt: r.created_at,
+    readingStatus: (r.reading_status ?? 'unread') as ResearchLogEntry['readingStatus'],
+    keyFindings: r.key_findings ?? '', nextAction: r.next_action ?? '',
   }
 }
 
@@ -40,10 +42,11 @@ export function researchLogRoutes(app: Hono, db: Database.Database) {
     const err = requireFields(body, ['id', 'date', 'projectId', 'kind', 'title'])
       || checkEnum(body.kind, VALID_KINDS, 'kind')
     if (err) return c.json({ error: err }, 400)
-    db.prepare(`INSERT INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+    db.prepare(`INSERT INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
       body.id, body.date, body.projectId, body.kind, body.title,
       body.source ?? '', body.note ?? '', JSON.stringify(jsonStrArray(body, 'attachments')),
-      body.createdAt ?? new Date().toISOString()
+      body.createdAt ?? new Date().toISOString(),
+      body.readingStatus ?? 'unread', body.keyFindings ?? '', body.nextAction ?? ''
     )
     return c.json({ ok: true }, 201)
   })
@@ -52,9 +55,10 @@ export function researchLogRoutes(app: Hono, db: Database.Database) {
     const body = await c.req.json()
     const err = checkEnum(body.kind, VALID_KINDS, 'kind')
     if (err) return c.json({ error: err }, 400)
-    const r = db.prepare(`UPDATE research_logs SET date = ?, project_id = ?, kind = ?, title = ?, source = ?, note = ?, attachments = ? WHERE id = ?`).run(
+    const r = db.prepare(`UPDATE research_logs SET date = ?, project_id = ?, kind = ?, title = ?, source = ?, note = ?, attachments = ?, reading_status = ?, key_findings = ?, next_action = ? WHERE id = ?`).run(
       body.date, body.projectId, body.kind, body.title,
       body.source ?? '', body.note ?? '', JSON.stringify(jsonStrArray(body, 'attachments')),
+      body.readingStatus ?? 'unread', body.keyFindings ?? '', body.nextAction ?? '',
       c.req.param('id')
     )
     if (r.changes === 0) return c.json({ error: 'Research log not found' }, 404)
