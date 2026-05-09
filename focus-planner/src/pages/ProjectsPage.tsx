@@ -109,8 +109,19 @@ export function ProjectsPage() {
     if (!remaining.length) return
     const targetId = remaining[0]?.id ?? projects.items[0].id
 
-    // Optimistic: remove from local state immediately
+    // Snapshot for rollback
+    const projectSnapshot = projects.items
+    const taskSnapshot = tasks.items
+    const studentSnapshot = thesisStudents.items
+    const logSnapshot = researchLogs.items
+    const pomodoroSnapshot = pomodoroSessions.items
+
+    // Optimistic: remove project, reassign related entities to target
     projects.setItems(prev => prev.filter(p => p.id !== projectId))
+    tasks.setItems(prev => prev.map(t => t.projectId === projectId ? { ...t, projectId: targetId } : t))
+    thesisStudents.setItems(prev => prev.map(s => s.projectId === projectId ? { ...s, projectId: targetId } : s))
+    researchLogs.setItems(prev => prev.map(l => l.projectId === projectId ? { ...l, projectId: targetId } : l))
+    pomodoroSessions.setItems(prev => prev.map(p => p.projectId === projectId ? { ...p, projectId: targetId } : p))
     if (projectFilterId === projectId) setProjectFilterId('all')
     if (pomodoroProjectId === projectId) setPomodoroProjectId(targetId)
     if (projectDetailId === projectId) setProjectDetailId(null)
@@ -118,8 +129,12 @@ export function ProjectsPage() {
     try {
       await projects.reassignAndDelete(projectId, targetId)
     } catch {
-      // Reload from server on failure
-      projects.setItems(prev => [...prev, projects.items.find(p => p.id === projectId)!])
+      // Rollback all entities on failure
+      projects.setItems(projectSnapshot)
+      tasks.setItems(taskSnapshot)
+      thesisStudents.setItems(studentSnapshot)
+      researchLogs.setItems(logSnapshot)
+      pomodoroSessions.setItems(pomodoroSnapshot)
     }
   }
 

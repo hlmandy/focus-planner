@@ -162,30 +162,40 @@ export function SettingsPage() {
   const resetData = async () => {
     if (!window.confirm('确定要清空本地数据并恢复初始示例吗？')) return
     const seeded = seedState()
+    // Use full-state replacement endpoint (transactional on the backend)
+    let serverOk = false
     try {
       await api.put('/state', seeded)
+      serverOk = true
     } catch {
       // Server unavailable — fall back to local-only reset
     }
-    // Reload all entity hooks from server (or localStorage cache)
-    const [p, t, b, h, he, ts, rl, ps] = await Promise.all([
-      projectsApi.list().catch(() => seeded.projects),
-      tasksApi.list().catch(() => seeded.tasks),
-      blocksApi.list().catch(() => seeded.blocks),
-      habitsApi.list().catch(() => seeded.habits),
-      habitEntriesApi.list().catch(() => seeded.habitEntries),
-      thesisStudentsApi.list().catch(() => seeded.thesisStudents),
-      researchLogsApi.list().catch(() => seeded.researchLogs),
-      pomodoroApi.list().catch(() => seeded.pomodoroSessions),
-    ])
-    projects.setItems(p)
-    tasks.setItems(t)
-    blocks.setItems(b)
-    habits.setItems(h)
-    habitEntries.setItems(he)
-    thesisStudents.setItems(ts)
-    researchLogs.setItems(rl)
-    pomodoroSessions.setItems(ps)
+    // Update local entity state from server (or seed if server was unavailable)
+    if (serverOk) {
+      const [p, t, b, h, he, ts, rl, ps] = await Promise.all([
+        projectsApi.list().catch(() => seeded.projects),
+        tasksApi.list().catch(() => seeded.tasks),
+        blocksApi.list().catch(() => seeded.blocks),
+        habitsApi.list().catch(() => seeded.habits),
+        habitEntriesApi.list().catch(() => seeded.habitEntries),
+        thesisStudentsApi.list().catch(() => seeded.thesisStudents),
+        researchLogsApi.list().catch(() => seeded.researchLogs),
+        pomodoroApi.list().catch(() => seeded.pomodoroSessions),
+      ])
+      projects.setItems(p)
+      tasks.setItems(t)
+      blocks.setItems(b)
+      habits.setItems(h)
+      habitEntries.setItems(he)
+      thesisStudents.setItems(ts)
+      researchLogs.setItems(rl)
+      pomodoroSessions.setItems(ps)
+    } else {
+      // Server unavailable: write seed directly to localStorage so entity hooks pick it up on reload
+      localStorage.setItem('focus-planner-state', JSON.stringify(seeded))
+      window.location.reload()
+      return
+    }
     setProjectFilterId('all')
     setProjectDetailId(null)
     setPage('planner')
