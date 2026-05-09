@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Archive, Plus, Settings, CalendarDays, TimerReset, FolderKanban, Flame, Save } from 'lucide-react'
+import { Archive, Plus, Settings, CalendarDays, TimerReset, FolderKanban, Flame, Save, FileText } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { uid } from '../utils'
 import { colors, projectTemplateGoals } from '../constants'
@@ -83,6 +83,9 @@ export function Sidebar() {
         </button>
         <button type="button" className={page === 'projects' ? 'active' : ''} onClick={openProjectOverview} title="项目">
           <FolderKanban size={18} /><span>项目</span>
+        </button>
+        <button type="button" className={page === 'research-log' ? 'active' : ''} onClick={() => setPage('research-log')} title="研究日志">
+          <FileText size={18} /><span>研究日志</span>
         </button>
         <button type="button" className={page === 'habits' ? 'active' : ''} onClick={() => setPage('habits')} title="习惯">
           <Flame size={18} /><span>习惯</span>

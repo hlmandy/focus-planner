@@ -11,8 +11,7 @@ import { ToolPanel } from './components/ToolPanel'
 import { PlannerPage } from './pages/PlannerPage'
 import { TodayPage } from './pages/TodayPage'
 import { ProjectsPage } from './pages/ProjectsPage'
-import { DiaryPage } from './pages/DiaryPage'
-import { LiteraturePage } from './pages/LiteraturePage'
+import { ResearchLogPage } from './pages/ResearchLogPage'
 import { HabitsPage } from './pages/HabitsPage'
 import { SummaryPage } from './pages/SummaryPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -106,8 +105,7 @@ function AppShell() {
           {page === 'planner' && <PlannerPage />}
           {page === 'today' && <TodayPage />}
           {page === 'projects' && <ProjectsPage />}
-          {page === 'diary' && <DiaryPage />}
-          {page === 'literature' && <LiteraturePage />}
+          {page === 'research-log' && <ResearchLogPage />}
           {page === 'habits' && <HabitsPage />}
           {page === 'summary' && <SummaryPage />}
           {page === 'settings' && <SettingsPage />}

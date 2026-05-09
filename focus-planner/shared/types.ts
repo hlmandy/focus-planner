@@ -99,7 +99,7 @@ export interface AppState {
 }
 
 export type PersistenceStatus = 'checking' | 'server' | 'local' | 'saving' | 'error'
-export type PageName = 'today' | 'planner' | 'projects' | 'diary' | 'literature' | 'habits' | 'summary' | 'settings'
+export type PageName = 'today' | 'planner' | 'projects' | 'research-log' | 'habits' | 'summary' | 'settings'
 export type BlockViewStatus = 'done' | 'now' | 'todo'
 
 export interface UserSettings {

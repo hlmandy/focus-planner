@@ -231,8 +231,8 @@ export function ProjectsPage() {
               </div>
               <div className="project-card-actions">
                 <button onClick={e => { e.stopPropagation(); setProjectFilterId(project.id); setProjectDetailId(project.id); setPage('planner') }}>查看规划</button>
-                <button onClick={e => { e.stopPropagation(); setProjectFilterId(project.id); setProjectDetailId(project.id); setPage(project.kind === 'student' ? 'projects' : 'diary') }}>
-                  {project.kind === 'student' ? '学生进度' : '研究日记'}
+                <button onClick={e => { e.stopPropagation(); setProjectFilterId(project.id); setProjectDetailId(project.id); setPage(project.kind === 'student' ? 'projects' : 'research-log') }}>
+                  {project.kind === 'student' ? '学生进度' : '研究日志'}
                 </button>
               </div>
             </article>
@@ -284,7 +284,7 @@ export function ProjectsPage() {
             <button onClick={() => setPage('planner')}>查看规划</button>
             <button onClick={() => setPage('today')}>今日任务</button>
             {activeProjectStats.kind !== 'student' && (
-              <><button onClick={() => setPage('diary')}>研究日记</button><button onClick={() => setPage('literature')}>文献库</button></>
+              <button type="button" onClick={() => setPage('research-log')}>研究日志</button>
             )}
             {projects.items.length > 1 && <button onClick={() => deleteProject(activeProjectStats.id)}>删除项目</button>}
           </div>
@@ -347,7 +347,7 @@ export function ProjectsPage() {
               </section>
             )}
             {activeProjectStats.kind !== 'student' && (
-              <ProjectDetailSection title="最近研究日记" count={activeProjectLogs.length} defaultOpen>
+              <ProjectDetailSection title="最近研究日志" count={activeProjectLogs.length} defaultOpen>
                 {activeProjectLogs.length ? (
                   activeProjectLogs.map(entry => (
                     <div key={entry.id} className="project-log-row">
@@ -356,7 +356,7 @@ export function ProjectsPage() {
                       <em>{entry.date}</em>
                     </div>
                   ))
-                ) : <div className="project-empty">还没有研究日记</div>}
+                ) : <div className="project-empty">还没有研究日志</div>}
               </ProjectDetailSection>
             )}
             {activeProjectStats.kind !== 'student' && (

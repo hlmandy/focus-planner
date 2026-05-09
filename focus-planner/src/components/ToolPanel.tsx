@@ -6,11 +6,11 @@ import {
   parseQuickInput, getFallbackProjectId, blockDateText,
 } from '../utils'
 import { DAY_START, DAY_END, getCalendarDayInfo } from '../constants'
-import type { ScheduleBlock, Task } from '../../shared/types'
+import type { ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
 
 export function ToolPanel() {
   const {
-    projects, tasks, blocks, pomodoroSessions,
+    projects, tasks, blocks, pomodoroSessions, researchLogs,
     date, setDate, setPage,
     projectFilterId, setProjectFilterId, setProjectDetailId,
     setIsToolPanelOpen, toolPanelWidth, setToolPanelWidth,
@@ -19,6 +19,8 @@ export function ToolPanel() {
   } = useApp()
 
   const [quick, setQuick] = useState('')
+  const [quickLog, setQuickLog] = useState('')
+  const [quickLogKind, setQuickLogKind] = useState<ResearchLogKind>('literature')
   const [showPomodoroHistory, setShowPomodoroHistory] = useState(false)
   const [editingPomodoroId, setEditingPomodoroId] = useState<string | null>(null)
   const [editMinutes, setEditMinutes] = useState(25)
@@ -87,6 +89,22 @@ export function ToolPanel() {
     tasks.create(task).catch(() => {})
     blocks.create(block).catch(() => {})
     setQuick('')
+  }
+
+  const addQuickLog = () => {
+    const text = quickLog.trim()
+    if (!text) return
+    const projectId = projectFilterId === 'all'
+      ? getFallbackProjectId(projects.items, projects.items[0]?.id ?? 'research-topic-a')
+      : projectFilterId
+    researchLogs.create({
+      id: uid(), date, projectId, kind: quickLogKind,
+      title: text.length <= 60 ? text : '研究笔记',
+      source: '', note: text.length > 60 ? text : '',
+      attachments: [], createdAt: new Date().toISOString(),
+      readingStatus: 'unread' as const, keyFindings: '', nextAction: '',
+    }).catch(() => {})
+    setQuickLog('')
   }
 
   const deletePomodoro = (id: string) => {
@@ -288,6 +306,19 @@ export function ToolPanel() {
         <div className="tool-quick-add">
           <input value={quick} onChange={e => setQuick(e.target.value)} onKeyDown={e => e.key === 'Enter' && addQuickItem()} placeholder="读文献 #文献 @10:00" />
           <button type="button" onClick={addQuickItem} aria-label="新增 TODO"><Plus size={16} /></button>
+        </div>
+      </div>
+      <div className="tool-card quick-todo-tool">
+        <div className="tool-card-title">
+          <span>快速记录</span>
+        </div>
+        <div className="tool-quick-add">
+          <input value={quickLog} onChange={e => setQuickLog(e.target.value)} onKeyDown={e => e.key === 'Enter' && addQuickLog()} placeholder="记一笔想法、发现…" />
+          <select value={quickLogKind} onChange={e => setQuickLogKind(e.target.value as ResearchLogKind)} className="quick-log-kind" aria-label="记录类型">
+            <option value="literature">文献</option><option value="experiment">实验</option><option value="analysis">分析</option>
+            <option value="writing">写作</option><option value="meeting">讨论</option><option value="admin">事务</option>
+          </select>
+          <button type="button" onClick={addQuickLog} aria-label="快速记录"><Plus size={16} /></button>
         </div>
       </div>
       <div className="tool-card calendar-tool">
