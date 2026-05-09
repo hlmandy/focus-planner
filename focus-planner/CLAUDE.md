@@ -16,7 +16,7 @@ focus-planner/
 │   ├── utils.ts             # 纯函数：日期、时间、UID、解析等
 │   ├── constants.ts         # 常量：标签、模板、节假日、默认值
 │   ├── seed.ts              # 种子数据、状态归一化、localStorage 加载
-│   ├── api/                 # API 调用层
+│   ├── api/                 # API 调用层（11 个文件）
 │   │   ├── client.ts        # fetch 封装 + ApiError
 │   │   ├── index.ts         # 统一导出
 │   │   ├── projects.ts      # 各实体 API 函数
@@ -26,7 +26,8 @@ focus-planner/
 │   │   ├── habit-entries.ts
 │   │   ├── thesis-students.ts
 │   │   ├── research-logs.ts
-│   │   └── pomodoro.ts
+│   │   ├── pomodoro.ts
+│   │   └── settings.ts      # 用户设置 API
 │   ├── hooks/
 │   │   ├── useEntityResource.ts  # 通用 CRUD hook（乐观更新 + 回滚 + 缓存）
 │   │   ├── useProjects.ts        # 各实体 hook（组合通用 hook + API）
@@ -39,18 +40,18 @@ focus-planner/
 │   │   ├── usePomodoroSessions.ts
 │   │   └── useAppContext.tsx     # React Context：组合 8 个 entity hooks
 │   ├── pages/               # 页面组件（通过 useApp() 获取 entity hooks）
-│   │   ├── PlannerPage.tsx  # 周规划时间线
-│   │   ├── TodayPage.tsx    # 今日概览 + TODO
-│   │   ├── ProjectsPage.tsx # 项目管理
-│   │   ├── DiaryPage.tsx    # 研究日记
-│   │   ├── LiteraturePage.tsx # 文献库
-│   │   ├── HabitsPage.tsx   # 习惯追踪
-│   │   ├── SummaryPage.tsx  # Markdown 日总结导出（只读）
-│   │   └── SettingsPage.tsx # 设置 + 数据管理 + CalDAV 同步配置
+│   │   ├── PlannerPage.tsx  # 周规划时间线（422 行）
+│   │   ├── TodayPage.tsx    # 今日 TODO 列表（可拖拽到规划表）
+│   │   ├── ProjectsPage.tsx # 项目管理（卡片、详情、任务树、论文指导）
+│   │   ├── ResearchLogPage.tsx # 研究日记 + 文献库（统一页面，支持编辑）
+│   │   ├── HabitsPage.tsx   # 习惯追踪（周视图）
+│   │   ├── SummaryPage.tsx  # Markdown 日总结 + 项目报告导出
+│   │   └── SettingsPage.tsx # 设置 + 数据管理 + CalDAV 同步 + 用户偏好
+│   ├── assets/              # 静态资源（hero.png, react.svg, vite.svg）
 │   ├── components/          # 共享 UI 组件
 │   │   ├── Sidebar.tsx      # 左侧导航栏（含项目创建）
-│   │   └── ToolPanel.tsx    # 右侧工具面板（番茄钟、快速添加、日历）
-│   ├── styles/              # 组件级 CSS（13 个文件）
+│   │   └── ToolPanel.tsx    # 右侧工具面板（番茄钟、快速添加、日历、全局搜索）
+│   ├── styles/              # 组件级 CSS（14 个文件）
 │   │   ├── variables.css    # CSS 变量 / 主题色
 │   │   ├── shell.css        # 应用外壳 grid 布局
 │   │   ├── base.css         # 全局 reset + 共享按钮样式
@@ -60,21 +61,35 @@ focus-planner/
 │   │   ├── planner.css      # 时间线 + 时间块 + 编辑器（最大区块）
 │   │   ├── today.css
 │   │   ├── projects.css
-│   │   ├── diary.css
+│   │   ├── research-log.css # 研究日记 + 文献库样式
 │   │   ├── habits.css
 │   │   ├── summary-settings.css
 │   │   └── responsive.css   # 媒体查询
+│   ├── index.css            # 全局样式入口（Vite 默认）
 │   └── __tests__/           # vitest 测试
 │       ├── utils.test.ts    # 纯函数测试（20 个）
 │       └── seed.test.ts     # 状态归一化/迁移测试（16 个）
 ├── server/                  # Hono 后端
-│   ├── index.ts             # 路由注册
+│   ├── index.ts             # 路由注册（14 个路由模块）
 │   ├── db.ts                # SQLite schema + 迁移 + 备份
-│   ├── types.ts             # re-export shared types
+│   ├── types.ts             # re-export shared types + SQLite row 类型
 │   ├── validate.ts          # 入参校验（requireFields, jsonField 等）
 │   ├── caldav-client.ts     # CalDAV HTTP 协议层
 │   ├── caldav-sync.ts       # CalDAV 同步引擎
 │   └── routes/              # 按实体的 CRUD 路由（14 个文件）
+│       ├── state.ts         # 全量状态同步（兼容/备份）
+│       ├── projects.ts      # 各实体路由
+│       ├── tasks.ts
+│       ├── blocks.ts
+│       ├── habits.ts
+│       ├── habit-entries.ts
+│       ├── thesis-students.ts
+│       ├── research-logs.ts
+│       ├── pomodoro.ts
+│       ├── search.ts        # 全局搜索
+│       ├── backups.ts       # 数据备份
+│       ├── caldav.ts        # CalDAV 配置/同步/测试
+│       └── settings.ts      # 用户设置
 ├── data/                    # SQLite 数据库 + 备份
 ├── eslint.config.js         # ESLint：src/(browser) + server/(node) 分离配置
 └── docs/
@@ -87,9 +102,10 @@ focus-planner/
 - **前端**：React 19 + Vite 8 + TypeScript，运行在 localhost:5173
 - **后端**：Hono + better-sqlite3，运行在 localhost:8787
 - **类型共享**：`shared/types.ts` 是前后端类型的单一数据源，不再手动同步
-- **数据模型**：8 种实体（Project, Task, ScheduleBlock, Habit, HabitEntry, ThesisStudent, ResearchLogEntry, PomodoroSession）
+- **数据模型**：8 种实体（Project, Task, ScheduleBlock, Habit, HabitEntry, ThesisStudent, ResearchLogEntry, PomodoroSession）+ UserSettings
 - **状态管理**：按实体的 entity hooks（乐观更新 + API 同步 + localStorage 缓存兜底）
-- **测试**：vitest，覆盖 utils 纯函数和 seed 状态归一化/迁移逻辑
+- **测试**：vitest，覆盖 utils 纯函数和 seed 状态归一化/迁移逻辑（36 个测试）
+- **API client**：`src/api/client.ts` 统一 fetch 封装，`ApiError` 类型区分 HTTP 错误
 
 ## 数据流
 
@@ -113,8 +129,17 @@ focus-planner/
 | ThesisStudent | `GET /api/thesis-students` | `POST /api/thesis-students` | `PUT /api/thesis-students/:id` | `DELETE /api/thesis-students/:id` |
 | ResearchLog | `GET /api/research-logs` | `POST /api/research-logs` | `PUT /api/research-logs/:id` | `DELETE /api/research-logs/:id` |
 | PomodoroSession | `GET /api/pomodoro-sessions` | `POST /api/pomodoro-sessions` | `PUT /api/pomodoro-sessions/:id` | `DELETE /api/pomodoro-sessions/:id` |
+| UserSettings | `GET /api/settings` | `PUT /api/settings` | — | — |
 
-另有 `GET/PUT /api/state`（全量同步）保留用于兼容和备份导入导出。
+另有：
+- `GET/PUT /api/state` — 全量同步（兼容/备份）
+- `GET /api/search?q=` — 全局搜索（跨项目/任务/日记/学生）
+- `GET/PUT /api/caldav/config` — CalDAV 配置
+- `POST /api/caldav/test-connection` — 测试 CalDAV 连接
+- `POST /api/caldav/sync` — 手动触发 CalDAV 同步
+- `GET /api/caldav/status` — 同步状态
+- `POST /api/backups` — 触发备份
+- `GET /api/health` — 健康检查
 
 ## Entity Hook 模式
 

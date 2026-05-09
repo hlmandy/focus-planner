@@ -1,6 +1,6 @@
 # Focus Planner
 
-Focus Planner is a local-first research workbench for managing several active academic work streams at the same time. It is built with React, TypeScript, and Vite.
+Focus Planner is a local-first research workbench for managing several active academic work streams at the same time. It is built with React 19, TypeScript, and Vite 8, with a Hono + SQLite backend.
 
 The current product direction is not generic personal task management. It is aimed at a researcher who needs to answer:
 
@@ -15,18 +15,21 @@ Implemented:
 
 - Multiple concrete research projects, such as separate papers and research topics.
 - Support workflows for undergraduate thesis supervision and academic/admin work.
-- Project management with type/status filters plus an edit button for name, type, status, goal, and due date metadata.
+- Project management with type/status filters (persisted to localStorage) plus an edit button for name, type, status, goal, and due date metadata.
 - Type-specific templates for research topics, papers, undergraduate supervision, and admin/support workflows.
 - Hierarchical task trees inside each work object for phases, work packages, and nested subtasks.
 - Undergraduate thesis supervision tracks multiple students by progress stage, next milestone, due date, and notes rather than research diary/literature output.
-- Pomodoro sessions are linked to a work object so focused time can be attributed to a project or supervision workflow.
-- Weekly planning view with draggable/schedulable tasks, drag-created schedule blocks, block notes, and click-to-edit details. Schedule placeholders auto-promote to real tasks when given a title.
-- Left navigation and right utility tools use docked drawer behavior. The right utility drawer contains the Pomodoro timer and a small calendar tool.
-- Daily research diary entries linked to a project and date.
-- Literature records linked to a project and date.
+- Pomodoro sessions are linked to a work object so focused time can be attributed to a project or supervision workflow. Sessions can be edited or deleted from the tool panel.
+- Weekly planning view with draggable/schedulable tasks, drag-created schedule blocks, block notes, and click-to-edit details. Schedule placeholders auto-promote to real tasks when given a title. Deleting a block cleans up orphaned placeholder tasks.
+- Left navigation and right utility tools use docked drawer behavior. The right utility drawer contains the Pomodoro timer, global search, quick-add TODO, quick research log, and a calendar.
+- Daily research diary entries linked to a project and date. Literature records are a subset (kind === "literature"). Entries support editing, reading status, key findings, and next action fields.
 - Attachment/path/link indexing through diary and literature records.
 - Work detail pages that aggregate tasks, recent diary entries, literature records where relevant, and attachment indexes.
-- Daily Markdown summary export including planned work, completed tasks, habits, and research diary entries.
+- Daily Markdown summary export and full project Markdown report export (tasks + diary + blocks).
+- Global search across projects, tasks, diary entries, and thesis students.
+- User-configurable Pomodoro durations, break lengths, sleep hours, default page, and CalDAV auto-sync.
+- CalDAV calendar sync (iCloud or other) for pushing schedule blocks to an external calendar.
+- Sidebar with collapsible archived project list (persisted to localStorage).
 
 Out of scope until the user explicitly asks for it:
 
@@ -44,13 +47,22 @@ The key objects are:
 
 - `Project`: a work object with type, status, goal/description, and optional due date. Research topics and papers are outcome-oriented research projects; undergraduate thesis supervision and academic/admin work are support workflows.
 - `ThesisStudent`: one supervised undergraduate thesis student, with topic, stage, next milestone, due date, and notes.
-- `PomodoroSession`: a completed focused work session linked to a work object and date.
-- `Task`: planned project work that can be scheduled on the weekly planner. Tasks support `parentId` so each work object can have a multi-level task tree. Drag-created blank time blocks use schedule placeholder tasks and are hidden from project task trees and completion stats.
+- `PomodoroSession`: a completed focused work session linked to a work object and date. Editable after creation.
+- `Task`: planned project work that can be scheduled on the weekly planner. Tasks support `parentId` so each work object can have a multi-level task tree. Drag-created blank time blocks use schedule placeholder tasks (`source: 'schedule'`) and are hidden from project task trees and completion stats until given a title.
 - `ScheduleBlock`: a dated time block attached to a task or schedule placeholder, with its own note field for what happened during that time.
-- `ResearchLogEntry`: a dated record of actual work, including literature, experiment, analysis, writing, meeting, or admin notes.
-- `Habit`: lightweight recurring tracking.
+- `ResearchLogEntry`: a dated record of actual work, including literature, experiment, analysis, writing, meeting, or admin notes. Includes structured fields: reading status, key findings, next action.
+- `Habit`: lightweight recurring tracking with weekly grid view.
+- `UserSettings`: Pomodoro durations, sleep hours, default startup page, CalDAV auto-sync toggle.
 
 Research diary entries and literature records share the `ResearchLogEntry` structure. Literature records are entries where `kind === "literature"`.
+
+## Architecture
+
+- **Frontend**: React 19 + Vite 8 + TypeScript, runs on localhost:5173
+- **Backend**: Hono + better-sqlite3, runs on localhost:8787
+- **Shared types**: `shared/types.ts` is the single source of truth for all entity types, used by both frontend and backend
+- **State management**: Entity-level hooks with optimistic updates, API sync, and localStorage cache fallback
+- **API**: Per-entity REST endpoints (`/api/projects`, `/api/tasks`, etc.) plus `/api/state` for full sync, `/api/search` for global search, `/api/settings` for user preferences
 
 ## Development
 
@@ -62,11 +74,11 @@ Install dependencies:
 npm install
 ```
 
-Run the dev server:
+Run the dev servers:
 
 ```bash
-npm run server
-npm run dev
+npm run server   # backend API (localhost:8787)
+npm run dev      # frontend dev server (localhost:5173)
 ```
 
 `npm run server` starts a Hono API server backed by SQLite (`better-sqlite3`). Data is stored in `data/focus-planner-state.db` with rolling backups in `data/backups/`. The browser also keeps a `localStorage` copy as a fallback.
@@ -86,32 +98,72 @@ npm run lint
 Test:
 
 ```bash
-npm run test
+npm run test        # run once
+npm run test:watch  # watch mode
 ```
 
 ## Project Structure
 
 ```
-src/
-  types.ts          — shared type definitions
-  utils.ts          — pure utility functions (date, time, UID, etc.)
-  constants.ts      — labels, templates, holiday calendar, defaults
-  seed.ts           — seed data, state normalization, legacy migration
-  hooks/
-    useAppContext.tsx — React Context for shared state and navigation
-  pages/            — page components (Planner, Projects, Diary, etc.)
-  components/       — shared UI components (Sidebar, ToolPanel)
-  styles/           — component-level CSS (13 files)
-  __tests__/        — vitest tests (utils, seed normalization)
-  App.tsx           — app shell: providers, persistence, routing
-  App.css           — style entry point (@import styles/*)
-server/
-  index.ts          — Hono API server entry point
-  db.ts             — SQLite schema, init, migration, backup
-  types.ts          — shared backend type definitions
-  validate.ts       — request validation helpers
-  routes/           — CRUD routes per entity
-docs/
-  RESEARCH_WORKFLOW.md — intended research workflow
-  TODO.md           — next work items
+focus-planner/
+├── shared/
+│   └── types.ts          # shared type definitions (single source of truth)
+├── src/
+│   ├── types.ts          # re-export shared types + LegacyState migration types
+│   ├── utils.ts          # pure utility functions (date, time, UID, etc.)
+│   ├── constants.ts      # labels, templates, holiday calendar, defaults, STORAGE_KEY
+│   ├── seed.ts           # seed data, state normalization, legacy migration
+│   ├── api/              # per-entity API client functions (11 files)
+│   │   ├── client.ts     # fetch wrapper + ApiError
+│   │   ├── index.ts      # unified exports
+│   │   ├── projects.ts   # entity API functions (projects, tasks, blocks, etc.)
+│   │   ├── tasks.ts
+│   │   ├── blocks.ts
+│   │   ├── habits.ts
+│   │   ├── habit-entries.ts
+│   │   ├── thesis-students.ts
+│   │   ├── research-logs.ts
+│   │   ├── pomodoro.ts
+│   │   └── settings.ts   # user settings API
+│   ├── hooks/
+│   │   ├── useEntityResource.ts  # generic CRUD hook (optimistic update + rollback + cache)
+│   │   ├── useProjects.ts        # per-entity hooks
+│   │   ├── useTasks.ts
+│   │   ├── useBlocks.ts
+│   │   ├── useHabits.ts
+│   │   ├── useHabitEntries.ts
+│   │   ├── useThesisStudents.ts
+│   │   ├── useResearchLogs.ts
+│   │   ├── usePomodoroSessions.ts
+│   │   └── useAppContext.tsx     # React Context composing all entity hooks
+│   ├── pages/
+│   │   ├── PlannerPage.tsx   # weekly planner timeline
+│   │   ├── TodayPage.tsx     # today's TODO list
+│   │   ├── ProjectsPage.tsx  # project management
+│   │   ├── ResearchLogPage.tsx # research diary + literature (unified, editable)
+│   │   ├── HabitsPage.tsx    # habit tracker
+│   │   ├── SummaryPage.tsx   # daily/project Markdown export
+│   │   └── SettingsPage.tsx  # settings + data management + CalDAV sync
+│   ├── components/
+│   │   ├── Sidebar.tsx       # left nav with project list + archived toggle
+│   │   └── ToolPanel.tsx     # right panel (pomodoro, search, quick add, calendar)
+│   ├── styles/               # 14 component-level CSS files
+│   ├── assets/               # static images
+│   ├── __tests__/            # vitest tests (36 total)
+│   │   ├── utils.test.ts
+│   │   └── seed.test.ts
+│   ├── App.tsx               # app shell: Provider + routing + PomodoroTimer
+│   ├── App.css               # style entry point (@import styles/)
+│   └── main.tsx              # Vite entry
+├── server/
+│   ├── index.ts              # Hono route registration (14 route modules)
+│   ├── db.ts                 # SQLite schema, init, migration, backup
+│   ├── types.ts              # re-export shared types + SQLite row types
+│   ├── validate.ts           # request validation helpers
+│   ├── caldav-client.ts      # CalDAV HTTP layer
+│   ├── caldav-sync.ts        # CalDAV sync engine
+│   └── routes/               # 14 route files (per entity + search/backups/caldav/settings)
+├── data/                     # SQLite database + backups
+└── docs/
+    └── TODO.md               # next work items
 ```

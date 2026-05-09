@@ -1,20 +1,14 @@
 # Focus Planner — 待办事项
 
-基于 2026-05-07 代码审计。已归档的历史条目见 git log。
+基于 2026-05-09 代码审计。已归档的历史条目见 git log。
 
 ---
 
 ## P0：技术债 & 安全
 
-- [ ] **前后端类型共享**：`server/types.ts` 与 `src/types.ts` 是两份独立拷贝，核心类型（Project/Task/ScheduleBlock 等）目前一致但随时可能漂移。应提取为 `shared/types.ts` 双端引用
-- [ ] **清理 8 个 lint error**：
-  - `App.tsx:7` — `seedState` 导入未使用
-  - `ToolPanel.tsx:27` — `isToolPanelOpen` 赋值未使用
-  - `ProjectsPage.tsx:4` — `getFallbackProjectId` 导入未使用
-  - `useAppContext.tsx:48` — 导出非组件常量触发 react-refresh 警告
-  - `PlannerPage.tsx:41,49` — React Compiler 无法保留手动 useMemo（考虑移除或改为 React Compiler 友好写法）
-  - `server/db.ts:239`、`server/routes/backups.ts:24` — 空 catch 块需加注释
-- [ ] **删除时间块不清理孤立 Task**：`PlannerPage.removeBlock` 只删 ScheduleBlock，对应的 `source:'schedule'` 空壳 Task 永远留在 state.tasks 中（类似内存泄漏）
+- [x] **前后端类型共享**：已提取 `shared/types.ts` 作为单一数据源，`src/types.ts` 和 `server/types.ts` 均 re-export
+- [x] **清理 lint errors**：当前 `npx eslint .` 零错误
+- [x] **删除时间块不清理孤立 Task**：`PlannerPage.removeBlock` 已检查 `source === 'schedule'` 且无其他 block 引用时一并清除
 
 ## P1：核心体验缺失（目前只能新增/删除，不能编辑）
 
