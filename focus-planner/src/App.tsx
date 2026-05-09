@@ -102,6 +102,9 @@ function AppShell() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isToolPanelOpen, setIsToolPanelOpen] = useState(true)
   const [toolPanelWidth, setToolPanelWidth] = useState(248)
+  const [stopwatchSeconds, setStopwatchSeconds] = useState(0)
+  const [stopwatchRunning, setStopwatchRunning] = useState(false)
+  const [stopwatchProjectId, setStopwatchProjectId] = useState('research-topic-a')
   const shellRef = useRef<HTMLElement>(null)
 
   // Apply tool panel width via ref to avoid inline style
@@ -141,6 +144,9 @@ function AppShell() {
     mode, setMode,
     secondsLeft, setSecondsLeft,
     isRunning, setIsRunning,
+    stopwatchSeconds, setStopwatchSeconds,
+    stopwatchRunning, setStopwatchRunning,
+    stopwatchProjectId, setStopwatchProjectId,
   }
 
   return (

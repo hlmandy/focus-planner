@@ -95,8 +95,7 @@
 }
 
 .project-card-header button,
-.thesis-student-head button,
-.habit-delete {
+.thesis-student-head button {
   width: 30px;
   height: 30px;
   display: grid;
@@ -107,8 +106,7 @@
 }
 
 .project-card-header button:hover,
-.thesis-student-head button:hover,
-.habit-delete:hover {
+.thesis-student-head button:hover {
   background: var(--surface-3);
   color: var(--coral);
 }

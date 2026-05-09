@@ -56,8 +56,9 @@ export function PlannerPage() {
   const totalMinutes = visibleBlocks.reduce((sum, block) => sum + block.end - block.start, 0)
 
   // Compute night window from user's sleep settings (in minutes from midnight)
-  const sleepStartMin = parseClockTime(settings.sleepStart)   // e.g. 22:00 → 1320
-  const sleepEndMin = parseClockTime(settings.sleepEnd)       // e.g. 07:00 → 420
+  const toMins = (hhmm: string) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m }
+  const sleepStartMin = toMins(settings.sleepStart)   // e.g. 22:00 → 1320
+  const sleepEndMin = toMins(settings.sleepEnd)       // e.g. 07:00 → 420
   const nightEndMin = sleepEndMin + (sleepEndMin <= sleepStartMin ? 1440 : 0)  // wrap past midnight
 
   const rawCurrentMinute = now.getHours() * 60 + now.getMinutes()

@@ -140,3 +140,18 @@
 .habit-name strong:hover {
   text-decoration: underline dotted var(--ink-soft);
 }
+
+.habit-delete {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+}
+
+.habit-delete:hover {
+  background: var(--surface-3);
+  color: var(--coral);
+}

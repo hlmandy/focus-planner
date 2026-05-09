@@ -4,6 +4,9 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  --planner-header-height: 52px;
+  --planner-hour-height: 52px;
+  --planner-visible-hours: 13;
 }
 
 .planner-controls {
@@ -136,7 +139,7 @@
 
 .hours {
   position: relative;
-  height: 678px;
+  height: calc(var(--planner-header-height) + var(--planner-hour-height) * var(--planner-visible-hours));
   color: #748698;
   font-size: 12px;
 }
@@ -152,7 +155,7 @@
 .timeline {
   position: relative;
   min-width: 0;
-  height: 678px;
+  height: calc(var(--planner-header-height) + var(--planner-hour-height) * var(--planner-visible-hours));
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -166,7 +169,7 @@
   right: 0;
   height: 1px;
   background: #d9ead2;
-  transform: translateY(52px);
+  transform: translateY(var(--planner-header-height));
 }
 
 .hour-line.major {
@@ -209,7 +212,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 52px;
+  height: var(--planner-header-height);
   display: grid;
   align-content: center;
   gap: 2px;
@@ -266,7 +269,7 @@
   right: 0;
   height: 0;
   border-top: 2px solid var(--coral);
-  transform: translateY(52px);
+  transform: translateY(var(--planner-header-height));
   z-index: 5;
   pointer-events: none;
 }
@@ -296,7 +299,7 @@
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 8px 18px rgba(32, 34, 38, 0.12);
-  transform: translateY(52px);
+  transform: translateY(var(--planner-header-height));
 }
 
 .time-block.todo {
@@ -343,7 +346,7 @@
   background: rgba(60, 150, 56, 0.12);
   color: var(--blue);
   font-size: 11px;
-  transform: translateY(52px);
+  transform: translateY(var(--planner-header-height));
   pointer-events: none;
   overflow: hidden;
   text-overflow: ellipsis;

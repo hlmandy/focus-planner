@@ -72,7 +72,7 @@ export function AppProvider({
   children,
   initial,
 }: {
-  value: Omit<AppContextValue, 'state' | 'projects' | 'tasks' | 'blocks' | 'habits' | 'habitEntries' | 'thesisStudents' | 'researchLogs' | 'pomodoroSessions' | 'settings' | 'stopwatchSeconds' | 'setStopwatchSeconds' | 'stopwatchRunning' | 'setStopwatchRunning' | 'stopwatchProjectId' | 'setStopwatchProjectId'>
+  value: Omit<AppContextValue, 'state' | 'projects' | 'tasks' | 'blocks' | 'habits' | 'habitEntries' | 'thesisStudents' | 'researchLogs' | 'pomodoroSessions' | 'settings' | 'updateSettings' | 'stopwatchSeconds' | 'setStopwatchSeconds' | 'stopwatchRunning' | 'setStopwatchRunning' | 'stopwatchProjectId' | 'setStopwatchProjectId'>
   children: ReactNode
   initial: AppState
 }) {

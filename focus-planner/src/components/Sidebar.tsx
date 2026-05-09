@@ -97,7 +97,7 @@ export function Sidebar() {
       </nav>
       {isSidebarOpen && (
         <div className="sidebar-section">
-          <div className="section-title">
+          <div className="sidebar-section-title">
             <span>项目</span>
             <button type="button" onClick={() => setIsSidebarProjectComposerOpen(v => !v)} aria-label="添加项目">
               <Plus size={16} />
@@ -119,7 +119,7 @@ export function Sidebar() {
                 <span className={`chevron ${showArchived ? 'open' : ''}`}>›</span>
               </button>
               {showArchived && archivedProjects.map(project => (
-                <button key={project.id} type="button" className={`project-filter archived ${projectFilterId === project.id ? 'active' : ''}`} onClick={() => openProject(project.id)} data-color={project.color}>
+                <button key={project.id} type="button" className={`project-filter archived ${projectFilterId === project.id ? 'active' : ''}`} onClick={() => openProject(project.id)} style={{ '--dot-color': project.color } as React.CSSProperties}>
                   <span className="dot" />{project.name}
                 </button>
               ))}

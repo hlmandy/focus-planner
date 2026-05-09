@@ -1,11 +1,11 @@
 import { RotateCcw } from 'lucide-react'
-import { reportApiError } from '../api/client'
+import { api, reportApiError } from '../api/client'
 import { useApp } from '../hooks/useAppContext'
 import { seedState } from '../seed'
 import { useState, useEffect, useCallback, type FormEvent } from 'react'
 import { settingsApi } from '../api/settings'
-import { DEFAULT_USER_SETTINGS } from '../../shared/types'
-import type { UserSettings, PageName } from '../../shared/types'
+import { projectsApi, tasksApi, blocksApi, habitsApi, habitEntriesApi, thesisStudentsApi, researchLogsApi, pomodoroApi } from '../api'
+import type { PageName } from '../../shared/types'
 
 interface CalDAVConfigForm {
   serverUrl: string
@@ -39,6 +39,10 @@ type SectionId = 'data' | 'pomodoro' | 'sleep' | 'ui' | 'caldav'
 export function SettingsPage() {
   const { projects, tasks, blocks, habits, habitEntries, thesisStudents, researchLogs, pomodoroSessions, setProjectFilterId, setProjectDetailId, setPage, persistenceStatus, settings, updateSettings } = useApp()
 
+  // Local draft for form editing — initialized from context settings.
+  // The useEffect below fetches fresh settings from the server on mount.
+  const [draft, setDraft] = useState(settings)
+
   const [settingsSaving, setSettingsSaving] = useState(false)
   const [settingsMessage, setSettingsMessage] = useState('')
 
@@ -58,7 +62,7 @@ export function SettingsPage() {
   const [openSections, setOpenSections] = useState<Set<SectionId>>(new Set(['data']))
 
   useEffect(() => {
-    settingsApi.get().then(setSettings).catch(reportApiError)
+    settingsApi.get().then(setDraft).catch(reportApiError)
     fetch('/api/caldav/config').then(r => r.json()).then(data => {
       setConfig({
         serverUrl: data.serverUrl || '',
@@ -90,7 +94,7 @@ export function SettingsPage() {
     setSettingsSaving(true)
     setSettingsMessage('')
     try {
-      await updateSettings(settings)
+      await updateSettings(draft)
       setSettingsMessage('设置已保存')
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -235,8 +239,8 @@ export function SettingsPage() {
               type="number"
               min={1}
               max={120}
-              value={settings.workDuration}
-              onChange={e => setSettings({ ...settings, workDuration: Number(e.target.value) || 25 })}
+              value={draft.workDuration}
+              onChange={e => setDraft({ ...draft, workDuration: Number(e.target.value) || 25 })}
             />
           </div>
           <div className="settings-row">
@@ -246,8 +250,8 @@ export function SettingsPage() {
               type="number"
               min={1}
               max={60}
-              value={settings.breakDuration}
-              onChange={e => setSettings({ ...settings, breakDuration: Number(e.target.value) || 5 })}
+              value={draft.breakDuration}
+              onChange={e => setDraft({ ...draft, breakDuration: Number(e.target.value) || 5 })}
             />
           </div>
           <div className="settings-row">
@@ -257,8 +261,8 @@ export function SettingsPage() {
               type="number"
               min={1}
               max={60}
-              value={settings.longBreakDuration}
-              onChange={e => setSettings({ ...settings, longBreakDuration: Number(e.target.value) || 15 })}
+              value={draft.longBreakDuration}
+              onChange={e => setDraft({ ...draft, longBreakDuration: Number(e.target.value) || 15 })}
             />
           </div>
           <div className="settings-row">
@@ -268,8 +272,8 @@ export function SettingsPage() {
               type="number"
               min={1}
               max={10}
-              value={settings.longBreakInterval}
-              onChange={e => setSettings({ ...settings, longBreakInterval: Number(e.target.value) || 4 })}
+              value={draft.longBreakInterval}
+              onChange={e => setDraft({ ...draft, longBreakInterval: Number(e.target.value) || 4 })}
             />
           </div>
           <div className="settings-form-actions">
@@ -295,8 +299,8 @@ export function SettingsPage() {
             <input
               id="setting-sleep-start"
               type="time"
-              value={settings.sleepStart}
-              onChange={e => setSettings({ ...settings, sleepStart: e.target.value })}
+              value={draft.sleepStart}
+              onChange={e => setDraft({ ...draft, sleepStart: e.target.value })}
             />
           </div>
           <div className="settings-row">
@@ -304,8 +308,8 @@ export function SettingsPage() {
             <input
               id="setting-sleep-end"
               type="time"
-              value={settings.sleepEnd}
-              onChange={e => setSettings({ ...settings, sleepEnd: e.target.value })}
+              value={draft.sleepEnd}
+              onChange={e => setDraft({ ...draft, sleepEnd: e.target.value })}
             />
           </div>
           <div className="caldav-hint">在免打扰时段内，番茄钟自动暂停，不会发送通知。</div>
@@ -330,8 +334,8 @@ export function SettingsPage() {
             <label htmlFor="setting-default-page">默认首页</label>
             <select
               id="setting-default-page"
-              value={settings.defaultPage}
-              onChange={e => setSettings({ ...settings, defaultPage: e.target.value as PageName })}
+              value={draft.defaultPage}
+              onChange={e => setDraft({ ...draft, defaultPage: e.target.value as PageName })}
             >
               {pageOptions.map(p => (
                 <option key={p.value} value={p.value}>{p.label}</option>
@@ -341,8 +345,8 @@ export function SettingsPage() {
           <label className="caldav-toggle">
             <input
               type="checkbox"
-              checked={settings.autoSyncCalDAV}
-              onChange={e => setSettings({ ...settings, autoSyncCalDAV: e.target.checked })}
+              checked={draft.autoSyncCalDAV}
+              onChange={e => setDraft({ ...draft, autoSyncCalDAV: e.target.checked })}
             />
             每次保存后自动同步 CalDAV
           </label>

@@ -45,6 +45,50 @@ textarea::placeholder {
   border-radius: 999px;
   flex: 0 0 auto;
 }
+/* Base button component class */
+.btn {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0 13px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn:hover {
+  border-color: var(--line-strong);
+  background: #fff;
+}
+
+.btn-primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #2f7a2c;
+  border-color: #2f7a2c;
+}
+
+.btn-danger {
+  border-color: #f2b4ad;
+  color: var(--coral);
+  background: var(--coral-soft);
+}
+
+.btn-ghost {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Legacy: keep existing button styles working via parent selectors */
 .sidebar-project-composer button,
 .project-composer button,
 .project-card-actions button,

@@ -106,7 +106,7 @@
   border-top: 1px solid rgba(60, 150, 56, 0.14);
 }
 
-.section-title {
+.sidebar-section-title {
   min-height: 26px;
   display: flex;
   align-items: center;
@@ -118,7 +118,7 @@
   letter-spacing: 0;
 }
 
-.section-title button {
+.sidebar-section-title button {
   width: 26px;
   height: 26px;
   display: grid;
@@ -128,7 +128,7 @@
   color: var(--muted);
 }
 
-.section-title button:hover {
+.sidebar-section-title button:hover {
   background: rgba(255, 255, 255, 0.9);
   color: var(--blue);
 }
@@ -221,7 +221,7 @@
   opacity: 1;
 }
 
-/* Dynamic dot colors via data attribute */
-.project-filter[data-color] .dot {
-  background: attr(data-color);
+/* Dynamic dot colors via CSS variable set inline on the parent */
+.project-filter .dot {
+  background: var(--dot-color, var(--color-primary, #3c9638));
 }
