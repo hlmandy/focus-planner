@@ -52,9 +52,11 @@ Avoid adding these until the user explicitly asks for them:
 - `utils.ts` — pure utility functions. Do not re-define these in component files.
 - `constants.ts` — labels, templates, holiday calendar, defaults, `STORAGE_KEY`, `pageLabels`.
 - `seed.ts` — `seedState()`, `normalizeState()`, `loadState()`, `createTasksFromTemplate()`.
-- `hooks/useAppContext.tsx` — `AppProvider` + `useApp()`. All pages and components access shared state through this context.
-- `App.tsx` — thin shell only: state initialization, persistence effects, pomodoro timer, context provider, page routing. No inline page JSX or local type/constant definitions.
-- `pages/` — each page is a self-contained component with its own local useState for form fields. Mutations go through `setState` from `useApp()`.
+- `hooks/useAppContext.tsx` — `AppProvider` + `useApp()`. Composes all entity hooks (projects, tasks, blocks, habits, etc.) into a single context.
+- `hooks/useEntityResource.ts` — generic CRUD hook with optimistic update, rollback, and localStorage cache.
+- `hooks/use{Entity}.ts` — per-entity hooks combining `useEntityResource` + API functions.
+- `App.tsx` — thin shell only: context provider, routing, pomodoro timer. No inline page JSX or local type/constant definitions.
+- `pages/` — each page is a self-contained component with its own local useState for form fields. Mutations go through entity hooks from `useApp()` (e.g. `projects.create()`, `tasks.update()`, `blocks.setItems()`).
 - `components/` — shared UI (Sidebar, ToolPanel). Same pattern as pages.
 - `styles/` — one CSS file per component. Do not add styles to `App.css` or inline styles.
 
@@ -78,9 +80,9 @@ Avoid adding these until the user explicitly asks for them:
 ### Backend
 
 - Hono server at `server/index.ts`, SQLite via `better-sqlite3`, database at `data/focus-planner-state.db`.
-- Full-state sync: `GET/PUT /api/state`. Granular CRUD routes exist per entity but frontend uses full-state sync.
+- Frontend calls per-entity REST API (`/api/projects`, `/api/tasks`, etc.) via `src/api/`. `GET/PUT /api/state` remains for full-sync fallback.
+- `shared/types.ts` is the single source of truth for all entity types — both `src/types.ts` and `server/types.ts` re-export from it.
 - Rolling backups under `data/backups/`.
-- Server types in `server/types.ts` are a separate copy from `src/types.ts` — keep them in sync manually for now.
 
 ## Code Review & Refactor Principles
 

@@ -51,7 +51,7 @@ focus-planner/
 │   ├── components/          # 共享 UI 组件
 │   │   ├── Sidebar.tsx      # 左侧导航栏（含项目创建）
 │   │   └── ToolPanel.tsx    # 右侧工具面板（番茄钟、快速添加、日历、全局搜索）
-│   ├── styles/              # 组件级 CSS（14 个文件）
+│   ├── styles/              # 组件级 CSS（13 个文件）
 │   │   ├── variables.css    # CSS 变量 / 主题色
 │   │   ├── shell.css        # 应用外壳 grid 布局
 │   │   ├── base.css         # 全局 reset + 共享按钮样式
@@ -93,8 +93,7 @@ focus-planner/
 ├── data/                    # SQLite 数据库 + 备份
 ├── eslint.config.js         # ESLint：src/(browser) + server/(node) 分离配置
 └── docs/
-    ├── TODO.md              # 待办事项
-    └── RESEARCH_WORKFLOW.md # 科研工作流说明
+    └── TODO.md              # 待办事项
 ```
 
 ## 核心架构
@@ -172,7 +171,7 @@ blocks.update(id, finalPatch)
 - **侧栏**支持展开/折叠已归档项目列表（localStorage 持久化）
 - **SummaryPage** 支持单项目 Markdown 导出（任务树 + 日记 + 时间块 + 新字段）
 - **ToolPanel** 包含全局搜索（跨项目/任务/日记/学生）和番茄钟历史管理（编辑/删除）
-- **DiaryPage/LiteraturePage** 支持编辑已有记录（标题/来源/笔记/附件/阅读状态/关键结论/下一步）
+- **ResearchLogPage**（研究日记 + 文献库统一页面）支持编辑已有记录（标题/来源/笔记/附件/阅读状态/关键结论/下一步）
 - **CSS** 在 `styles/` 目录按组件拆分，通过 `App.css` 的 `@import` 汇总
 - **ESLint** 分两套配置：`src/` 用 browser globals + React 插件，`server/` 用 node globals
 - **后端路由**按实体拆分为独立文件，保持这个模式

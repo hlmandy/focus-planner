@@ -6,16 +6,26 @@
 
 ```
 focus-planner/
+├── shared/
+│   └── types.ts             # 前后端共享类型定义（单一数据源）
 ├── src/
-│   ├── App.tsx              # 薄壳（~150行）：Provider + persistence + pomodoro + 路由
+│   ├── App.tsx              # 应用壳：Provider + 路由 + PomodoroTimer
 │   ├── App.css              # @import 汇总（实际样式在 styles/ 下 13 个文件）
 │   ├── main.tsx             # Vite 入口
-│   ├── types.ts             # 所有 TypeScript 类型（8种实体 + AppState + PageName）
+│   ├── types.ts             # re-export shared types + LegacyState（迁移兼容）
 │   ├── utils.ts             # 纯函数：日期、时间、UID、解析
 │   ├── constants.ts         # 常量：标签、模板、节假日、默认值、STORAGE_KEY
 │   ├── seed.ts              # 种子数据、状态归一化（normalizeState）、loadState
+│   ├── api/                 # 按实体的 API 调用函数（11 个文件）
+│   │   ├── client.ts        # fetch 封装 + ApiError
+│   │   ├── index.ts         # 统一导出
+│   │   └── *.ts             # projects, tasks, blocks, habits, habit-entries,
+│   │                        # thesis-students, research-logs, pomodoro, settings
 │   ├── hooks/
-│   │   └── useAppContext.tsx # React Context：全局状态 + 导航 + 番茄钟状态
+│   │   ├── useAppContext.tsx # React Context：组合 8 个 entity hooks
+│   │   ├── useEntityResource.ts # 通用 CRUD hook（乐观更新 + 回滚 + 缓存）
+│   │   └── use{Entity}.ts   # 各实体 hook（projects, tasks, blocks, habits,
+│   │                        # habit-entries, thesis-students, research-logs, pomodoro-sessions）
 │   ├── styles/              # 按组件拆分的 CSS（共 13 个文件）
 │   │   ├── variables.css    # CSS 自定义属性
 │   │   ├── shell.css        # app-shell grid 布局
@@ -26,65 +36,78 @@ focus-planner/
 │   │   ├── planner.css      # 规划表 + 时间块 + 编辑器
 │   │   ├── today.css        # 今日页
 │   │   ├── projects.css     # 项目管理页
-│   │   ├── diary.css        # 研究日记
+│   │   ├── research-log.css # 研究日记 + 文献库
 │   │   ├── habits.css       # 习惯追踪
 │   │   ├── summary-settings.css
 │   │   └── responsive.css   # 媒体查询
-│   ├── pages/               # 页面组件（各自通过 useApp() 获取上下文）
+│   ├── pages/               # 页面组件（通过 useApp() 获取 entity hooks）
 │   │   ├── PlannerPage.tsx  # 周规划时间线（含时间块 CRUD、拖拽、编辑器）
 │   │   ├── ProjectsPage.tsx # 项目管理（卡片、详情、任务树、论文指导）
 │   │   ├── TodayPage.tsx    # 今日概览 + TODO 条
-│   │   ├── DiaryPage.tsx    # 研究日记
-│   │   ├── LiteraturePage.tsx # 文献库
+│   │   ├── ResearchLogPage.tsx # 研究日记 + 文献库（统一页面，支持编辑）
 │   │   ├── HabitsPage.tsx   # 习惯追踪
-│   │   ├── SummaryPage.tsx  # Markdown 日总结导出
+│   │   ├── SummaryPage.tsx  # Markdown 日总结 + 项目报告导出
 │   │   └── SettingsPage.tsx # 设置 + 数据管理 + CalDAV 同步配置
 │   └── components/          # 共享 UI 组件
-│       ├── Sidebar.tsx      # 左侧导航栏（含项目创建）
-│       └── ToolPanel.tsx    # 右侧工具面板（番茄钟、快速添加、日历）
+│       ├── Sidebar.tsx      # 左侧导航栏（含项目创建、归档列表折叠）
+│       └── ToolPanel.tsx    # 右侧工具面板（番茄钟、全局搜索、快速添加、日历）
 ├── server/                  # Hono 后端
-│   ├── index.ts             # 路由注册
+│   ├── index.ts             # 路由注册（14 个路由模块）
 │   ├── db.ts                # SQLite schema + 迁移 + 备份
+│   ├── types.ts             # re-export shared types + SQLite row 类型
+│   ├── validate.ts          # 入参校验
 │   ├── caldav-client.ts     # CalDAV HTTP 协议层（PROPFIND/PUT/DELETE、ICS 构建）
 │   ├── caldav-sync.ts       # CalDAV 同步引擎（变更检测、创建/更新/删除流程）
-│   ├── types.ts / validate.ts
-│   └── routes/              # 按实体的 CRUD 路由（14 个文件，含 caldav.ts）
+│   └── routes/              # 按实体的 CRUD 路由（13 个文件 + caldav.ts）
 ├── docs/                    # 文档
-│   ├── TODO.md              # 待办清单（按 P0-P4 优先级排列）
-│   └── RESEARCH_WORKFLOW.md # 研究工作流领域文档
-└── data/                    # SQLite 数据库 + 备份
+│   └── TODO.md              # 待办清单（按 P0-P4 优先级排列）
+├── data/                    # SQLite 数据库 + 备份
+├── eslint.config.js         # ESLint：src/(browser) + server/(node) 分离配置
+└── src/__tests__/           # vitest 测试（utils + seed，共 36 个）
 ```
 
 ## 数据流
 
-1. `App.tsx` 初始化时 `loadState()` 从 localStorage 读取
-2. `useEffect` 尝试 `GET /api/state`，服务器可用则覆盖
-3. 每次 state 变化 → 写 localStorage + 延迟 500ms `PUT /api/state`
-4. 番茄钟完成 → 自动创建 `PomodoroSession` 记录
-5. 每次 `PUT /api/state` → 后台触发 CalDAV 同步（将 ScheduleBlock 推送到 iCloud 等日历）
+1. App 初始化时从 localStorage 读取（`loadState()`），entity hooks mount 时从各 REST API 拉取最新数据
+2. 每次 CRUD 操作 → 立即更新本地 state（乐观更新）→ 异步调用对应 REST API → 失败时回滚
+3. 离线时 API 调用失败 → 本地 state 保持 → localStorage 缓存作为下次启动兜底
+4. 番茄钟完成 → `pomodoroSessions.create()` 乐观更新本地 state + API 同步
+5. CalDAV 同步由后端独立触发（全量同步时或手动触发），前端不直接参与
+
+## API 架构
+
+前端通过 `src/api/` 按实体调用细粒度 REST API（详见 `focus-planner/CLAUDE.md`）。
+
+另有辅助路由：`GET/PUT /api/state`（全量同步兼容）、`GET /api/search`（全局搜索）、`/api/caldav/*`（CalDAV 配置/同步）、`/api/backups`（备份）、`/api/health`（健康检查）。
 
 ## CalDAV 同步
 
-- **协议层**：`server/caldav-client.ts` — 纯 HTTP 封装，使用 Node.js `fetch`，支持 PROPFIND/PUT/DELETE
+- **协议层**：`server/caldav-client.ts` — 纯 HTTP 封装，使用 Node.js `fetch`
 - **同步引擎**：`server/caldav-sync.ts` — 读 DB → 比对 content hash → 创建/更新/删除远程事件
 - **映射表**：`caldav_sync_map` 表存储 block_id ↔ event_url/etag 的映射
 - **配置表**：`caldav_config` 单行表存储 CalDAV 凭据（Settings 页面管理）
-- **触发时机**：每次 state PUT 保存后自动后台同步，也可在 Settings 页手动触发
 - **时间转换**：ScheduleBlock 的 date + start/end (分钟) → iCalendar DTSTART/DTEND
 
-## 编码约定
+## 关键约定
 
+- **类型共享**：`shared/types.ts` 是前后端类型的单一数据源，修改实体类型只需改这里
 - **不重复定义**：types / constants / utils / seed 各有独立文件，不要在其他文件重新定义
-- **页面组件模式**：每个 page 通过 `useApp()` 获取 state 和 setter，表单状态用本地 useState
+- **页面组件模式**：每个 page 通过 `useApp()` 获取 entity hooks，表单状态用本地 useState
+- **Task.source** 区分真实任务 (`'task'`) 和日程占位 (`'schedule'`)
 - **样式**：改哪个组件就改 `styles/` 下对应文件，不要加到别处
 - **后端路由**：按实体拆分，保持一个文件一个实体
+- **ESLint**：两套配置，`src/` 用 browser globals，`server/` 用 node globals
 
 ## 常用命令
 
 ```bash
 cd focus-planner
-npm run dev      # 前端 dev server (localhost:5173)
-npm run server   # 后端 data server (localhost:8787)
-npm run build    # 构建生产版本
-npm run lint     # ESLint 检查
+npm run dev        # 前端 dev server (localhost:5173)
+npm run server     # 后端 data server (localhost:8787)
+npm run build      # 构建生产版本
+npm run lint       # ESLint 检查
+npm run test       # 运行测试
+npm run test:watch # 监听模式运行测试
+npm run typecheck  # TypeScript 类型检查
+npm run check      # typecheck + lint + test 一键全检
 ```
