@@ -469,13 +469,18 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
                 className="btn btn-primary stopwatch-save"
                 onClick={() => {
                   const mins = Math.max(1, Math.round(stopwatch.elapsedSeconds / 60))
+                  const now = Date.now()
+                  const nowMin = new Date(now).getHours() * 60 + new Date(now).getMinutes()
+                  const startMin = new Date(now - stopwatch.elapsedSeconds * 1000).getHours() * 60 + new Date(now - stopwatch.elapsedSeconds * 1000).getMinutes()
                   pomodoroSessions
                     .create({
                       id: uid(),
                       projectId: stopwatchProjectId,
                       date: todayKey(),
                       minutes: mins,
-                      createdAt: new Date().toISOString(),
+                      start: startMin,
+                      end: nowMin,
+                      createdAt: new Date(now).toISOString(),
                     })
                     .catch(reportApiError)
                   stopwatch.reset()

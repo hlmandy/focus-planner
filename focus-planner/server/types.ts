@@ -140,6 +140,8 @@ export interface PomodoroSessionRow {
   project_id: string
   date: string
   minutes: number
+  start_min: number | null
+  end_min: number | null
   created_at: string
 }
 

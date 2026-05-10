@@ -26,9 +26,10 @@ import {
   getCalendarDayInfo,
 } from '../constants'
 import type { ScheduleBlock } from '../../shared/types'
+import { reportApiError } from '../api/client'
 
 export function PlannerPage() {
-  const { projects, blocks, tasks, date, setDate, projectFilterId, isToolPanelOpen, settings } =
+  const { projects, blocks, tasks, pomodoroSessions, date, setDate, projectFilterId, isToolPanelOpen, settings } =
     useApp()
   const scheduleActions = useScheduleActions()
 
@@ -82,7 +83,17 @@ export function PlannerPage() {
     [blocks.items, weekKeys, tasksById, projectFilterId],
   )
 
+  const doneBlocks = useMemo(
+    () =>
+      pomodoroSessions.items
+        .filter(s => s.start != null && s.end != null && weekKeys.includes(s.date))
+        .filter(s => projectFilterId === 'all' || s.projectId === projectFilterId)
+        .sort((a, b) => a.date.localeCompare(b.date) || (a.start ?? 0) - (b.start ?? 0)),
+    [pomodoroSessions.items, weekKeys, projectFilterId],
+  )
+
   const totalMinutes = visibleBlocks.reduce((sum, block) => sum + block.end - block.start, 0)
+    + doneBlocks.reduce((sum, s) => sum + (s.start != null && s.end != null ? s.end - s.start : 0), 0)
 
   // Compute night window from user's sleep settings (in minutes from midnight)
   const toMins = (hhmm: string) => {
@@ -387,6 +398,7 @@ export function PlannerPage() {
             {weekDays.map(weekDate => {
               const dayKey = toDateKey(weekDate)
               const dayBlocks = visibleBlocks.filter(block => block.date === dayKey)
+              const dayDoneBlocks = doneBlocks.filter(s => s.date === dayKey)
               const dayInfo = getCalendarDayInfo(dayKey)
               return (
                 <section
@@ -484,6 +496,40 @@ export function PlannerPage() {
                           }}
                           aria-label="调整时长"
                         />
+                      </article>
+                    )
+                  })}
+                  {dayDoneBlocks.map(session => {
+                    const project = projectsById[session.projectId]
+                    const duration = (session.end ?? 0) - (session.start ?? 0)
+                    const blockColor = project?.color ?? '#3a7afe'
+                    return (
+                      <article
+                        key={session.id}
+                        className={`time-block done done-block ${duration < 45 ? 'compact' : duration < 75 ? 'regular' : 'spacious'}`}
+                        style={{
+                          top: ((session.start ?? 0) - DAY_START) * PIXELS_PER_MINUTE,
+                          height: duration * PIXELS_PER_MINUTE,
+                          borderColor: blockColor,
+                          background: `${blockColor}10`,
+                        }}
+                        onContextMenu={event => openBlockContextMenu(event, session.id)}
+                      >
+                        <button
+                          type="button"
+                          className="btn btn-ghost drag-area"
+                        >
+                          <strong>番茄钟 · {project?.name ?? '未知项目'}</strong>
+                          <span>
+                            {session.start != null ? timeText(session.start) : ''} - {session.end != null ? timeText(session.end) : ''}
+                          </span>
+                          {duration >= 75 && (
+                            <em>
+                              <b>{session.minutes}min</b>
+                              已完成
+                            </em>
+                          )}
+                        </button>
                       </article>
                     )
                   })}
@@ -679,30 +725,43 @@ export function PlannerPage() {
           onClick={event => event.stopPropagation()}
           onContextMenu={event => event.preventDefault()}
         >
-          <button
-            type="button"
-            className="planner-context-menu-item"
-            onClick={() => {
-              const block = blocks.items.find(b => b.id === contextMenu.blockId)
-              if (block) {
-                openBlockEditor(block.id, contextMenu.x, contextMenu.y)
-              }
-              setContextMenu(null)
-            }}
-          >
-            编辑
-          </button>
-          <button
-            type="button"
-            className="planner-context-menu-item danger"
-            onClick={() => {
-              scheduleActions.deleteBlock(contextMenu.blockId)
-              setEditingBlockId(null)
-              setContextMenu(null)
-            }}
-          >
-            删除时间块
-          </button>
+          {(() => {
+            const isDoneBlock = !blocks.items.some(b => b.id === contextMenu.blockId)
+            return (
+              <>
+                {!isDoneBlock && (
+                  <button
+                    type="button"
+                    className="planner-context-menu-item"
+                    onClick={() => {
+                      const block = blocks.items.find(b => b.id === contextMenu.blockId)
+                      if (block) {
+                        openBlockEditor(block.id, contextMenu.x, contextMenu.y)
+                      }
+                      setContextMenu(null)
+                    }}
+                  >
+                    编辑
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="planner-context-menu-item danger"
+                  onClick={() => {
+                    if (isDoneBlock) {
+                      pomodoroSessions.remove(contextMenu.blockId).catch(reportApiError)
+                    } else {
+                      scheduleActions.deleteBlock(contextMenu.blockId)
+                    }
+                    setEditingBlockId(null)
+                    setContextMenu(null)
+                  }}
+                >
+                  {isDoneBlock ? '删除专注记录' : '删除时间块'}
+                </button>
+              </>
+            )
+          })()}
         </div>
       )}
     </div>

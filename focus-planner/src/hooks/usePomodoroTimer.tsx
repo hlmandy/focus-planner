@@ -67,6 +67,11 @@ function clampRemaining(endsAt: number | null, fallback: number) {
   return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000))
 }
 
+function minuteOfDay(ts: number): number {
+  const d = new Date(ts)
+  return d.getHours() * 60 + d.getMinutes()
+}
+
 async function requestNotificationPermission() {
   if (!('Notification' in window)) return 'unsupported'
   if (Notification.permission !== 'default') return Notification.permission
@@ -113,6 +118,7 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const completingRef = useRef(false)
+  const startedAtRef = useRef<number | null>(null)
 
   const totalSeconds = mode === 'work' ? workSeconds : breakSeconds
 
@@ -136,12 +142,20 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
 
     try {
       if (mode === 'work') {
+        const now = Date.now()
+        const endMin = minuteOfDay(now)
+        const startedAt = startedAtRef.current
+        const startMin = startedAt != null ? minuteOfDay(startedAt) : null
+        startedAtRef.current = null
+
         const session: PomodoroSession = {
           id: roundId,
           projectId: pomodoroProjectId,
           date: todayKey(),
           minutes: settings.workDuration,
-          createdAt: new Date().toISOString(),
+          start: startMin,
+          end: endMin,
+          createdAt: new Date(now).toISOString(),
         }
         pomodoroSessions.create(session).catch(reportApiError)
         emitReminder({
@@ -198,6 +212,7 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
       const nextSeconds = nextMode === 'work' ? workSeconds : breakSeconds
       const nextRoundId = uid()
 
+      startedAtRef.current = null
       setMode(nextMode)
       setSecondsLeft(nextSeconds)
       setEndsAt(null)
@@ -218,6 +233,7 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
   const start = useCallback(() => {
     void requestNotificationPermission()
     const nextEndsAt = Date.now() + secondsLeft * 1000
+    startedAtRef.current = Date.now()
 
     setEndsAt(nextEndsAt)
     setIsRunning(true)

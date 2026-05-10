@@ -54,21 +54,25 @@ Avoid adding these until the user explicitly asks for them:
 - `seed.ts` — `seedState()`, `normalizeState()`, `loadState()`, `createTasksFromTemplate()`.
 - `hooks/useAppContext.tsx` — `AppProvider` + `useApp()`. Composes all entity hooks (projects, tasks, blocks, habits, etc.) into a single context. No `page`/`setPage` — routing is handled by react-router.
 - `hooks/useEntityResource.ts` — generic CRUD hook with optimistic update, rollback, and localStorage cache.
+- `hooks/useScheduleActions.ts` — cross-entity business layer for ScheduleBlock + Task interactions. All schedule writes (create diary/task blocks, convert types, delete with orphan cleanup) must go through this hook, not directly through entity hooks in page components.
+- `hooks/usePomodoroTimer.tsx` — `PomodoroTimerProvider` + `StopwatchTimerProvider`. Manages continuously running timer state with localStorage persistence. Timer logic does not belong in page components.
 - `hooks/use{Entity}.ts` — per-entity hooks combining `useEntityResource` + API functions.
-- `App.tsx` — thin shell only: context provider, react-router `<Routes>`, dynamic header title, pomodoro timer. No inline page JSX or local type/constant definitions.
-- `pages/` — each page is a self-contained component with its own local useState for form fields. Mutations go through entity hooks from `useApp()` (e.g. `projects.create()`, `tasks.update()`, `blocks.setItems()`).
+- `App.tsx` — thin shell only: context provider, `PomodoroTimerProvider`, `StopwatchTimerProvider`, react-router `<Routes>`, dynamic header title. No inline page JSX or local type/constant definitions.
+- `pages/` — each page is a self-contained component with its own local useState for form fields. Single-entity mutations go through entity hooks from `useApp()`. Schedule-related mutations go through `useScheduleActions()`.
 - `components/` — shared UI (Sidebar, ToolPanel). Same pattern as pages.
 - `styles/` — one CSS file per component. Do not add styles to `App.css` or inline styles.
 
 ### Data model rules
 
-- `Task.source`: `"task"` for real project tasks, `"schedule"` for blank planner time blocks. Task trees, TODO strips, and completion stats must ignore schedule placeholders. Typing a title in the block editor auto-promotes a schedule placeholder to a real task. Deleting a time block also removes orphaned schedule-only tasks with no remaining blocks.
+- `ScheduleBlock.blockType`: determines block category — `'task'` (linked to a Task via `taskId`, for project work) or `'diary'` (no Task, `taskId: null`, for non-project activities like childcare/commute/rest). Diary blocks can be converted to task blocks via `useScheduleActions.convertDiaryToTask()`.
+- `Task.source`: `"task"` for real project tasks, `"schedule"` for legacy placeholder tasks (from old migration). `source: 'schedule'` is only used in `normalizeState` for backward compatibility and in `useScheduleActions.deleteBlock` for orphan cleanup. Do not create new schedule placeholder tasks in page code.
 - `ScheduleBlock.note`: notes for a specific time window. Do not store in task title.
-- `Project.kind`: determines template and UI — `research` / `paper` / `student` / `admin`.
+- `Project.kind`: determines template and UI — `research` / `admin`. Old kinds (`paper`, `student`) are mapped to `research`/`admin` via `normalizeKind` in `seed.ts`.
 - `Task.parentId`: multi-level task trees. Deleting a parent deletes its entire subtree and related schedule blocks.
 - Literature records are `ResearchLogEntry` with `kind === "literature"`.
-- Pomodoro sessions are `PomodoroSession` linked to a project. Completed work intervals = 25 minutes.
+- Pomodoro sessions are `PomodoroSession` linked to a project and date. Created automatically by `PomodoroTimerProvider` on work completion.
 - HTTP/HTTPS attachments render as clickable links; other attachments are plain names/paths.
+- `seedState()` returns empty arrays (no demo projects). First launch has no pre-filled data.
 
 ### Layout rules
 

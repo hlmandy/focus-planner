@@ -22,8 +22,10 @@ focus-planner/
 │   │   └── *.ts             # projects, tasks, blocks, habits, habit-entries,
 │   │                        # thesis-students, research-logs, pomodoro, settings
 │   ├── hooks/
-│   │   ├── useAppContext.tsx # React Context：组合 8 个 entity hooks（无 page/setPage，路由替代）
+│   │   ├── useAppContext.tsx # React Context：组合 8 个 entity hooks + settings + UI state
 │   │   ├── useEntityResource.ts # 通用 CRUD hook（乐观更新 + 回滚 + 缓存）
+│   │   ├── useScheduleActions.ts # 跨实体业务层：ScheduleBlock + Task 联动（diary/task block 创建、转换、删除）
+│   │   ├── usePomodoroTimer.tsx # 番茄钟 + 秒表持续运行状态（Provider + Context，localStorage 持久化）
 │   │   └── use{Entity}.ts   # 各实体 hook（projects, tasks, blocks, habits,
 │   │                        # habit-entries, thesis-students, research-logs, pomodoro-sessions）
 │   ├── styles/              # 按组件拆分的 CSS（共 13 个文件）
@@ -72,7 +74,10 @@ focus-planner/
 - **后端**：Hono + better-sqlite3，运行在 localhost:8787
 - **类型共享**：`shared/types.ts` 是前后端类型的单一数据源，不再手动同步
 - **数据模型**：8 种实体（Project, Task, ScheduleBlock, Habit, HabitEntry, ThesisStudent, ResearchLogEntry, PomodoroSession）+ UserSettings
-- **状态管理**：按实体的 entity hooks（乐观更新 + API 同步 + localStorage 缓存兜底）
+- **状态管理层**（三层分离）：
+  - `useEntityResource` — 单实体 CRUD、乐观更新、回滚、localStorage 缓存
+  - `useScheduleActions` — ScheduleBlock + Task 跨实体业务动作（创建 diary/task block、转换、删除联动）
+  - `usePomodoroTimer` / `useStopwatchTimer` — 持续运行计时器状态（Provider + Context，localStorage 持久化）
 - **测试**：vitest，覆盖 utils 纯函数和 seed 状态归一化/迁移逻辑（36 个测试）
 - **API client**：`src/api/client.ts` 统一 fetch 封装，`ApiError` 类型区分 HTTP 错误
 - **路由**：react-router（`BrowserRouter`），`NavLink` / `navigate()` 导航，`useParams` 获取 URL 参数
@@ -82,9 +87,10 @@ focus-planner/
 1. App 初始化时从 localStorage 读取（`loadState()`），entity hooks mount 时从各 REST API 拉取最新数据
 2. 每次 CRUD 操作 → 立即更新本地 state（乐观更新）→ 异步调用对应 REST API → 失败时回滚
 3. 离线时 API 调用失败 → 本地 state 保持 → localStorage 缓存作为下次启动兜底
-4. 番茄钟完成 → `pomodoroSessions.create()` 乐观更新本地 state + API 同步
+4. 番茄钟完成 → `PomodoroTimerProvider` 调用 `pomodoroSessions.create()` 乐观更新本地 state + API 同步
 5. CalDAV 同步由后端独立触发（`PUT /api/state` 时或手动触发），前端不直接参与
 6. 前端路由使用 react-router（`BrowserRouter`），导航通过 `NavLink` / `navigate()` 而非 `setPage()` state
+7. Schedule 相关写操作走 `useScheduleActions`（创建 diary/task block、转换类型、删除联动 Task）
 
 ## API 架构
 
@@ -113,20 +119,55 @@ focus-planner/
 - `POST /api/backups` — 触发备份
 - `GET /api/health` — 健康检查
 
-## Entity Hook 模式
+## 状态管理层
+
+### Entity Hook（单实体 CRUD）
 
 每个实体 hook 返回 `{ items, setItems, error, create, update, remove, delete }`：
 
 ```ts
 // 乐观更新：立即改本地 state，后台调 API
 projects.create({ id: uid(), name: '新项目', ... })
-blocks.update(blockId, { start: 90, end: 120 })
+tasks.update(taskId, { done: true })
 tasks.delete(taskId)  // 或 tasks.remove(taskId)
+```
 
-// 拖拽等高频操作：先用 setItems() 纯本地更新，结束时调 update() 同步 API
-blocks.setItems(prev => prev.map(b => b.id === id ? { ...b, ...patch } : b))
-// pointerup 时：
-blocks.update(id, finalPatch)
+### useScheduleActions（ScheduleBlock + Task 联动）
+
+Schedule 相关写操作**必须**走 `useScheduleActions`，不要在页面里直接实现跨 Task + ScheduleBlock 的业务逻辑。
+
+```ts
+const actions = useScheduleActions()
+
+// 创建普通日程（不关联 Task）
+actions.createDiaryBlock({ date, start, end, title, category })
+
+// 创建项目任务 block（同时创建 Task + ScheduleBlock）
+actions.createTaskBlock({ date, start, end, title, projectId })
+
+// 排期已有 Task
+actions.scheduleExistingTask({ taskId, date, start, duration })
+
+// 转换 block 类型
+actions.convertDiaryToTask(blockId, projectId)
+actions.convertTaskBlockToDiary(blockId)
+
+// 删除 block（自动清理孤立 schedule placeholder Task）
+actions.deleteBlock(blockId)
+```
+
+### usePomodoroTimer / useStopwatchTimer（计时器运行状态）
+
+番茄钟和秒表通过 Provider + Context 管理，计时状态持久化到 localStorage，页面刷新后恢复。
+
+```ts
+const timer = usePomodoroTimer()
+timer.start() / timer.pause() / timer.reset()
+timer.adjustMinutes(5) / timer.setMinutes(30)
+timer.switchMode('break')
+
+const stopwatch = useStopwatchTimer()
+stopwatch.start() / stopwatch.pause() / stopwatch.reset()
 ```
 
 ## CalDAV 同步
@@ -153,13 +194,18 @@ UI 上通过类型选择器切换，默认"普通日程"。diary block 不显示
 - **类型共享**：`shared/types.ts` 是前后端类型的单一数据源，修改实体类型只需改这里
 - **不重复定义**：types / constants / utils / seed 各有独立文件，不要在其他文件重新定义
 - **页面组件模式**：每个 page 通过 `useApp()` 获取 entity hooks，表单状态用本地 useState
+- **Schedule 业务边界**：ScheduleBlock + Task 的跨实体写操作走 `useScheduleActions`，PlannerPage / TodayPage 不直接实现联动逻辑
+- **计时器状态**：番茄钟和秒表走 `PomodoroTimerProvider` / `StopwatchTimerProvider`，不放在页面组件里
 - **路由**：react-router 管理页面导航，`useParams` 获取 URL 参数（如 `projectId`），不再用 `page` state 切换
 - **Task.source** 区分真实任务 (`'task'`) 和日程占位 (`'schedule'`)
-  - 拖拽创建的时间块初始为 `source: 'schedule'`
-  - 在编辑器中填写标题后自动提升为 `source: 'task'`
-  - 删除时间块时，无其他 block 引用的 `source: 'schedule'` Task 一并清除
+  - `source: 'task'` 是用户明确创建的项目任务
+  - `source: 'schedule'` 是旧迁移遗留的空占位 Task，`normalizeState` 中自动推断
+  - 删除时间块时，`useScheduleActions.deleteBlock` 自动清理无其他 block 引用的 schedule placeholder Task
 - **ScheduleBlock.blockType** 区分项目任务 (`'task'`) 和普通日程 (`'diary'`)
-- **Project.kind** 决定模板和 UI 呈现：`research` / `admin`（原 `affairs` 已重命名为 `admin`）
+  - `task block`：关联 Task（`taskId` 非空），用于项目工作排程
+  - `diary block`：不关联 Task（`taskId: null`），用于带娃、吃饭、通勤等非项目日程
+- **Project.kind** 决定模板和 UI 呈现：`research` / `admin`（旧 `paper`/`student` 在 `normalizeKind` 中映射到 `research`/`admin`）
+- **seedState** 返回空数组（无 demo 数据），首次启动时无预填项目
 - **ResearchLogEntry** 新增字段：`readingStatus`（unread/reading/read/reviewed）、`keyFindings`（关键结论）、`nextAction`（下一步行动）
 - **项目管理筛选器**（kind/status）持久化到 localStorage，刷新不丢失
 - **侧栏**支持展开/折叠已归档项目列表（localStorage 持久化）

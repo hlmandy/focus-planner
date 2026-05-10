@@ -329,6 +329,20 @@
   text-decoration: line-through;
 }
 
+.time-block.done-block {
+  border-style: dashed;
+  opacity: 0.55;
+}
+
+.time-block.done-block .drag-area strong {
+  text-decoration: none;
+}
+
+.time-block.done-block .drag-area strong::after {
+  content: ' ✓';
+  color: #3a7afe;
+}
+
 .time-block.now {
   box-shadow:
     0 0 0 2px rgba(184, 75, 63, 0.28),

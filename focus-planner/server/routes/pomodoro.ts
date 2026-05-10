@@ -9,6 +9,8 @@ function toPomodoroSession(r: PomodoroSessionRow): PomodoroSession {
     projectId: r.project_id,
     date: r.date,
     minutes: r.minutes,
+    start: r.start_min ?? null,
+    end: r.end_min ?? null,
     createdAt: r.created_at,
   }
 }
@@ -47,13 +49,15 @@ export function pomodoroRoutes(app: Hono, db: Database.Database) {
     const err = requireFields(body, ['id', 'projectId', 'date'])
     if (err) return c.json({ error: err }, 400)
     db.prepare(
-      `INSERT INTO pomodoro_sessions (id, project_id, date, minutes, created_at)
-      VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO pomodoro_sessions (id, project_id, date, minutes, start_min, end_min, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       body.id,
       body.projectId,
       body.date,
       body.minutes ?? 25,
+      body.start ?? null,
+      body.end ?? null,
       body.createdAt ?? new Date().toISOString(),
     )
     return c.json({ ok: true }, 201)
@@ -61,9 +65,13 @@ export function pomodoroRoutes(app: Hono, db: Database.Database) {
 
   app.put('/api/pomodoro-sessions/:id', async c => {
     const body = await c.req.json()
-    db.prepare('UPDATE pomodoro_sessions SET project_id = ?, minutes = ? WHERE id = ?').run(
+    db.prepare(
+      'UPDATE pomodoro_sessions SET project_id = ?, minutes = ?, start_min = ?, end_min = ? WHERE id = ?',
+    ).run(
       body.projectId,
       body.minutes,
+      body.start ?? null,
+      body.end ?? null,
       c.req.param('id'),
     )
     return c.json({ ok: true })

@@ -191,6 +191,8 @@ export const normalizeState = (state: LegacyState): AppState => {
       projectId: resolveProjectId(session.projectId, projects),
       date: session.date ?? todayKey(),
       minutes: session.minutes ?? 25,
+      start: (session as { start?: number | null }).start ?? null,
+      end: (session as { end?: number | null }).end ?? null,
       createdAt: session.createdAt ?? new Date().toISOString(),
     })),
   }

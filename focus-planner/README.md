@@ -20,7 +20,7 @@ Implemented:
 - Hierarchical task trees inside each work object for phases, work packages, and nested subtasks.
 - Undergraduate thesis supervision tracks multiple students by progress stage, next milestone, due date, and notes rather than research diary/literature output.
 - Pomodoro sessions are linked to a work object so focused time can be attributed to a project or supervision workflow. Sessions can be edited or deleted from the tool panel.
-- Weekly planning view with draggable/schedulable tasks, drag-created schedule blocks, block notes, and click-to-edit details. Schedule placeholders auto-promote to real tasks when given a title. Deleting a block cleans up orphaned placeholder tasks.
+- Weekly planning view with draggable/schedulable tasks, drag-created schedule blocks, block notes, and click-to-edit details. Schedule blocks come in two types: task blocks (linked to a project Task) and diary blocks (standalone, for non-project activities like childcare or commute).
 - Left navigation and right utility tools use docked drawer behavior. The right utility drawer contains the Pomodoro timer, global search, quick-add TODO, quick research log, and a calendar.
 - Daily research diary entries linked to a project and date. Literature records are a subset (kind === "literature"). Entries support editing, reading status, key findings, and next action fields.
 - Attachment/path/link indexing through diary and literature records.
@@ -48,8 +48,8 @@ The key objects are:
 - `Project`: a work object with type, status, goal/description, and optional due date. Research topics and papers are outcome-oriented research projects; undergraduate thesis supervision and academic/admin work are support workflows.
 - `ThesisStudent`: one supervised undergraduate thesis student, with topic, stage, next milestone, due date, and notes.
 - `PomodoroSession`: a completed focused work session linked to a work object and date. Editable after creation.
-- `Task`: planned project work that can be scheduled on the weekly planner. Tasks support `parentId` so each work object can have a multi-level task tree. Drag-created blank time blocks use schedule placeholder tasks (`source: 'schedule'`) and are hidden from project task trees and completion stats until given a title.
-- `ScheduleBlock`: a dated time block attached to a task or schedule placeholder, with its own note field for what happened during that time.
+- `Task`: planned project work that can be scheduled on the weekly planner. Tasks support `parentId` so each work object can have a multi-level task tree. Task trees and completion stats ignore legacy schedule placeholders (`source: 'schedule'`).
+- `ScheduleBlock`: a dated time block. Two types: task blocks (`blockType: 'task'`, linked to a Task via `taskId`) for project work, and diary blocks (`blockType: 'diary'`, `taskId: null`) for non-project activities like childcare, commute, or rest. Each block has its own note field for what happened during that time.
 - `ResearchLogEntry`: a dated record of actual work, including literature, experiment, analysis, writing, meeting, or admin notes. Includes structured fields: reading status, key findings, next action.
 - `Habit`: lightweight recurring tracking with weekly grid view.
 - `UserSettings`: Pomodoro durations, sleep hours, default startup page, CalDAV auto-sync toggle.
@@ -62,7 +62,7 @@ Research diary entries and literature records share the `ResearchLogEntry` struc
 - **Backend**: Hono + better-sqlite3, runs on localhost:8787
 - **Shared types**: `shared/types.ts` is the single source of truth for all entity types, used by both frontend and backend
 - **Routing**: react-router (`BrowserRouter`) with `NavLink` / `navigate()`, URL-driven page and project detail (`/projects/:projectId`)
-- **State management**: Entity-level hooks with optimistic updates, API sync, and localStorage cache fallback
+- **State management**: Three-layer architecture — entity hooks for single-entity CRUD, `useScheduleActions` for ScheduleBlock + Task cross-entity logic, `usePomodoroTimer` / `useStopwatchTimer` for continuously running timer state
 - **API**: Per-entity REST endpoints (`/api/projects`, `/api/tasks`, etc.) plus `/api/state` for full sync, `/api/search` for global search, `/api/settings` for user preferences
 
 ## Development
@@ -147,6 +147,8 @@ focus-planner/
 │   │   └── settings.ts   # user settings API
 │   ├── hooks/
 │   │   ├── useEntityResource.ts  # generic CRUD hook (optimistic update + rollback + cache)
+│   │   ├── useScheduleActions.ts # cross-entity: ScheduleBlock + Task business logic
+│   │   ├── usePomodoroTimer.tsx  # pomodoro + stopwatch timer state (Provider + Context)
 │   │   ├── useProjects.ts        # per-entity hooks
 │   │   ├── useTasks.ts
 │   │   ├── useBlocks.ts
@@ -155,7 +157,7 @@ focus-planner/
 │   │   ├── useThesisStudents.ts
 │   │   ├── useResearchLogs.ts
 │   │   ├── usePomodoroSessions.ts
-│   │   └── useAppContext.tsx     # React Context composing all entity hooks
+│   │   └── useAppContext.tsx     # React Context composing all entity hooks + settings + UI state
 │   ├── pages/
 │   │   ├── PlannerPage.tsx   # weekly planner timeline
 │   │   ├── TodayPage.tsx     # today's TODO list

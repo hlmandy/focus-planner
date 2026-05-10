@@ -310,13 +310,15 @@ function migrateFromJson(db: Database.Database): void {
 
     for (const ps of state.pomodoroSessions ?? []) {
       db.prepare(
-        `INSERT OR IGNORE INTO pomodoro_sessions (id, project_id, date, minutes, created_at)
-        VALUES (?, ?, ?, ?, ?)`,
+        `INSERT OR IGNORE INTO pomodoro_sessions (id, project_id, date, minutes, start_min, end_min, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         ps.id,
         ps.projectId,
         ps.date,
         ps.minutes ?? 25,
+        (ps as { start?: number | null }).start ?? null,
+        (ps as { end?: number | null }).end ?? null,
         ps.createdAt ?? new Date().toISOString(),
       )
     }
@@ -472,6 +474,18 @@ export function initDatabase(): Database.Database {
     db.exec(`ALTER TABLE projects ADD COLUMN icon TEXT NOT NULL DEFAULT 'flask'`)
   }
 
+  // 9. Add start_min/end_min columns to pomodoro_sessions (for done-block timeline)
+  const pomodoroCols = db.prepare('PRAGMA table_info(pomodoro_sessions)').all() as {
+    name: string
+  }[]
+  const pomodoroColNames = new Set(pomodoroCols.map(c => c.name))
+  if (!pomodoroColNames.has('start_min')) {
+    db.exec(`ALTER TABLE pomodoro_sessions ADD COLUMN start_min INTEGER`)
+  }
+  if (!pomodoroColNames.has('end_min')) {
+    db.exec(`ALTER TABLE pomodoro_sessions ADD COLUMN end_min INTEGER`)
+  }
+
   const hasData = db.prepare('SELECT COUNT(*) as c FROM projects').get() as { c: number }
   if (hasData.c === 0) {
     migrateFromJson(db)
@@ -599,6 +613,8 @@ export function loadFullState(db: Database.Database): AppState {
     projectId: row.project_id,
     date: row.date,
     minutes: row.minutes,
+    start: row.start_min ?? null,
+    end: row.end_min ?? null,
     createdAt: row.created_at,
   }))
 
@@ -647,8 +663,8 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
       db.prepare(`INSERT INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     const insPomodoro =
-      db.prepare(`INSERT INTO pomodoro_sessions (id, project_id, date, minutes, created_at)
-      VALUES (?, ?, ?, ?, ?)`)
+      db.prepare(`INSERT INTO pomodoro_sessions (id, project_id, date, minutes, start_min, end_min, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`)
 
     for (const p of state.projects ?? []) {
       insProject.run(p.id, p.name, p.color, p.icon ?? 'flask', p.kind, p.status, p.goal, p.dueDate)
@@ -714,7 +730,7 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
       )
     }
     for (const ps of state.pomodoroSessions ?? []) {
-      insPomodoro.run(ps.id, ps.projectId, ps.date, ps.minutes, ps.createdAt)
+      insPomodoro.run(ps.id, ps.projectId, ps.date, ps.minutes, ps.start ?? null, ps.end ?? null, ps.createdAt)
     }
   })
   tx()
