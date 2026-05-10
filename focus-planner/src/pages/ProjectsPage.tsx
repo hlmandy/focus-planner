@@ -22,11 +22,14 @@ import {
 } from '../utils'
 import {
   colors,
+  PROJECT_PALETTE,
+  PROJECT_ICONS,
   projectKindLabels,
   projectStatusLabels,
   thesisStageLabels,
   projectTemplateGoals,
 } from '../constants'
+import { getProjectIcon } from '../utils/projectIcons'
 import { createTasksFromTemplate } from '../seed'
 import type {
   ProjectKind,

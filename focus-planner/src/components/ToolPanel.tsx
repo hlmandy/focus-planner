@@ -218,6 +218,8 @@ export function ToolPanel() {
     const block: ScheduleBlock = {
       id: uid(),
       taskId: task.id,
+      blockType: 'task',
+      title: '',
       date,
       start: parsed.start,
       end: parsed.start + 30,

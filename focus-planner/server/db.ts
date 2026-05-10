@@ -14,6 +14,7 @@ import type {
   AppState,
   Project,
   Task,
+  ScheduleBlock,
   ThesisStudent,
   ResearchLogEntry,
   ProjectRow,
@@ -38,6 +39,7 @@ CREATE TABLE IF NOT EXISTS projects (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   color TEXT NOT NULL,
+  icon TEXT NOT NULL DEFAULT 'flask',
   kind TEXT NOT NULL CHECK(kind IN ('research','admin')),
   status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','paused','done','archived')),
   goal TEXT NOT NULL DEFAULT '',
@@ -207,12 +209,13 @@ function migrateFromJson(db: Database.Database): void {
   const tx = db.transaction(() => {
     for (const p of state.projects ?? []) {
       db.prepare(
-        `INSERT OR IGNORE INTO projects (id, name, color, kind, status, goal, due_date)
-        VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT OR IGNORE INTO projects (id, name, color, icon, kind, status, goal, due_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         p.id,
         p.name,
         p.color,
+        p.icon ?? 'flask',
         p.kind ?? 'admin',
         p.status ?? 'active',
         p.goal ?? '',
@@ -411,6 +414,13 @@ export function initDatabase(): Database.Database {
     UPDATE projects SET kind = 'admin' WHERE kind IN ('student');
   `)
 
+  // 6. Add icon column to projects (if migrating from old schema)
+  const projectCols = db.prepare(`PRAGMA table_info(projects)`).all() as Array<{ name: string }>
+  const hasIcon = projectCols.some(col => col.name === 'icon')
+  if (!hasIcon) {
+    db.exec(`ALTER TABLE projects ADD COLUMN icon TEXT NOT NULL DEFAULT 'flask'`)
+  }
+
   const hasData = db.prepare('SELECT COUNT(*) as c FROM projects').get() as { c: number }
   if (hasData.c === 0) {
     migrateFromJson(db)
@@ -452,6 +462,7 @@ export function loadFullState(db: Database.Database): AppState {
     id: row.id,
     name: row.name,
     color: row.color,
+    icon: row.icon ?? 'flask',
     kind: row.kind as Project['kind'],
     status: row.status as Project['status'],
     goal: row.goal,
@@ -563,8 +574,8 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
     db.prepare('DELETE FROM projects').run()
 
     const insProject =
-      db.prepare(`INSERT INTO projects (id, name, color, kind, status, goal, due_date)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`)
+      db.prepare(`INSERT INTO projects (id, name, color, icon, kind, status, goal, due_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
     const insTask =
       db.prepare(`INSERT INTO tasks (id, title, project_id, parent_id, tags, done, created_at, source)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
@@ -588,7 +599,7 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
       VALUES (?, ?, ?, ?, ?)`)
 
     for (const p of state.projects ?? []) {
-      insProject.run(p.id, p.name, p.color, p.kind, p.status, p.goal, p.dueDate)
+      insProject.run(p.id, p.name, p.color, p.icon ?? 'flask', p.kind, p.status, p.goal, p.dueDate)
     }
     for (const t of state.tasks ?? []) {
       insTask.run(

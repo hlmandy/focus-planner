@@ -9,6 +9,7 @@ function toProject(r: ProjectRow): Project {
     id: r.id,
     name: r.name,
     color: r.color,
+    icon: r.icon ?? 'flask',
     kind: r.kind as Project['kind'],
     status: r.status as Project['status'],
     goal: r.goal,
@@ -51,8 +52,8 @@ export function projectRoutes(app: Hono, db: Database.Database) {
       checkEnum(status, PROJECT_STATUSES, 'status')
     if (err) return c.json({ error: err }, 400)
     db.prepare(
-      `INSERT INTO projects (id, name, color, kind, status, goal, due_date) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    ).run(body.id, body.name, body.color, kind, status, body.goal ?? '', body.dueDate ?? '')
+      `INSERT INTO projects (id, name, color, icon, kind, status, goal, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(body.id, body.name, body.color, body.icon ?? 'flask', kind, status, body.goal ?? '', body.dueDate ?? '')
     return c.json({ ok: true }, 201)
   })
 
@@ -72,8 +73,8 @@ export function projectRoutes(app: Hono, db: Database.Database) {
     if (err) return c.json({ error: err }, 400)
 
     db.prepare(
-      `UPDATE projects SET name = ?, color = ?, kind = ?, status = ?, goal = ?, due_date = ? WHERE id = ?`,
-    ).run(next.name, next.color, next.kind, next.status, next.goal ?? '', next.dueDate ?? '', id)
+      `UPDATE projects SET name = ?, color = ?, icon = ?, kind = ?, status = ?, goal = ?, due_date = ? WHERE id = ?`,
+    ).run(next.name, next.color, next.icon ?? 'flask', next.kind, next.status, next.goal ?? '', next.dueDate ?? '', id)
     return c.json({ ok: true })
   })
 

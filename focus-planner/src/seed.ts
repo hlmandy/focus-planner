@@ -29,6 +29,7 @@ export const normalizeProjects = (projects?: Project[]) => {
   if (!hasLegacySeedProject) {
     return projects.map(project => ({
       ...project,
+      icon: project.icon ?? (normalizeKind(project.kind ?? 'research') === 'research' ? 'flask' : 'briefcase'),
       kind: normalizeKind(project.kind ?? 'research'),
       status: project.status ?? 'active',
       goal: project.goal ?? '',
@@ -48,6 +49,7 @@ export const normalizeProjects = (projects?: Project[]) => {
       })
       .map(project => ({
         ...project,
+        icon: project.icon ?? (normalizeKind(project.kind ?? 'research') === 'research' ? 'flask' : 'briefcase'),
         kind: normalizeKind(project.kind ?? 'research'),
         status: project.status ?? 'active',
         goal: project.goal ?? '',
@@ -135,6 +137,16 @@ export const seedState = (): AppState => {
         date: todayKey(),
         start: 9 * 60,
         end: 9 * 60 + 45,
+        note: '',
+      },
+      {
+        id: uid(),
+        taskId: null,
+        blockType: 'diary',
+        title: '午饭',
+        date: todayKey(),
+        start: 12 * 60,
+        end: 13 * 60,
         note: '',
       },
     ],
@@ -225,6 +237,8 @@ export const normalizeState = (state: LegacyState): AppState => {
       return {
         id: block.id ?? uid(),
         taskId: existingTaskId,
+        blockType: (block as { blockType?: string }).blockType ?? 'task',
+        title: (block as { title?: string }).title ?? '',
         date: block.date,
         start: block.start,
         end: block.end,

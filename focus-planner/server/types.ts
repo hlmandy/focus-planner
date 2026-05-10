@@ -62,6 +62,7 @@ export interface ProjectRow {
   id: string
   name: string
   color: string
+  icon: string
   kind: string
   status: string
   goal: string

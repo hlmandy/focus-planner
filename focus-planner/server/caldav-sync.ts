@@ -10,26 +10,30 @@ import type { CaldavConfigRow, CaldavSyncMapRow } from './types.js'
 
 interface BlockWithTaskRow {
   block_id: string
-  task_id: string
+  task_id: string | null
+  block_type: string
+  block_title: string
   date: string
   start_min: number
   end_min: number
   note: string
-  title: string
-  done: number
-  project_id: string
+  title: string | null
+  done: number | null
+  project_id: string | null
 }
 
 interface BlockWithTask {
   blockId: string
-  taskId: string
+  taskId: string | null
+  blockType: string
+  blockTitle: string
   date: string
   startMin: number
   endMin: number
   note: string
-  title: string
+  title: string | null
   done: boolean
-  projectId: string
+  projectId: string | null
 }
 
 interface SyncMapRow {
@@ -44,9 +48,10 @@ interface SyncMapRow {
 }
 
 export function getContentHash(block: BlockWithTask): string {
+  const summary = block.blockType === 'diary' ? block.blockTitle : block.title ?? ''
   return [
     block.blockId,
-    block.title,
+    summary,
     block.date,
     String(block.startMin),
     String(block.endMin),
@@ -64,16 +69,19 @@ function getBlocksWithTasks(db: Database.Database): BlockWithTask[] {
     db
       .prepare(
         `
-    SELECT b.id as block_id, b.task_id, b.date, b.start_min, b.end_min, b.note,
+    SELECT b.id as block_id, b.task_id, b.block_type, b.block_title, b.date,
+           b.start_min, b.end_min, b.note,
            t.title, t.done, t.project_id
     FROM schedule_blocks b
-    JOIN tasks t ON t.id = b.task_id
+    LEFT JOIN tasks t ON t.id = b.task_id
   `,
       )
       .all() as BlockWithTaskRow[]
   ).map(r => ({
     blockId: r.block_id,
     taskId: r.task_id,
+    blockType: r.block_type ?? 'task',
+    blockTitle: r.block_title ?? '',
     date: r.date,
     startMin: r.start_min,
     endMin: r.end_min,
@@ -166,14 +174,17 @@ export async function runSync(db: Database.Database): Promise<{
     const uid = `${block.blockId}@focus-planner-caldav`
 
     if (!existing) {
+      const summary = block.blockType === 'diary'
+        ? block.blockTitle
+        : block.title ?? ''
       const ics = buildIcs({
         uid,
-        summary: (block.done ? '✓ ' : '') + block.title,
+        summary: (block.done ? '✓ ' : '') + summary,
         date: block.date,
         startMin: block.startMin,
         endMin: block.endMin,
         location: block.note || undefined,
-        description: `Source: Focus Planner\nBlock: ${block.blockId}\nTask: ${block.taskId}`,
+        description: `Source: Focus Planner\nBlock: ${block.blockId}\nType: ${block.blockType}`,
       })
       try {
         const result = await createRemoteEvent(config, uid, ics)
@@ -200,14 +211,17 @@ export async function runSync(db: Database.Database): Promise<{
       }
     } else if (existing.contentHash !== hash) {
       if (!existing.eventUrl) continue
+      const summary = block.blockType === 'diary'
+        ? block.blockTitle
+        : block.title ?? ''
       const ics = buildIcs({
         uid: existing.eventUid || uid,
-        summary: (block.done ? '✓ ' : '') + block.title,
+        summary: (block.done ? '✓ ' : '') + summary,
         date: block.date,
         startMin: block.startMin,
         endMin: block.endMin,
         location: block.note || undefined,
-        description: `Source: Focus Planner\nBlock: ${block.blockId}\nTask: ${block.taskId}`,
+        description: `Source: Focus Planner\nBlock: ${block.blockId}\nType: ${block.blockType}`,
       })
       try {
         const result = await updateRemoteEvent(config, existing.eventUrl, existing.etag, ics)

@@ -18,6 +18,31 @@ export const TIMELINE_HEADER_HEIGHT = 52
 
 export const colors = ['#3a7afe', '#00a884', '#f59e0b', '#ef4444', '#8b5cf6', '#0ea5e9']
 
+export const PROJECT_PALETTE = [
+  '#3c9638',
+  '#2b8a6e',
+  '#2563eb',
+  '#7c3aed',
+  '#f59e0b',
+  '#ef4444',
+  '#64748b',
+  '#0f766e',
+]
+
+export const PROJECT_ICONS = [
+  'flask',
+  'book',
+  'pen',
+  'chart',
+  'briefcase',
+  'calendar',
+  'users',
+  'baby',
+  'home',
+  'mail',
+  'file',
+] as const
+
 export const projectKindLabels: Record<ProjectKind, string> = {
   research: '科研',
   admin: '事务',
@@ -71,6 +96,7 @@ export const defaultProjects: Project[] = [
     id: 'research-topic-a',
     name: '课题 A：核心研究问题',
     color: '#3a7afe',
+    icon: 'flask',
     kind: 'research',
     status: 'active',
     goal: '推进核心研究问题、文献线索和实验/分析路径。',
@@ -80,6 +106,7 @@ export const defaultProjects: Project[] = [
     id: 'research-topic-b',
     name: '课题 B：数据分析方向',
     color: '#00a884',
+    icon: 'chart',
     kind: 'research',
     status: 'active',
     goal: '完成结果分析、图表和阶段性产出。',
@@ -89,6 +116,7 @@ export const defaultProjects: Project[] = [
     id: 'affairs-admin',
     name: '事务管理',
     color: '#f59e0b',
+    icon: 'briefcase',
     kind: 'admin',
     status: 'active',
     goal: '集中处理论文指导、会议、邮件、报销、材料等事务性工作。',

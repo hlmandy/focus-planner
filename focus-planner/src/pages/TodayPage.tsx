@@ -172,6 +172,8 @@ export function TodayPage() {
     const block: ScheduleBlock = {
       id: uid(),
       taskId: task.id,
+      blockType: 'task',
+      title: task.title,
       date,
       start: parsed.start,
       end: parsed.start + 30,
@@ -292,9 +294,12 @@ export function TodayPage() {
   const scheduleTaskQuick = (taskId: string) => {
     const lastEnd = todayBlocks.length > 0 ? Math.max(...todayBlocks.map(b => b.end)) : nowMinutes
     const start = clamp(snap(lastEnd + 30), DAY_START, DAY_END - 30)
+    const task = tasks.items.find(t => t.id === taskId)
     const block: ScheduleBlock = {
       id: uid(),
       taskId,
+      blockType: 'task',
+      title: task?.title ?? '',
       date,
       start,
       end: start + 30,
