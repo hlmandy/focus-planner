@@ -9,31 +9,27 @@ import {
 import type { LegacyState } from '../types'
 
 describe('seedState', () => {
-  it('returns a valid AppState with all required fields', () => {
+  it('returns a valid AppState with default projects and empty entity arrays', () => {
     const state = seedState()
     expect(state.projects.length).toBeGreaterThan(0)
-    expect(state.tasks.length).toBeGreaterThan(0)
-    expect(state.blocks).toBeDefined()
-    expect(state.habits).toBeDefined()
-    expect(state.habitEntries).toBeDefined()
-    expect(state.thesisStudents).toBeDefined()
-    expect(state.researchLogs).toBeDefined()
-    expect(state.pomodoroSessions).toBeDefined()
-  })
-
-  it('all seed tasks have source=task', () => {
-    const state = seedState()
-    for (const task of state.tasks) {
-      expect(task.source).toBe('task')
-    }
+    expect(state.tasks).toEqual([])
+    expect(state.blocks).toEqual([])
+    expect(state.habits).toEqual([])
+    expect(state.habitEntries).toEqual([])
+    expect(state.thesisStudents).toEqual([])
+    expect(state.researchLogs).toEqual([])
+    expect(state.pomodoroSessions).toEqual([])
   })
 })
 
 describe('normalizeState', () => {
-  it('returns seed state for empty input', () => {
+  it('returns default projects and empty arrays for empty input', () => {
     const result = normalizeState({})
     expect(result.projects.length).toBeGreaterThan(0)
-    expect(result.tasks.length).toBeGreaterThan(0)
+    expect(result.tasks).toEqual([])
+    expect(result.blocks).toEqual([])
+    expect(result.thesisStudents).toEqual([])
+    expect(result.researchLogs).toEqual([])
   })
 
   it('preserves existing tasks with source field', () => {

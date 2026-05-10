@@ -90,122 +90,16 @@ export const createTasksFromTemplate = (projectId: string, kind: ProjectKind) =>
   })
 }
 
-export const seedState = (): AppState => {
-  const planTaskId = uid()
-  return {
-    projects: [...defaultProjects],
-    tasks: [
-      {
-        id: uid(),
-        title: '梳理课题 A 的本周文献并更新问题清单 #文献 @10:00',
-        projectId: 'research-topic-a',
-        tags: ['文献'],
-        done: false,
-        createdAt: todayKey(),
-        source: 'task',
-      },
-      {
-        id: planTaskId,
-        title: '推进课题 B 的结果部分初稿 #写作',
-        projectId: 'research-topic-b',
-        tags: ['写作'],
-        done: false,
-        createdAt: todayKey(),
-        source: 'task',
-      },
-      {
-        id: uid(),
-        title: '给本科论文开题提纲反馈 #指导',
-        projectId: 'affairs-admin',
-        tags: ['指导'],
-        done: false,
-        createdAt: todayKey(),
-        source: 'task',
-      },
-      {
-        id: uid(),
-        title: '整理会议报销与待回邮件 #行政',
-        projectId: 'affairs-admin',
-        tags: ['行政'],
-        done: false,
-        createdAt: todayKey(),
-        source: 'task',
-      },
-    ],
-    blocks: [
-      {
-        id: uid(),
-        taskId: planTaskId,
-        blockType: 'task',
-        title: '',
-        date: todayKey(),
-        start: 9 * 60,
-        end: 9 * 60 + 45,
-        note: '',
-      },
-      {
-        id: uid(),
-        taskId: null,
-        blockType: 'diary',
-        title: '午饭',
-        date: todayKey(),
-        start: 12 * 60,
-        end: 13 * 60,
-        note: '',
-      },
-    ],
-    habits: [
-      {
-        id: uid(),
-        title: '文献阅读',
-        color: '#00a884',
-        createdAt: todayKey(),
-      },
-    ],
-    habitEntries: [],
-    thesisStudents: [
-      {
-        id: uid(),
-        projectId: 'affairs-admin',
-        name: '学生 A',
-        topic: '待确定论文题目',
-        stage: 'topic',
-        nextMilestone: '确定选题和研究问题',
-        dueDate: todayKey(),
-        notes: '记录沟通要点、材料缺口和下次反馈重点。',
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: uid(),
-        projectId: 'affairs-admin',
-        name: '学生 B',
-        topic: '开题报告修改',
-        stage: 'proposal',
-        nextMilestone: '提交开题报告第二版',
-        dueDate: todayKey(),
-        notes: '',
-        updatedAt: new Date().toISOString(),
-      },
-    ],
-    researchLogs: [
-      {
-        id: uid(),
-        date: todayKey(),
-        projectId: 'research-topic-a',
-        kind: 'literature',
-        title: '示例：阅读课题 A 的核心文献',
-        source: 'DOI / Zotero key / PDF 路径 / 论文链接',
-        note: '记录它回答了什么问题、用了什么方法、对自己课题有什么启发。',
-        attachments: ['paper.pdf', 'reading-notes.md'],
-        createdAt: new Date().toISOString(),
-        readingStatus: 'read',
-        keyFindings: '本文提出了 X 方法，可借鉴用于课题 A 的实验设计。',
-        nextAction: '复现文中的关键实验，对比自己数据。',
-      },
-    ],
-    pomodoroSessions: [],
-  }
-}
+export const seedState = (): AppState => ({
+  projects: [...defaultProjects],
+  tasks: [],
+  blocks: [],
+  habits: [],
+  habitEntries: [],
+  thesisStudents: [],
+  researchLogs: [],
+  pomodoroSessions: [],
+})
 
 export const normalizeState = (state: LegacyState): AppState => {
   const seeded = seedState()
@@ -282,17 +176,17 @@ export const normalizeState = (state: LegacyState): AppState => {
 
   return {
     projects,
-    tasks: tasks.length ? tasks : seeded.tasks,
+    tasks,
     blocks,
-    habits: state.habits?.length ? state.habits : seeded.habits,
-    habitEntries: state.habitEntries ?? seeded.habitEntries,
-    thesisStudents: (state.thesisStudents ?? seeded.thesisStudents).map(student => ({
+    habits: state.habits ?? [],
+    habitEntries: state.habitEntries ?? [],
+    thesisStudents: (state.thesisStudents ?? []).map(student => ({
       ...student,
       projectId: resolveProjectId(student.projectId, projects),
       stage: student.stage ?? 'topic',
       updatedAt: student.updatedAt ?? new Date().toISOString(),
     })),
-    researchLogs: (state.researchLogs ?? seeded.researchLogs).map(entry => ({
+    researchLogs: (state.researchLogs ?? []).map(entry => ({
       ...entry,
       projectId: resolveProjectId(entry.projectId, projects),
       attachments: entry.attachments ?? [],
@@ -301,7 +195,7 @@ export const normalizeState = (state: LegacyState): AppState => {
       keyFindings: entry.keyFindings ?? '',
       nextAction: entry.nextAction ?? '',
     })),
-    pomodoroSessions: (state.pomodoroSessions ?? seeded.pomodoroSessions).map(session => ({
+    pomodoroSessions: (state.pomodoroSessions ?? []).map(session => ({
       ...session,
       projectId: resolveProjectId(session.projectId, projects),
       date: session.date ?? todayKey(),

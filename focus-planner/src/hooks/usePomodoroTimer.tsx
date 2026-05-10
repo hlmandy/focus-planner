@@ -15,11 +15,20 @@ import type { PomodoroSession } from '../../shared/types'
 
 type PomodoroMode = 'work' | 'break'
 
+interface TimerEvent {
+  type: 'work-complete' | 'break-complete'
+  title: string
+  body: string
+  at: number
+}
+
 interface PomodoroTimerState {
   mode: PomodoroMode
   isRunning: boolean
   secondsLeft: number
   totalSeconds: number
+  lastEvent: TimerEvent | null
+  clearLastEvent: () => void
   start: () => void
   pause: () => void
   reset: (mode?: PomodoroMode) => void
@@ -58,16 +67,10 @@ function clampRemaining(endsAt: number | null, fallback: number) {
   return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000))
 }
 
-function notify(title: string, body: string) {
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification(title, { body, icon: '🍅' })
-  }
-}
-
-function requestNotificationPermission() {
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission()
-  }
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) return 'unsupported'
+  if (Notification.permission !== 'default') return Notification.permission
+  return await Notification.requestPermission()
 }
 
 export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
@@ -88,6 +91,26 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
     return initial?.secondsLeft ?? workSeconds
   })
   const [roundId, setRoundId] = useState(initial?.roundId ?? uid())
+  const [lastEvent, setLastEvent] = useState<TimerEvent | null>(null)
+
+  const clearLastEvent = useCallback(() => {
+    setLastEvent(null)
+  }, [])
+
+  const emitReminder = useCallback((event: TimerEvent) => {
+    setLastEvent(event)
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(event.title, { body: event.body })
+    }
+
+    try {
+      const audio = new Audio('/sounds/timer-done.mp3')
+      audio.play().catch(() => undefined)
+    } catch {
+      // ignore
+    }
+  }, [])
 
   const completingRef = useRef(false)
 
@@ -121,8 +144,12 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
           createdAt: new Date().toISOString(),
         }
         pomodoroSessions.create(session).catch(reportApiError)
-        notify('🍅 专注完成！', `完成了 ${settings.workDuration} 分钟的专注，休息一下吧`)
-        requestNotificationPermission()
+        emitReminder({
+          type: 'work-complete',
+          title: '🍅 专注完成！',
+          body: `完成了 ${settings.workDuration} 分钟的专注，休息一下吧`,
+          at: Date.now(),
+        })
 
         const nextSeconds = breakSeconds
         const nextRoundId = uid()
@@ -139,8 +166,12 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
           roundId: nextRoundId,
         })
       } else {
-        notify('☕ 休息结束', '休息时间结束，准备开始下一轮专注')
-        requestNotificationPermission()
+        emitReminder({
+          type: 'break-complete',
+          title: '☕ 休息结束',
+          body: '休息时间结束，准备开始下一轮专注',
+          at: Date.now(),
+        })
 
         const nextSeconds = workSeconds
         const nextRoundId = uid()
@@ -160,7 +191,7 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
     } finally {
       completingRef.current = false
     }
-  }, [mode, roundId, pomodoroProjectId, pomodoroSessions, settings.workDuration, workSeconds, breakSeconds])
+  }, [mode, roundId, pomodoroProjectId, pomodoroSessions, settings.workDuration, workSeconds, breakSeconds, emitReminder])
 
   const reset = useCallback(
     (nextMode: PomodoroMode = mode) => {
@@ -185,7 +216,7 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
   )
 
   const start = useCallback(() => {
-    requestNotificationPermission()
+    void requestNotificationPermission()
     const nextEndsAt = Date.now() + secondsLeft * 1000
 
     setEndsAt(nextEndsAt)
@@ -290,6 +321,8 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
       isRunning,
       secondsLeft,
       totalSeconds,
+      lastEvent,
+      clearLastEvent,
       start,
       pause,
       reset,
@@ -297,7 +330,7 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
       adjustMinutes,
       setMinutes,
     }),
-    [mode, isRunning, secondsLeft, totalSeconds, start, pause, reset, switchMode, adjustMinutes, setMinutes],
+    [mode, isRunning, secondsLeft, totalSeconds, lastEvent, clearLastEvent, start, pause, reset, switchMode, adjustMinutes, setMinutes],
   )
 
   return (

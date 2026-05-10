@@ -89,6 +89,8 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
     mode,
     isRunning,
     secondsLeft,
+    lastEvent,
+    clearLastEvent,
     start: startPomodoro,
     pause: pausePomodoro,
     reset: resetPomodoro,
@@ -309,6 +311,16 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
         {/* ===== 计时面板（番茄钟 + 直接计时） ===== */}
         {activeTab === 'timer' && (
           <div className="tool-card">
+            {lastEvent && (
+              <div className={`timer-alert timer-alert-${lastEvent.type}`}>
+                <strong>{lastEvent.title}</strong>
+                <span>{lastEvent.body}</span>
+                <button type="button" className="btn btn-ghost timer-alert-dismiss" onClick={clearLastEvent}>
+                  知道了
+                </button>
+              </div>
+            )}
+
             {/* 今日总览 — 番茄钟 + 直接计时合并统计 */}
             <div className="tool-card-title">
               <span>今日专注</span>
