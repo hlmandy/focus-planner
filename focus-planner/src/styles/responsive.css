@@ -87,8 +87,7 @@
     grid-column: auto;
   }
 
-  .project-detail-grid,
-  .template-notes {
+  .project-detail-grid {
     grid-template-columns: 1fr;
   }
 

@@ -25,7 +25,7 @@ const ARCHIVED_STORAGE_KEY = 'focus-planner-show-archived'
 
 const kindGroups: { kind: ProjectKind; label: string; icon: typeof FlaskConical }[] = [
   { kind: 'research', label: '科研', icon: FlaskConical },
-  { kind: 'affairs', label: '事务', icon: Briefcase },
+  { kind: 'admin', label: '事务', icon: Briefcase },
 ]
 
 export function Sidebar() {
@@ -40,7 +40,7 @@ export function Sidebar() {
     if (saved) {
       try { return JSON.parse(saved) } catch { /* ignore */ }
     }
-    return { research: true, affairs: true }
+    return { research: true, admin: true }
   })
 
   const {

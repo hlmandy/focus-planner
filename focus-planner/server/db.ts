@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS projects (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   color TEXT NOT NULL,
-  kind TEXT NOT NULL CHECK(kind IN ('research','affairs')),
+  kind TEXT NOT NULL CHECK(kind IN ('research','admin')),
   status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','paused','done','archived')),
   goal TEXT NOT NULL DEFAULT '',
   due_date TEXT NOT NULL DEFAULT ''

@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { MoreHorizontal } from 'lucide-react'
 import './App.css'
 import type { AppState, PageName, PersistenceStatus } from '../shared/types'
 import { todayKey } from './utils'
 import { pageLabels } from './constants'
 import { loadState } from './seed'
-import { AppProvider } from './hooks/useAppContext'
+import { AppProvider, useApp } from './hooks/useAppContext'
 import { Sidebar } from './components/Sidebar'
 import { ToolPanel } from './components/ToolPanel'
 import { PlannerPage } from './pages/PlannerPage'
@@ -73,39 +73,62 @@ function AppShell() {
 
   return (
     <AppProvider value={contextValue} initial={initialState}>
-      <main
-        ref={shellRef}
-        className={`app-shell ${isSidebarOpen ? '' : 'sidebar-collapsed'} ${isToolPanelOpen ? 'tool-panel-open' : ''}`}
-      >
-        <Sidebar />
-        <section className={`workspace ${page === 'planner' ? 'planner-workspace' : ''}`}>
-          <header className="app-header">
-            <h1>{pageLabels[page] ?? ''}</h1>
-            <div className="header-actions">
-              {!isToolPanelOpen && (
-                <button
-                  type="button"
-                  className="btn btn-ghost tool-trigger"
-                  onClick={() => setIsToolPanelOpen(true)}
-                  aria-expanded="false"
-                  aria-label="打开工具面板"
-                >
-                  <MoreHorizontal size={22} />
-                </button>
-              )}
-            </div>
-          </header>
-          {page === 'planner' && <PlannerPage />}
-          {page === 'today' && <TodayPage />}
-          {page === 'projects' && <ProjectsPage />}
-          {page === 'research-log' && <ResearchLogPage />}
-          {page === 'habits' && <HabitsPage />}
-          {page === 'summary' && <SummaryPage />}
-          {page === 'settings' && <SettingsPage />}
-        </section>
-        {isToolPanelOpen && <ToolPanel />}
-      </main>
+      <AppShellInner shellRef={shellRef} />
     </AppProvider>
+  )
+}
+
+function AppShellInner({ shellRef }: { shellRef: React.RefObject<HTMLElement | null> }) {
+  const {
+    page,
+    projectDetailId,
+    projects,
+    isSidebarOpen,
+    isToolPanelOpen,
+    setIsToolPanelOpen,
+  } = useApp()
+
+  const headerTitle = useMemo(() => {
+    if (page === 'projects' && projectDetailId) {
+      const project = projects.items.find(p => p.id === projectDetailId)
+      if (project) return project.name
+    }
+    return pageLabels[page] ?? ''
+  }, [page, projectDetailId, projects.items])
+
+  return (
+    <main
+      ref={shellRef}
+      className={`app-shell ${isSidebarOpen ? '' : 'sidebar-collapsed'} ${isToolPanelOpen ? 'tool-panel-open' : ''}`}
+    >
+      <Sidebar />
+      <section className={`workspace ${page === 'planner' ? 'planner-workspace' : ''}`}>
+        <header className="app-header">
+          <h1>{headerTitle}</h1>
+          <div className="header-actions">
+            {!isToolPanelOpen && (
+              <button
+                type="button"
+                className="btn btn-ghost tool-trigger"
+                onClick={() => setIsToolPanelOpen(true)}
+                aria-expanded="false"
+                aria-label="打开工具面板"
+              >
+                <MoreHorizontal size={22} />
+              </button>
+            )}
+          </div>
+        </header>
+        {page === 'planner' && <PlannerPage />}
+        {page === 'today' && <TodayPage />}
+        {page === 'projects' && <ProjectsPage />}
+        {page === 'research-log' && <ResearchLogPage />}
+        {page === 'habits' && <HabitsPage />}
+        {page === 'summary' && <SummaryPage />}
+        {page === 'settings' && <SettingsPage />}
+      </section>
+      {isToolPanelOpen && <ToolPanel />}
+    </main>
   )
 }
 

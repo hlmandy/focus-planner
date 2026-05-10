@@ -296,7 +296,7 @@ export function ProjectsPage() {
   }
 
   const addThesisStudent = () => {
-    if (!activeProjectStats || activeProjectStats.kind !== 'affairs') return
+    if (!activeProjectStats || activeProjectStats.kind !== 'admin') return
     const name = newStudentName.trim()
     if (!name) return
     const student: ThesisStudent = {
@@ -393,7 +393,7 @@ export function ProjectsPage() {
             >
               <option value="all">全部类型</option>
               <option value="research">科研</option>
-              <option value="affairs">事务</option>
+              <option value="admin">事务</option>
             </select>
             <select
               value={projectStatusFilter}
@@ -425,7 +425,7 @@ export function ProjectsPage() {
               aria-label="项目类型"
             >
               <option value="research">科研</option>
-              <option value="affairs">事务</option>
+              <option value="admin">事务</option>
             </select>
             <button className="btn btn-primary" onClick={addProject}>
               <Plus size={17} />
@@ -479,7 +479,7 @@ export function ProjectsPage() {
                 </span>
               </div>
               <div className="project-card-stats research-stats">
-                {project.kind === 'affairs' ? (
+                {project.kind === 'admin' ? (
                   <>
                     <span>
                       <strong>{project.studentCount}</strong>学生
@@ -526,10 +526,10 @@ export function ProjectsPage() {
                     e.stopPropagation()
                     setProjectFilterId(project.id)
                     setProjectDetailId(project.id)
-                    setPage(project.kind === 'affairs' ? 'projects' : 'research-log')
+                    setPage(project.kind === 'admin' ? 'projects' : 'research-log')
                   }}
                 >
-                  {project.kind === 'affairs' ? '事务详情' : '研究日志'}
+                  {project.kind === 'admin' ? '事务详情' : '研究日志'}
                 </button>
               </div>
             </article>
@@ -542,7 +542,7 @@ export function ProjectsPage() {
             <div>
               <h2>{activeProjectStats.name}</h2>
               <p>
-                {activeProjectStats.kind === 'affairs'
+                {activeProjectStats.kind === 'admin'
                   ? `${projectKindLabels[activeProjectStats.kind]} · ${activeProjectStats.studentCount} 名学生 · ${activeProjectStats.doneCount}/${activeProjectStats.taskCount} 个待办完成 · 本周专注 ${durationText(activeProjectStats.weekFocusMinutes)}`
                   : `${projectKindLabels[activeProjectStats.kind]} · ${activeProjectStats.doneCount}/${activeProjectStats.taskCount} 完成 · 本周专注 ${durationText(activeProjectStats.weekFocusMinutes)} · ${activeProjectStats.logCount} 条记录 · ${activeProjectStats.literatureCount} 篇文献 · ${activeProjectStats.attachmentCount} 个附件`}
               </p>
@@ -581,7 +581,7 @@ export function ProjectsPage() {
                   }
                 >
                   <option value="research">科研</option>
-                  <option value="affairs">事务</option>
+                  <option value="admin">事务</option>
                 </select>
               </label>
               <label>
@@ -644,7 +644,7 @@ export function ProjectsPage() {
             <button className="btn btn-ghost" onClick={() => setPage('today')}>
               今日任务
             </button>
-            {activeProjectStats.kind !== 'affairs' && (
+            {activeProjectStats.kind !== 'admin' && (
               <button
                 type="button"
                 className="btn btn-ghost"
@@ -688,7 +688,7 @@ export function ProjectsPage() {
                 )}
               </div>
             </section>
-            {activeProjectStats.kind === 'affairs' && (
+            {activeProjectStats.kind === 'admin' && (
               <section className="project-panel thesis-panel">
                 <h3>学生进度</h3>
                 <div className="thesis-composer">
@@ -799,7 +799,7 @@ export function ProjectsPage() {
                 </div>
               </section>
             )}
-            {activeProjectStats.kind !== 'affairs' && (
+            {activeProjectStats.kind !== 'admin' && (
               <ProjectDetailSection
                 title="最近研究日志"
                 count={activeProjectLogs.length}
@@ -820,7 +820,7 @@ export function ProjectsPage() {
                 )}
               </ProjectDetailSection>
             )}
-            {activeProjectStats.kind !== 'affairs' && (
+            {activeProjectStats.kind !== 'admin' && (
               <ProjectDetailSection title="文献" count={activeProjectLiterature.length} defaultOpen>
                 {activeProjectLiterature.length ? (
                   activeProjectLiterature.map(entry => (
@@ -835,7 +835,7 @@ export function ProjectsPage() {
                 )}
               </ProjectDetailSection>
             )}
-            {activeProjectStats.kind !== 'affairs' && (
+            {activeProjectStats.kind !== 'admin' && (
               <ProjectDetailSection title="附件" count={activeProjectAttachments.length}>
                 {activeProjectAttachments.length ? (
                   <div className="project-attachment-list">

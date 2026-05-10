@@ -20,7 +20,7 @@ export const colors = ['#3a7afe', '#00a884', '#f59e0b', '#ef4444', '#8b5cf6', '#
 
 export const projectKindLabels: Record<ProjectKind, string> = {
   research: '科研',
-  affairs: '事务',
+  admin: '事务',
 }
 
 export const projectStatusLabels: Record<ProjectStatus, string> = {
@@ -46,7 +46,7 @@ export const blockStatusLabels: Record<BlockViewStatus, string> = {
 
 export const projectTemplateGoals: Record<ProjectKind, string> = {
   research: '推进研究问题、文献线索、实验/分析路径和阶段性结果。',
-  affairs: '集中处理论文指导、会议、邮件、报销、材料、申请和其他事务性工作。',
+  admin: '集中处理论文指导、会议、邮件、报销、材料、申请和其他事务性工作。',
 }
 
 export const projectTaskTemplates: Record<
@@ -59,7 +59,7 @@ export const projectTaskTemplates: Record<
     { title: '数据 / 实验 / 分析', children: ['准备数据或材料', '运行分析并记录结果'] },
     { title: '阶段性输出', children: ['整理图表', '形成阶段结论'] },
   ],
-  affairs: [
+  admin: [
     { title: '学生指导', children: ['本科论文进度跟进', '开题/初稿反馈'] },
     { title: '学术事务', children: ['论文投稿与返修', '会议准备与材料'] },
     { title: '日常事务', children: ['邮件与通知', '报销与申请'] },
@@ -89,7 +89,7 @@ export const defaultProjects: Project[] = [
     id: 'affairs-admin',
     name: '事务管理',
     color: '#f59e0b',
-    kind: 'affairs',
+    kind: 'admin',
     status: 'active',
     goal: '集中处理论文指导、会议、邮件、报销、材料等事务性工作。',
     dueDate: '',
@@ -104,8 +104,12 @@ export const legacyProjectIdMap: Record<string, string> = {
   'product-build': 'research-topic-b',
   'operations-improvement': 'affairs-admin',
   'research-main': 'research-topic-a',
-  'paper-manuscript': 'research-topic-b',
+  'paper-manuscript': 'affairs-admin',
   'student-thesis': 'affairs-admin',
+  'paper-topic-b': 'research-topic-b',
+  'paper-topic-c': 'affairs-admin',
+  'student-supervision': 'affairs-admin',
+  'academic-admin': 'affairs-admin',
 }
 
 export const legacyProjectIds = new Set(Object.keys(legacyProjectIdMap))

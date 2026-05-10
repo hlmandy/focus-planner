@@ -135,7 +135,7 @@
   background: var(--blue-soft);
 }
 
-.kind-pill.affairs,
+.kind-pill.admin,
 .kind-pill.writing,
 .status-pill.active {
   color: var(--teal);
@@ -358,28 +358,8 @@
   font-weight: 650;
 }
 
-.template-panel,
 .thesis-panel {
   grid-column: 1 / -1;
-}
-
-.template-notes {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.template-notes span {
-  min-height: 36px;
-  display: grid;
-  place-items: center;
-  border: 1px solid #d7e3eb;
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  color: var(--ink-soft);
-  font-size: 13px;
-  text-align: center;
-  padding: 6px;
 }
 
 .thesis-composer {
