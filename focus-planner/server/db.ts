@@ -59,12 +59,16 @@ CREATE TABLE IF NOT EXISTS tasks (
 
 CREATE TABLE IF NOT EXISTS schedule_blocks (
   id TEXT PRIMARY KEY,
-  task_id TEXT NOT NULL,
+  task_id TEXT,
+  block_type TEXT NOT NULL DEFAULT 'task'
+    CHECK(block_type IN ('task','diary')),
+  title TEXT NOT NULL DEFAULT '',
   date TEXT NOT NULL,
   start_min INTEGER NOT NULL,
   end_min INTEGER NOT NULL,
   note TEXT NOT NULL DEFAULT '',
-  FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+  FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+  CHECK(block_type != 'task' OR task_id IS NOT NULL)
 );
 
 CREATE TABLE IF NOT EXISTS habits (
@@ -234,9 +238,18 @@ function migrateFromJson(db: Database.Database): void {
 
     for (const b of state.blocks ?? []) {
       db.prepare(
-        `INSERT OR IGNORE INTO schedule_blocks (id, task_id, date, start_min, end_min, note)
-        VALUES (?, ?, ?, ?, ?, ?)`,
-      ).run(b.id, b.taskId, b.date, b.start, b.end, b.note ?? '')
+        `INSERT OR IGNORE INTO schedule_blocks (id, task_id, block_type, title, date, start_min, end_min, note)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        b.id,
+        b.taskId ?? null,
+        (b as { blockType?: string }).blockType ?? 'task',
+        (b as { title?: string }).title ?? '',
+        b.date,
+        b.start,
+        b.end,
+        b.note ?? '',
+      )
     }
 
     for (const h of state.habits ?? []) {
@@ -449,6 +462,8 @@ export function loadFullState(db: Database.Database): AppState {
     row => ({
       id: row.id,
       taskId: row.task_id,
+      blockType: (row.block_type ?? 'task') as ScheduleBlock['blockType'],
+      title: row.title ?? '',
       date: row.date,
       start: row.start_min,
       end: row.end_min,

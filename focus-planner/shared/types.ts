@@ -14,6 +14,7 @@ export const RESEARCH_LOG_KINDS = [
   'admin',
 ] as const
 export const TASK_SOURCES = ['task', 'schedule'] as const
+export const SCHEDULE_BLOCK_TYPES = ['task', 'diary'] as const
 export const READING_STATUSES = ['unread', 'reading', 'read', 'reviewed'] as const
 
 // ── Enum types (derived from constants above — single source of truth) ──────
@@ -23,6 +24,7 @@ export type ProjectStatus = (typeof PROJECT_STATUSES)[number]
 export type ThesisStage = (typeof THESIS_STAGES)[number]
 export type ResearchLogKind = (typeof RESEARCH_LOG_KINDS)[number]
 export type TaskSource = (typeof TASK_SOURCES)[number]
+export type ScheduleBlockType = (typeof SCHEDULE_BLOCK_TYPES)[number]
 export type ReadingStatus = (typeof READING_STATUSES)[number]
 
 export interface Project {
@@ -48,7 +50,9 @@ export interface Task {
 
 export interface ScheduleBlock {
   id: string
-  taskId: string
+  taskId: string | null
+  blockType: ScheduleBlockType
+  title: string
   date: string
   start: number
   end: number

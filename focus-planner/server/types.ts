@@ -6,6 +6,7 @@ export type {
   ThesisStage,
   ResearchLogKind,
   TaskSource,
+  ScheduleBlockType,
   ReadingStatus,
   // Entity types
   Project,
@@ -79,7 +80,9 @@ export interface TaskRow {
 
 export interface ScheduleBlockRow {
   id: string
-  task_id: string
+  task_id: string | null
+  block_type: string
+  title: string
   date: string
   start_min: number
   end_min: number

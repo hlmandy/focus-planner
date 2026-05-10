@@ -293,7 +293,13 @@ export const loadState = (): AppState => {
   const raw = localStorage.getItem(STORAGE_KEY)
   if (!raw) return seedState()
   try {
-    return normalizeState(JSON.parse(raw) as LegacyState)
+    const state = normalizeState(JSON.parse(raw) as LegacyState)
+    // Final safety net: normalize any remaining old kinds
+    state.projects = state.projects.map(p => ({
+      ...p,
+      kind: normalizeKind(p.kind),
+    }))
+    return state
   } catch {
     return seedState()
   }

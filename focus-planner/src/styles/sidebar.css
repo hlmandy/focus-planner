@@ -280,3 +280,50 @@
   color: var(--muted);
   opacity: 0.6;
 }
+
+/* Sidebar sub-groups (under 科研) */
+.sidebar-sub-group {
+  display: grid;
+  gap: 1px;
+}
+
+.sidebar-sub-toggle {
+  width: 100%;
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  padding: 0 6px 0 18px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.sidebar-sub-toggle:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.sidebar-sub-toggle svg:first-child {
+  flex: 0 0 auto;
+}
+
+.sidebar-sub-toggle .sidebar-kind-count {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.project-filter-deep {
+  padding-left: 36px;
+  font-size: 13px;
+}
+
+.sidebar-empty-sub {
+  padding-left: 36px;
+}
