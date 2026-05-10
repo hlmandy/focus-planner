@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import {
   Check,
   FileText,
@@ -49,16 +50,16 @@ export function ToolPanel() {
     researchLogs,
     date,
     setDate,
-    setPage,
     projectFilterId,
     setProjectFilterId,
-    setProjectDetailId,
     toolPanelWidth,
     setToolPanelWidth,
     pomodoroProjectId,
     setPomodoroProjectId,
     settings,
   } = useApp()
+
+  const navigate = useNavigate()
 
   const [activeTab, setActiveTab] = useState<TabId | null>('timer')
   const [quick, setQuick] = useState('')
@@ -671,8 +672,7 @@ export function ToolPanel() {
                           className="btn btn-ghost search-result-item"
                           onClick={() => {
                             setProjectFilterId(p.id)
-                            setProjectDetailId(p.id)
-                            setPage('planner')
+                            navigate('/planner')
                             handleSearch('')
                           }}
                         >
@@ -861,7 +861,7 @@ export function ToolPanel() {
                   className={`${date === dayKey ? 'active' : ''} ${dayKey === todayKey() ? 'today' : ''} ${isCurrentMonth ? '' : 'outside'} ${dayInfo.isRestDay ? 'rest-day' : ''} ${dayInfo.isAdjustedWorkday ? 'workday-adjusted' : ''}`}
                   onClick={() => {
                     setDate(dayKey)
-                    setPage('planner')
+                    navigate('/planner')
                   }}
                   title={dayInfo.label}
                 >

@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react'
+import { useNavigate, useParams } from 'react-router'
 import { reportApiError } from '../api/client'
 import {
   Check,
@@ -78,6 +79,9 @@ function ProjectDetailSection({
 }
 
 export function ProjectsPage() {
+  const { projectId } = useParams<{ projectId: string }>()
+  const navigate = useNavigate()
+
   const {
     projects,
     tasks,
@@ -87,9 +91,6 @@ export function ProjectsPage() {
     date,
     projectFilterId,
     setProjectFilterId,
-    projectDetailId,
-    setProjectDetailId,
-    setPage,
     setPomodoroProjectId,
     pomodoroProjectId,
   } = useApp()
@@ -166,20 +167,20 @@ export function ProjectsPage() {
       (projectStatusFilter === 'all' || p.status === projectStatusFilter),
   )
 
-  const activeProjectStats = projectDetailId
-    ? projectStats.find(p => p.id === projectDetailId)
+  const activeProjectStats = projectId
+    ? projectStats.find(p => p.id === projectId)
     : undefined
-  const activeProjectTasks = projectDetailId
-    ? tasks.items.filter(t => t.projectId === projectDetailId && isProjectTask(t))
+  const activeProjectTasks = projectId
+    ? tasks.items.filter(t => t.projectId === projectId && isProjectTask(t))
     : []
-  const activeProjectStudents = projectDetailId
+  const activeProjectStudents = projectId
     ? thesisStudents.items
-        .filter(s => s.projectId === projectDetailId)
+        .filter(s => s.projectId === projectId)
         .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
     : []
-  const activeProjectLogs = projectDetailId
+  const activeProjectLogs = projectId
     ? researchLogs.items
-        .filter(e => e.projectId === projectDetailId)
+        .filter(e => e.projectId === projectId)
         .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt))
     : []
   const activeProjectLiterature = activeProjectLogs.filter(e => e.kind === 'literature')
@@ -195,8 +196,8 @@ export function ProjectsPage() {
 
   const openProjectOverview = () => {
     setProjectFilterId('all')
-    setProjectDetailId(null)
     setEditingProjectId(null)
+    navigate('/projects')
   }
 
   const addProject = () => {
@@ -215,54 +216,50 @@ export function ProjectsPage() {
       dueDate: '',
     }
     const templateTasks = createTasksFromTemplate(project.id, project.kind)
-    // Optimistic: update local immediately, API in background
     projects.create(project).catch(reportApiError)
     templateTasks.forEach(t => tasks.create(t).catch(reportApiError))
     setProjectFilterId(project.id)
-    setProjectDetailId(project.id)
     setPomodoroProjectId(project.id)
     setNewProjectName('')
     setNewProjectKind('research')
+    navigate(`/projects/${project.id}`)
   }
 
   const updateProject = (projectId: string, patch: Partial<Project>) => {
     projects.update(projectId, patch).catch(reportApiError)
   }
 
-  const deleteProject = async (projectId: string) => {
-    const remaining = projects.items.filter(p => p.id !== projectId)
+  const deleteProject = async (pid: string) => {
+    const remaining = projects.items.filter(p => p.id !== pid)
     if (!remaining.length) return
     const targetId = remaining[0]?.id ?? projects.items[0].id
 
-    // Snapshot for rollback
     const projectSnapshot = projects.items
     const taskSnapshot = tasks.items
     const studentSnapshot = thesisStudents.items
     const logSnapshot = researchLogs.items
     const pomodoroSnapshot = pomodoroSessions.items
 
-    // Optimistic: remove project, reassign related entities to target
-    projects.setItems(prev => prev.filter(p => p.id !== projectId))
+    projects.setItems(prev => prev.filter(p => p.id !== pid))
     tasks.setItems(prev =>
-      prev.map(t => (t.projectId === projectId ? { ...t, projectId: targetId } : t)),
+      prev.map(t => (t.projectId === pid ? { ...t, projectId: targetId } : t)),
     )
     thesisStudents.setItems(prev =>
-      prev.map(s => (s.projectId === projectId ? { ...s, projectId: targetId } : s)),
+      prev.map(s => (s.projectId === pid ? { ...s, projectId: targetId } : s)),
     )
     researchLogs.setItems(prev =>
-      prev.map(l => (l.projectId === projectId ? { ...l, projectId: targetId } : l)),
+      prev.map(l => (l.projectId === pid ? { ...l, projectId: targetId } : l)),
     )
     pomodoroSessions.setItems(prev =>
-      prev.map(p => (p.projectId === projectId ? { ...p, projectId: targetId } : p)),
+      prev.map(p => (p.projectId === pid ? { ...p, projectId: targetId } : p)),
     )
-    if (projectFilterId === projectId) setProjectFilterId('all')
-    if (pomodoroProjectId === projectId) setPomodoroProjectId(targetId)
-    if (projectDetailId === projectId) setProjectDetailId(null)
+    if (projectFilterId === pid) setProjectFilterId('all')
+    if (pomodoroProjectId === pid) setPomodoroProjectId(targetId)
+    navigate('/projects')
 
     try {
-      await projects.reassignAndDelete(projectId, targetId)
+      await projects.reassignAndDelete(pid, targetId)
     } catch {
-      // Rollback all entities on failure
       projects.setItems(projectSnapshot)
       tasks.setItems(taskSnapshot)
       thesisStudents.setItems(studentSnapshot)
@@ -376,9 +373,21 @@ export function ProjectsPage() {
     )
   }
 
+  // Project not found
+  if (projectId && !activeProjectStats) {
+    return (
+      <section className="projects-page">
+        <h1>项目不存在</h1>
+        <button className="btn" onClick={() => navigate('/projects')}>
+          返回全部项目
+        </button>
+      </section>
+    )
+  }
+
   return (
     <div className="projects-page">
-      {projectDetailId === null && (
+      {!projectId && (
         <>
           <div className="project-management-bar">
             <div>
@@ -439,7 +448,7 @@ export function ProjectsPage() {
           </div>
         </>
       )}
-      {projectDetailId === null ? (
+      {!projectId ? (
         <div className="project-grid">
           {managedProjectStats.map(project => (
             <article
@@ -447,7 +456,7 @@ export function ProjectsPage() {
               className="project-card"
               onClick={() => {
                 setProjectFilterId(project.id)
-                setProjectDetailId(project.id)
+                navigate(`/projects/${project.id}`)
               }}
             >
               <div className="project-card-header">
@@ -521,8 +530,7 @@ export function ProjectsPage() {
                   onClick={e => {
                     e.stopPropagation()
                     setProjectFilterId(project.id)
-                    setProjectDetailId(project.id)
-                    setPage('planner')
+                    navigate('/planner')
                   }}
                 >
                   查看规划
@@ -532,8 +540,7 @@ export function ProjectsPage() {
                   onClick={e => {
                     e.stopPropagation()
                     setProjectFilterId(project.id)
-                    setProjectDetailId(project.id)
-                    setPage(project.kind === 'admin' ? 'projects' : 'research-log')
+                    navigate(project.kind === 'admin' ? `/projects/${project.id}` : '/research-log')
                   }}
                 >
                   {project.kind === 'admin' ? '事务详情' : '研究日志'}
@@ -681,17 +688,17 @@ export function ProjectsPage() {
             />
           </div>
           <div className="project-toolbar">
-            <button className="btn btn-ghost" onClick={() => setPage('planner')}>
+            <button className="btn btn-ghost" onClick={() => navigate('/planner')}>
               查看规划
             </button>
-            <button className="btn btn-ghost" onClick={() => setPage('today')}>
+            <button className="btn btn-ghost" onClick={() => navigate('/today')}>
               今日任务
             </button>
             {activeProjectStats.kind !== 'admin' && (
               <button
                 type="button"
                 className="btn btn-ghost"
-                onClick={() => setPage('research-log')}
+                onClick={() => navigate('/research-log')}
               >
                 研究日志
               </button>

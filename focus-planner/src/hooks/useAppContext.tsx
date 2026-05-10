@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { AppState, PageName, PersistenceStatus, UserSettings } from '../../shared/types'
+import type { AppState, PersistenceStatus, UserSettings } from '../../shared/types'
 import { DEFAULT_USER_SETTINGS } from '../../shared/types'
 import { settingsApi } from '../api/settings'
 import { reportApiError } from '../api/client'
@@ -38,14 +38,10 @@ interface AppContextValue {
   updateSettings: (next: UserSettings) => Promise<void>
 
   // Navigation & UI
-  page: PageName
-  setPage: (page: PageName) => void
   date: string
   setDate: (date: string) => void
   projectFilterId: string
   setProjectFilterId: (id: string) => void
-  projectDetailId: string | null
-  setProjectDetailId: (id: string | null) => void
   pomodoroProjectId: string
   setPomodoroProjectId: (id: string) => void
   isSidebarOpen: boolean

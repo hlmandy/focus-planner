@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { reportApiError } from '../api/client'
 import {
   BookOpen,
@@ -46,13 +47,15 @@ export function TodayPage() {
     projects,
     researchLogs,
     date,
-    setPage,
     projectFilterId,
     pomodoroSessions,
   } = useApp()
 
+  const navigate = useNavigate()
+
   // --- Quick-add state ---
   const [quickInput, setQuickInput] = useState('')
+  const [quickBlockType, setQuickBlockType] = useState<'task' | 'diary'>('diary')
   const [quickProject, setQuickProject] = useState('')
 
   // --- Inline editor state ---
@@ -159,6 +162,23 @@ export function TodayPage() {
     if (!quickInput.trim()) return
     const fallbackStart = clamp(snap(nowMinutes + 30), DAY_START, DAY_END - 30)
     const parsed = parseQuickInput(quickInput, fallbackStart, DAY_START, DAY_END)
+
+    if (quickBlockType === 'diary') {
+      const block: ScheduleBlock = {
+        id: uid(),
+        taskId: null,
+        blockType: 'diary',
+        title: parsed.title,
+        date,
+        start: parsed.start,
+        end: parsed.start + 30,
+        note: '',
+      }
+      blocks.create(block).catch(reportApiError)
+      setQuickInput('')
+      return
+    }
+
     const task: Task = {
       id: uid(),
       title: parsed.title,
@@ -217,7 +237,7 @@ export function TodayPage() {
 
   const toggleBlockTask = (blockId: string) => {
     const block = blocks.items.find(b => b.id === blockId)
-    if (!block) return
+    if (!block || block.blockType !== 'task' || !block.taskId) return
     const task = tasks.items.find(t => t.id === block.taskId)
     if (task) tasks.update(task.id, { done: !task.done }).catch(reportApiError)
   }
@@ -225,13 +245,17 @@ export function TodayPage() {
   const deleteBlock = (blockId: string) => {
     const block = blocks.items.find(b => b.id === blockId)
     if (!block) return
-    const task = tasks.items.find(t => t.id === block.taskId)
-    const hasOtherBlocks = blocks.items.some(b => b.id !== blockId && b.taskId === block.taskId)
-    if (task?.source === 'schedule' && !hasOtherBlocks) {
+    if (block.blockType === 'diary' || !block.taskId) {
       blocks.remove(blockId).catch(reportApiError)
-      tasks.remove(task.id).catch(reportApiError)
     } else {
-      blocks.remove(blockId).catch(reportApiError)
+      const task = tasks.items.find(t => t.id === block.taskId)
+      const hasOtherBlocks = blocks.items.some(b => b.id !== blockId && b.taskId === block.taskId)
+      if (task?.source === 'schedule' && !hasOtherBlocks) {
+        blocks.remove(blockId).catch(reportApiError)
+        tasks.remove(task.id).catch(reportApiError)
+      } else {
+        blocks.remove(blockId).catch(reportApiError)
+      }
     }
     if (editingBlockId === blockId) setEditingBlockId(null)
   }
@@ -242,7 +266,7 @@ export function TodayPage() {
     const task = block.taskId ? tasksById[block.taskId] : undefined
     setEditingBlockId(block.id)
     setEditForm({
-      title: task?.title ?? '',
+      title: block.blockType === 'diary' ? block.title : task?.title ?? '',
       start: timeText(block.start),
       end: timeText(block.end),
       projectId: task?.projectId ?? '',
@@ -258,13 +282,27 @@ export function TodayPage() {
   const saveEditBlock = () => {
     const block = blocks.items.find(b => b.id === editingBlockId)
     if (!block) return
-    const task = block.taskId ? tasksById[block.taskId] : undefined
-    if (!task) return
 
     const [sh, sm] = editForm.start.split(':').map(Number)
     const [eh, em] = editForm.end.split(':').map(Number)
     const newStart = sh * 60 + sm
     const newEnd = eh * 60 + em
+
+    if (block.blockType === 'diary') {
+      blocks
+        .update(block.id, {
+          title: editForm.title.trim() || block.title,
+          start: clamp(newStart, DAY_START, newEnd - MIN_BLOCK),
+          end: clamp(newEnd, newStart + MIN_BLOCK, DAY_END),
+          note: editForm.note,
+        })
+        .catch(reportApiError)
+      setEditingBlockId(null)
+      return
+    }
+
+    const task = block.taskId ? tasksById[block.taskId] : undefined
+    if (!task) { setEditingBlockId(null); return }
 
     const promoteSource = task.source === 'schedule' && editForm.title.trim() !== ''
     const newTitle = editForm.title.trim() || task.title
@@ -411,18 +449,29 @@ export function TodayPage() {
             placeholder="添加日程... #标签 @09:00"
           />
           <select
-            value={quickProject}
-            onChange={e => setQuickProject(e.target.value)}
-            className="today-quick-project"
-            aria-label="选择项目"
+            value={quickBlockType}
+            onChange={e => setQuickBlockType(e.target.value as 'task' | 'diary')}
+            className="today-quick-type"
+            aria-label="日程类型"
           >
-            <option value="">— 项目 —</option>
-            {projects.items.map(p => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
+            <option value="diary">普通日程</option>
+            <option value="task">项目任务</option>
           </select>
+          {quickBlockType === 'task' && (
+            <select
+              value={quickProject}
+              onChange={e => setQuickProject(e.target.value)}
+              className="today-quick-project"
+              aria-label="选择项目"
+            >
+              <option value="">— 项目 —</option>
+              {projects.items.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          )}
           <button type="button" className="btn btn-primary" onClick={addQuickItem} aria-label="添加">
             <Plus size={16} />
           </button>
@@ -434,7 +483,14 @@ export function TodayPage() {
           <div className="today-blocks">
             {todayBlocks.map(block => {
               const task = block.taskId ? tasksById[block.taskId] : undefined
-              const project = projectsById[task?.projectId ?? '']
+              const project =
+                block.blockType === 'task'
+                  ? projectsById[task?.projectId ?? '']
+                  : undefined
+              const blockTitle =
+                block.blockType === 'diary'
+                  ? block.title || '普通日程'
+                  : task?.title || block.title || '未命名任务'
               const status = getBlockViewStatus(block, task, date, nowMinutes)
               const isActive = status === 'now'
               const isDone = status === 'done'
@@ -452,18 +508,20 @@ export function TodayPage() {
                       <span>{timeText(block.end)}</span>
                       <em>{durationText(block.end - block.start)}</em>
                     </div>
-                    <button
-                      type="button"
-                      className="btn btn-ghost today-block-status"
-                      onClick={e => {
-                        e.stopPropagation()
-                        toggleBlockTask(block.id)
-                      }}
-                      aria-label="切换完成状态"
-                    >
-                      {isDone ? <Check size={17} /> : <Circle size={17} />}
-                    </button>
-                    <span className="today-block-title">{task?.title || '未命名'}</span>
+                    {block.blockType === 'task' && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost today-block-status"
+                        onClick={e => {
+                          e.stopPropagation()
+                          toggleBlockTask(block.id)
+                        }}
+                        aria-label="切换完成状态"
+                      >
+                        {isDone ? <Check size={17} /> : <Circle size={17} />}
+                      </button>
+                    )}
+                    <span className="today-block-title">{blockTitle}</span>
                     {project && (
                       <span
                         className="today-block-project"
@@ -472,17 +530,24 @@ export function TodayPage() {
                         {project.name}
                       </span>
                     )}
-                    <button
-                      type="button"
-                      className="btn btn-ghost today-block-action"
-                      onClick={e => {
-                        e.stopPropagation()
-                        blockToResearchLog(block)
-                      }}
-                      title="转为研究日志"
-                    >
-                      <PenLine size={13} />
-                    </button>
+                    {block.blockType === 'diary' && (
+                      <span className="today-block-project today-block-diary">
+                        普通日程
+                      </span>
+                    )}
+                    {block.blockType === 'task' && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost today-block-action"
+                        onClick={e => {
+                          e.stopPropagation()
+                          blockToResearchLog(block)
+                        }}
+                        title="转为研究日志"
+                      >
+                        <PenLine size={13} />
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="btn btn-danger today-block-delete"
@@ -503,19 +568,21 @@ export function TodayPage() {
                           className="editor-title"
                           value={editForm.title}
                           onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
-                          placeholder="标题（可选）"
+                          placeholder="标题"
                         />
-                        <select
-                          value={editForm.projectId}
-                          onChange={e => setEditForm(f => ({ ...f, projectId: e.target.value }))}
-                          aria-label="项目"
-                        >
-                          {projects.items.map(p => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                            </option>
-                          ))}
-                        </select>
+                        {block.blockType === 'task' && (
+                          <select
+                            value={editForm.projectId}
+                            onChange={e => setEditForm(f => ({ ...f, projectId: e.target.value }))}
+                            aria-label="项目"
+                          >
+                            {projects.items.map(p => (
+                              <option key={p.id} value={p.id}>
+                                {p.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </div>
                       <div className="editor-row">
                         <label className="editor-time-label">
@@ -534,14 +601,16 @@ export function TodayPage() {
                             onChange={e => setEditForm(f => ({ ...f, end: e.target.value }))}
                           />
                         </label>
-                        <label className="editor-done-label">
-                          <input
-                            type="checkbox"
-                            checked={editForm.done}
-                            onChange={e => setEditForm(f => ({ ...f, done: e.target.checked }))}
-                          />
-                          完成
-                        </label>
+                        {block.blockType === 'task' && (
+                          <label className="editor-done-label">
+                            <input
+                              type="checkbox"
+                              checked={editForm.done}
+                              onChange={e => setEditForm(f => ({ ...f, done: e.target.checked }))}
+                            />
+                            完成
+                          </label>
+                        )}
                       </div>
                       <textarea
                         className="editor-note"
@@ -583,18 +652,18 @@ export function TodayPage() {
         <button
           type="button"
           className="btn btn-ghost outline-action small"
-          onClick={() => setPage('planner')}
+          onClick={() => navigate('/planner')}
         >
           <CalendarClock size={15} />
           去规划表
         </button>
       </div>
 
-      {/* ===== 4. 快速记录 ===== */}
+      {/* ===== 4. 项目记录 ===== */}
       <div className="today-section">
         <div className="today-section-header">
           <PenLine size={18} />
-          <span>快速记录</span>
+          <span>项目记录</span>
         </div>
         <div className="today-quick-log">
           <input
@@ -640,7 +709,7 @@ export function TodayPage() {
           </button>
         </div>
         <div className="today-quick-log-hint">
-          记为
+          快速记为
           <button type="button" className="btn btn-ghost today-log-type-btn" onClick={() => { setQuickLogKind('writing'); addQuickLog(); }}>
             研究日志
           </button>

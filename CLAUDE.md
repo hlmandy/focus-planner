@@ -9,9 +9,9 @@ focus-planner/
 ├── shared/
 │   └── types.ts             # 前后端共享类型定义（单一数据源）
 ├── src/
-│   ├── App.tsx              # 应用壳：Provider + 路由 + PomodoroTimer
+│   ├── App.tsx              # 应用壳：Provider + 路由 + 动态 header 标题
 │   ├── App.css              # @import 汇总（实际样式在 styles/ 下 13 个文件）
-│   ├── main.tsx             # Vite 入口
+│   ├── main.tsx             # Vite 入口（BrowserRouter）
 │   ├── types.ts             # re-export shared types + LegacyState（迁移兼容）
 │   ├── utils.ts             # 纯函数：日期、时间、UID、解析
 │   ├── constants.ts         # 常量：标签、模板、节假日、默认值、STORAGE_KEY
@@ -22,7 +22,7 @@ focus-planner/
 │   │   └── *.ts             # projects, tasks, blocks, habits, habit-entries,
 │   │                        # thesis-students, research-logs, pomodoro, settings
 │   ├── hooks/
-│   │   ├── useAppContext.tsx # React Context：组合 8 个 entity hooks
+│   │   ├── useAppContext.tsx # React Context：组合 8 个 entity hooks（无 page/setPage，路由替代）
 │   │   ├── useEntityResource.ts # 通用 CRUD hook（乐观更新 + 回滚 + 缓存）
 │   │   └── use{Entity}.ts   # 各实体 hook（projects, tasks, blocks, habits,
 │   │                        # habit-entries, thesis-students, research-logs, pomodoro-sessions）
@@ -42,14 +42,14 @@ focus-planner/
 │   │   └── responsive.css   # 媒体查询
 │   ├── pages/               # 页面组件（通过 useApp() 获取 entity hooks）
 │   │   ├── PlannerPage.tsx  # 周规划时间线（含时间块 CRUD、拖拽、编辑器）
-│   │   ├── ProjectsPage.tsx # 项目管理（卡片、详情、任务树、论文指导）
+│   │   ├── ProjectsPage.tsx # 项目管理（路由 /projects 和 /projects/:projectId）
 │   │   ├── TodayPage.tsx    # 今日概览 + TODO 条
 │   │   ├── ResearchLogPage.tsx # 研究日记 + 文献库（统一页面，支持编辑）
 │   │   ├── HabitsPage.tsx   # 习惯追踪
 │   │   ├── SummaryPage.tsx  # Markdown 日总结 + 项目报告导出
 │   │   └── SettingsPage.tsx # 设置 + 数据管理 + CalDAV 同步配置
 │   └── components/          # 共享 UI 组件
-│       ├── Sidebar.tsx      # 左侧导航栏（含项目创建、归档列表折叠）
+│       ├── Sidebar.tsx      # 左侧导航栏（NavLink 路由 + 项目创建 + 归档折叠）
 │       └── ToolPanel.tsx    # 右侧工具面板（番茄钟、全局搜索、快速添加、日历）
 ├── server/                  # Hono 后端
 │   ├── index.ts             # 路由注册（14 个路由模块）
@@ -73,6 +73,7 @@ focus-planner/
 3. 离线时 API 调用失败 → 本地 state 保持 → localStorage 缓存作为下次启动兜底
 4. 番茄钟完成 → `pomodoroSessions.create()` 乐观更新本地 state + API 同步
 5. CalDAV 同步由后端独立触发（全量同步时或手动触发），前端不直接参与
+6. 前端路由使用 react-router（`BrowserRouter`），导航通过 `NavLink` / `navigate()` 而非 `setPage()` state
 
 ## API 架构
 
@@ -93,6 +94,7 @@ focus-planner/
 - **类型共享**：`shared/types.ts` 是前后端类型的单一数据源，修改实体类型只需改这里
 - **不重复定义**：types / constants / utils / seed 各有独立文件，不要在其他文件重新定义
 - **页面组件模式**：每个 page 通过 `useApp()` 获取 entity hooks，表单状态用本地 useState
+- **路由**：react-router 管理页面导航，`useParams` 获取 URL 参数（如 `projectId`），不再用 `page` state 切换
 - **Task.source** 区分真实任务 (`'task'`) 和日程占位 (`'schedule'`)
 - **样式**：改哪个组件就改 `styles/` 下对应文件，不要加到别处
 - **后端路由**：按实体拆分，保持一个文件一个实体

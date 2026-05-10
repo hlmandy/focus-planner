@@ -52,10 +52,10 @@ Avoid adding these until the user explicitly asks for them:
 - `utils.ts` — pure utility functions. Do not re-define these in component files.
 - `constants.ts` — labels, templates, holiday calendar, defaults, `STORAGE_KEY`, `pageLabels`.
 - `seed.ts` — `seedState()`, `normalizeState()`, `loadState()`, `createTasksFromTemplate()`.
-- `hooks/useAppContext.tsx` — `AppProvider` + `useApp()`. Composes all entity hooks (projects, tasks, blocks, habits, etc.) into a single context.
+- `hooks/useAppContext.tsx` — `AppProvider` + `useApp()`. Composes all entity hooks (projects, tasks, blocks, habits, etc.) into a single context. No `page`/`setPage` — routing is handled by react-router.
 - `hooks/useEntityResource.ts` — generic CRUD hook with optimistic update, rollback, and localStorage cache.
 - `hooks/use{Entity}.ts` — per-entity hooks combining `useEntityResource` + API functions.
-- `App.tsx` — thin shell only: context provider, routing, pomodoro timer. No inline page JSX or local type/constant definitions.
+- `App.tsx` — thin shell only: context provider, react-router `<Routes>`, dynamic header title, pomodoro timer. No inline page JSX or local type/constant definitions.
 - `pages/` — each page is a self-contained component with its own local useState for form fields. Mutations go through entity hooks from `useApp()` (e.g. `projects.create()`, `tasks.update()`, `blocks.setItems()`).
 - `components/` — shared UI (Sidebar, ToolPanel). Same pattern as pages.
 - `styles/` — one CSS file per component. Do not add styles to `App.css` or inline styles.

@@ -165,13 +165,13 @@ focus-planner/
 │   │   └── SettingsPage.tsx  # settings + data management + CalDAV sync
 │   ├── components/
 │   │   ├── Sidebar.tsx       # left nav with project list + archived toggle
-│   │   └── ToolPanel.tsx     # right panel (pomodoro, search, quick add, calendar)
+│   │   └── ToolPanel.tsx     # right panel (pomodoro with duration controls, search, quick add, calendar)
 │   ├── styles/               # 14 component-level CSS files
 │   ├── assets/               # static images
 │   ├── __tests__/            # vitest tests (36 total)
 │   │   ├── utils.test.ts
 │   │   └── seed.test.ts
-│   ├── App.tsx               # app shell: Provider + routing + PomodoroTimer
+│   ├── App.tsx               # app shell: Provider + routing
 │   ├── App.css               # style entry point (@import styles/)
 │   └── main.tsx              # Vite entry
 ├── server/

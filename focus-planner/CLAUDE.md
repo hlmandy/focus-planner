@@ -9,9 +9,9 @@ focus-planner/
 ├── shared/
 │   └── types.ts             # 前后端共享类型定义（单一数据源）
 ├── src/
-│   ├── App.tsx              # 应用壳：Provider + 路由 + PomodoroTimer
+│   ├── App.tsx              # 应用壳：Provider + react-router + 动态 header 标题
 │   ├── App.css              # 全局样式入口（@import styles/）
-│   ├── main.tsx             # Vite 入口
+│   ├── main.tsx             # Vite 入口（BrowserRouter）
 │   ├── types.ts             # re-export shared types + LegacyState（迁移兼容）
 │   ├── utils.ts             # 纯函数：日期、时间、UID、解析等
 │   ├── constants.ts         # 常量：标签、模板、节假日、默认值
@@ -42,7 +42,7 @@ focus-planner/
 │   ├── pages/               # 页面组件（通过 useApp() 获取 entity hooks）
 │   │   ├── PlannerPage.tsx  # 周规划时间线（422 行）
 │   │   ├── TodayPage.tsx    # 今日 TODO 列表（可拖拽到规划表）
-│   │   ├── ProjectsPage.tsx # 项目管理（卡片、详情、任务树、论文指导）
+│   │   ├── ProjectsPage.tsx # 项目管理（路由 /projects 和 /projects/:projectId）
 │   │   ├── ResearchLogPage.tsx # 研究日记 + 文献库（统一页面，支持编辑）
 │   │   ├── HabitsPage.tsx   # 习惯追踪（周视图）
 │   │   ├── SummaryPage.tsx  # Markdown 日总结 + 项目报告导出
@@ -50,7 +50,7 @@ focus-planner/
 │   ├── assets/              # 静态资源（hero.png, react.svg, vite.svg）
 │   ├── components/          # 共享 UI 组件
 │   │   ├── Sidebar.tsx      # 左侧导航栏（含项目创建）
-│   │   └── ToolPanel.tsx    # 右侧工具面板（番茄钟、快速添加、日历、全局搜索）
+│   │   └── ToolPanel.tsx    # 右侧工具面板（番茄钟含时间调节、快速添加、日历、全局搜索）
 │   ├── styles/              # 组件级 CSS（13 个文件）
 │   │   ├── variables.css    # CSS 变量 / 主题色
 │   │   ├── shell.css        # 应用外壳 grid 布局
@@ -113,6 +113,7 @@ focus-planner/
 3. 离线时 API 调用失败 → 本地 state 保持 → localStorage 缓存作为下次启动兜底
 4. 番茄钟完成 → `pomodoroSessions.create()` 乐观更新本地 state + API 同步
 5. CalDAV 同步由后端独立触发（`PUT /api/state` 时或手动触发），前端不直接参与
+6. 前端路由使用 react-router（`BrowserRouter`），导航通过 `NavLink` / `navigate()` 而非 `setPage()` state
 
 ## API 架构
 
@@ -165,12 +166,13 @@ blocks.update(id, finalPatch)
   - 拖拽创建的时间块初始为 `source: 'schedule'`
   - 在编辑器中填写标题后自动提升为 `source: 'task'`
   - 删除时间块时，无其他 block 引用的 `source: 'schedule'` Task 一并清除
-- **Project.kind** 决定模板和 UI 呈现：research/paper/student/admin
+- **Project.kind** 决定模板和 UI 呈现：`research` / `admin`（原 `affairs` 已重命名为 `admin`）
+- **路由**：react-router 管理页面导航，`useParams` 获取 URL 参数（如 `projectId`），不再用 `page` state 切换
 - **ResearchLogEntry** 新增字段：`readingStatus`（unread/reading/read/reviewed）、`keyFindings`（关键结论）、`nextAction`（下一步行动）
 - **项目管理筛选器**（kind/status）持久化到 localStorage，刷新不丢失
 - **侧栏**支持展开/折叠已归档项目列表（localStorage 持久化）
 - **SummaryPage** 支持单项目 Markdown 导出（任务树 + 日记 + 时间块 + 新字段）
-- **ToolPanel** 包含全局搜索（跨项目/任务/日记/学生）和番茄钟历史管理（编辑/删除）
+- **ToolPanel** 包含番茄钟（计时逻辑 + 时间调节控件 + 历史管理）、全局搜索（跨项目/任务/日记/学生）、快速添加和日历
 - **ResearchLogPage**（研究日记 + 文献库统一页面）支持编辑已有记录（标题/来源/笔记/附件/阅读状态/关键结论/下一步）
 - **CSS** 在 `styles/` 目录按组件拆分，通过 `App.css` 的 `@import` 汇总
 - **ESLint** 分两套配置：`src/` 用 browser globals + React 插件，`server/` 用 node globals

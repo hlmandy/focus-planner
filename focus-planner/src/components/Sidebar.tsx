@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { NavLink, useNavigate } from 'react-router'
 import {
   Archive,
   Plus,
@@ -42,15 +43,14 @@ export function Sidebar() {
   const {
     projects,
     tasks,
-    page,
-    setPage,
     projectFilterId,
     setProjectFilterId,
-    setProjectDetailId,
     isSidebarOpen,
     setIsSidebarOpen,
     setPomodoroProjectId,
   } = useApp()
+
+  const navigate = useNavigate()
 
   const toggleArchived = () => {
     const next = !showArchived
@@ -66,21 +66,14 @@ export function Sidebar() {
 
   const openProject = (id: string) => {
     setProjectFilterId(id)
-    setProjectDetailId(id === 'all' ? null : id)
-    setPage('projects')
-  }
-
-  const openProjectOverview = () => {
-    setProjectFilterId('all')
-    setProjectDetailId(null)
-    setPage('projects')
+    navigate(id === 'all' ? '/projects' : `/projects/${id}`)
   }
 
   const addProject = () => {
     const name = newProjectName.trim()
     if (!name) {
       setIsSidebarProjectComposerOpen(true)
-      setPage('projects')
+      navigate('/projects')
       return
     }
     const project = {
@@ -97,9 +90,8 @@ export function Sidebar() {
     projects.create(project).catch(reportApiError)
     templateTasks.forEach(t => tasks.create(t).catch(reportApiError))
     setProjectFilterId(project.id)
-    setProjectDetailId(project.id)
     setPomodoroProjectId(project.id)
-    setPage('projects')
+    navigate(`/projects/${project.id}`)
     setIsSidebarProjectComposerOpen(false)
     setNewProjectName('')
     setNewProjectKind('research')
@@ -124,60 +116,49 @@ export function Sidebar() {
         {isSidebarOpen ? '‹' : '›'}
       </button>
       <nav className="nav-list">
-        <button
-          type="button"
-          className={`btn btn-ghost${page === 'today' ? ' active' : ''}`}
-          onClick={() => setPage('today')}
-          title="今天"
+        <NavLink
+          to="/today"
+          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
         >
           <CalendarDays size={18} />
           <span>今天</span>
-        </button>
-        <button
-          type="button"
-          className={`btn btn-ghost${page === 'planner' ? ' active' : ''}`}
-          onClick={() => setPage('planner')}
-          title="规划表"
+        </NavLink>
+        <NavLink
+          to="/planner"
+          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
         >
           <TimerReset size={18} />
           <span>规划表</span>
-        </button>
-        <button
-          type="button"
-          className={`btn btn-ghost${page === 'projects' ? ' active' : ''}`}
-          onClick={openProjectOverview}
-          title="项目"
+        </NavLink>
+        <NavLink
+          to="/projects"
+          end
+          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
         >
           <FolderKanban size={18} />
           <span>项目</span>
-        </button>
-        <button
-          type="button"
-          className={`btn btn-ghost${page === 'research-log' ? ' active' : ''}`}
-          onClick={() => setPage('research-log')}
-          title="研究日志"
+        </NavLink>
+        <NavLink
+          to="/research-log"
+          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
         >
           <FileText size={18} />
           <span>研究日志</span>
-        </button>
-        <button
-          type="button"
-          className={`btn btn-ghost${page === 'habits' ? ' active' : ''}`}
-          onClick={() => setPage('habits')}
-          title="习惯"
+        </NavLink>
+        <NavLink
+          to="/habits"
+          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
         >
           <Flame size={18} />
           <span>习惯</span>
-        </button>
-        <button
-          type="button"
-          className={`btn btn-ghost${page === 'summary' ? ' active' : ''}`}
-          onClick={() => setPage('summary')}
-          title="今日总结"
+        </NavLink>
+        <NavLink
+          to="/summary"
+          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
         >
           <Save size={18} />
           <span>今日总结</span>
-        </button>
+        </NavLink>
       </nav>
       {isSidebarOpen && (
         <div className="sidebar-section">
@@ -211,7 +192,7 @@ export function Sidebar() {
                   type="button"
                   className="sidebar-kind-toggle"
                   onClick={() => toggleGroup(group.kind)}
-                  aria-expanded={isExpanded}
+                  aria-expanded={isExpanded ? 'true' : 'false'}
                 >
                   {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                   <Icon size={14} />
@@ -224,17 +205,19 @@ export function Sidebar() {
                 {isExpanded && groupProjects.map(project => {
                   const ProjIcon = getProjectIcon(project.icon)
                   return (
-                    <button
+                    <NavLink
                       key={project.id}
-                      type="button"
-                      className={`btn btn-ghost project-filter project-filter-nested ${projectFilterId === project.id ? 'active' : ''}`}
-                      onClick={() => openProject(project.id)}
+                      to={`/projects/${project.id}`}
+                      className={({ isActive }) =>
+                        `btn btn-ghost project-filter project-filter-nested${isActive ? ' active' : ''}`
+                      }
+                      onClick={() => setProjectFilterId(project.id)}
                     >
                       <span className="project-icon-dot" data-project-color={project.color}>
                         <ProjIcon size={13} />
                       </span>
                       {project.name}
-                    </button>
+                    </NavLink>
                   )
                 })}
               </div>
@@ -247,7 +230,7 @@ export function Sidebar() {
                 type="button"
                 className="sidebar-archive-toggle"
                 onClick={toggleArchived}
-                aria-expanded={showArchived}
+                aria-expanded={showArchived ? 'true' : 'false'}
               >
                 <Archive size={14} />
                 <span>已归档 ({archivedProjects.length})</span>
@@ -257,17 +240,19 @@ export function Sidebar() {
                 archivedProjects.map(project => {
                   const ProjIcon = getProjectIcon(project.icon)
                   return (
-                    <button
+                    <NavLink
                       key={project.id}
-                      type="button"
-                      className={`btn btn-ghost project-filter archived ${projectFilterId === project.id ? 'active' : ''}`}
-                      onClick={() => openProject(project.id)}
+                      to={`/projects/${project.id}`}
+                      className={({ isActive }) =>
+                        `btn btn-ghost project-filter archived${isActive ? ' active' : ''}`
+                      }
+                      onClick={() => setProjectFilterId(project.id)}
                     >
                       <span className="project-icon-dot" data-project-color={project.color}>
                         <ProjIcon size={13} />
                       </span>
                       {project.name}
-                    </button>
+                    </NavLink>
                   )
                 })}
             </>
@@ -300,15 +285,13 @@ export function Sidebar() {
         </div>
       )}
       <div className="sidebar-footer">
-        <button
-          type="button"
-          className={`btn btn-ghost${page === 'settings' ? ' active' : ''}`}
-          onClick={() => setPage('settings')}
-          title="设置"
+        <NavLink
+          to="/settings"
+          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
         >
           <Settings size={18} />
           <span>设置</span>
-        </button>
+        </NavLink>
       </div>
     </aside>
   )

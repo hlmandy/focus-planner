@@ -146,6 +146,10 @@
   color: var(--project-color, var(--muted));
 }
 
+.today-block-diary {
+  color: var(--muted);
+}
+
 .today-block-delete {
   display: grid;
   place-items: center;
@@ -215,7 +219,7 @@
 .today-quick-add {
   width: min(600px, 100%);
   display: grid;
-  grid-template-columns: 1fr auto auto;
+  grid-template-columns: 1fr auto auto auto;
   gap: 6px;
   align-items: center;
 }
@@ -241,6 +245,7 @@
   box-shadow: 0 0 0 3px rgba(56, 150, 100, 0.12);
 }
 
+.today-quick-type,
 .today-quick-project {
   height: 36px;
   padding: 0 8px;

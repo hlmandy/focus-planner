@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router'
 import { RotateCcw } from 'lucide-react'
 import { api, reportApiError } from '../api/client'
 import { useApp } from '../hooks/useAppContext'
@@ -46,12 +47,12 @@ export function SettingsPage() {
     researchLogs,
     pomodoroSessions,
     setProjectFilterId,
-    setProjectDetailId,
-    setPage,
     persistenceStatus,
     settings,
     updateSettings,
   } = useApp()
+
+  const navigate = useNavigate()
 
   // Local draft for form editing — initialized from context settings.
   // The useEffect below fetches fresh settings from the server on mount.
@@ -216,8 +217,7 @@ export function SettingsPage() {
       return
     }
     setProjectFilterId('all')
-    setProjectDetailId(null)
-    setPage('planner')
+    navigate('/planner')
   }
 
   return (

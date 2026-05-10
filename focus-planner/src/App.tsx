@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
-import { MoreHorizontal } from 'lucide-react'
+import { Navigate, Route, Routes, useLocation } from 'react-router'
 import './App.css'
-import type { AppState, PageName, PersistenceStatus } from '../shared/types'
+import type { AppState, PersistenceStatus } from '../shared/types'
 import { todayKey } from './utils'
 import { pageLabels } from './constants'
 import { loadState } from './seed'
@@ -18,10 +18,8 @@ import { SettingsPage } from './pages/SettingsPage'
 
 function AppShell() {
   const [persistenceStatus, setPersistenceStatus] = useState<PersistenceStatus>('checking')
-  const [page, setPage] = useState<PageName>('planner')
   const [date, setDate] = useState(todayKey())
   const [projectFilterId, setProjectFilterId] = useState('all')
-  const [projectDetailId, setProjectDetailId] = useState<string | null>(null)
   const [pomodoroProjectId, setPomodoroProjectId] = useState('research-topic-a')
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isToolPanelOpen, setIsToolPanelOpen] = useState(true)
@@ -52,14 +50,10 @@ function AppShell() {
   }, [])
 
   const contextValue = {
-    page,
-    setPage,
     date,
     setDate,
     projectFilterId,
     setProjectFilterId,
-    projectDetailId,
-    setProjectDetailId,
     pomodoroProjectId,
     setPomodoroProjectId,
     isSidebarOpen,
@@ -79,22 +73,35 @@ function AppShell() {
 }
 
 function AppShellInner({ shellRef }: { shellRef: React.RefObject<HTMLElement | null> }) {
-  const {
-    page,
-    projectDetailId,
-    projects,
-    isSidebarOpen,
-    isToolPanelOpen,
-    setIsToolPanelOpen,
-  } = useApp()
+  const { projects, isSidebarOpen, isToolPanelOpen, setIsToolPanelOpen } = useApp()
+  const location = useLocation()
+
+  // Derive page name from current path for header title and CSS class
+  const page = useMemo(() => {
+    const pathname = location.pathname
+    if (pathname.startsWith('/planner')) return 'planner' as const
+    if (pathname.startsWith('/today')) return 'today' as const
+    if (pathname.startsWith('/projects')) return 'projects' as const
+    if (pathname.startsWith('/research-log')) return 'research-log' as const
+    if (pathname.startsWith('/habits')) return 'habits' as const
+    if (pathname.startsWith('/summary')) return 'summary' as const
+    if (pathname.startsWith('/settings')) return 'settings' as const
+    return 'planner' as const
+  }, [location.pathname])
+
+  // Extract projectId from URL for header title in project detail view
+  const projectIdFromUrl = useMemo(() => {
+    const match = location.pathname.match(/^\/projects\/(.+)$/)
+    return match ? match[1] : null
+  }, [location.pathname])
 
   const headerTitle = useMemo(() => {
-    if (page === 'projects' && projectDetailId) {
-      const project = projects.items.find(p => p.id === projectDetailId)
+    if (page === 'projects' && projectIdFromUrl) {
+      const project = projects.items.find(p => p.id === projectIdFromUrl)
       if (project) return project.name
     }
     return pageLabels[page] ?? ''
-  }, [page, projectDetailId, projects.items])
+  }, [page, projectIdFromUrl, projects.items])
 
   return (
     <main
@@ -119,17 +126,25 @@ function AppShellInner({ shellRef }: { shellRef: React.RefObject<HTMLElement | n
             )}
           </div>
         </header>
-        {page === 'planner' && <PlannerPage />}
-        {page === 'today' && <TodayPage />}
-        {page === 'projects' && <ProjectsPage />}
-        {page === 'research-log' && <ResearchLogPage />}
-        {page === 'habits' && <HabitsPage />}
-        {page === 'summary' && <SummaryPage />}
-        {page === 'settings' && <SettingsPage />}
+        <Routes>
+          <Route path="/" element={<Navigate to="/planner" replace />} />
+          <Route path="/planner" element={<PlannerPage />} />
+          <Route path="/today" element={<TodayPage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/projects/:projectId" element={<ProjectsPage />} />
+          <Route path="/research-log" element={<ResearchLogPage />} />
+          <Route path="/habits" element={<HabitsPage />} />
+          <Route path="/summary" element={<SummaryPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to="/planner" replace />} />
+        </Routes>
       </section>
       {isToolPanelOpen && <ToolPanel />}
     </main>
   )
 }
+
+// Need MoreHorizontal for the header button
+import { MoreHorizontal } from 'lucide-react'
 
 export default AppShell
