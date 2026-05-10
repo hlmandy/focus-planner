@@ -6,6 +6,7 @@ import { todayKey } from './utils'
 import { pageLabels } from './constants'
 import { loadState } from './seed'
 import { AppProvider, useApp } from './hooks/useAppContext'
+import { PomodoroTimerProvider, StopwatchTimerProvider } from './hooks/usePomodoroTimer'
 import { Sidebar } from './components/Sidebar'
 import { ToolPanel } from './components/ToolPanel'
 import { PlannerPage } from './pages/PlannerPage'
@@ -67,7 +68,11 @@ function AppShell() {
 
   return (
     <AppProvider value={contextValue} initial={initialState}>
-      <AppShellInner shellRef={shellRef} />
+      <PomodoroTimerProvider>
+        <StopwatchTimerProvider>
+          <AppShellInner shellRef={shellRef} />
+        </StopwatchTimerProvider>
+      </PomodoroTimerProvider>
     </AppProvider>
   )
 }

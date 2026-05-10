@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import {
   Check,
@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
+import { usePomodoroTimer, useStopwatchTimer } from '../hooks/usePomodoroTimer'
 import {
   toDateKey,
   todayKey,
@@ -30,7 +31,7 @@ import {
   blockDateText,
 } from '../utils'
 import { DAY_START, DAY_END, getCalendarDayInfo } from '../constants'
-import type { PomodoroSession, ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
+import type { ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
 import { reportApiError } from '../api/client'
 
 type TabId = 'timer' | 'search' | 'quick-add' | 'quick-log'
@@ -83,94 +84,31 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
   } | null>(null)
   const [isSearching, setIsSearching] = useState(false)
 
-  // ===== Notifications =====
-  function notify(title: string, body: string) {
-    if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(title, { body, icon: '🍅' })
-    }
-  }
-
-  function requestNotificationPermission() {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission()
-    }
-  }
-
-  // Request notification permission on first user interaction
-  useEffect(() => {
-    const handler = () => requestNotificationPermission()
-    window.addEventListener('click', handler, { once: true })
-    return () => window.removeEventListener('click', handler)
-  }, [])
-
-  // ===== Pomodoro timer state (self-contained) =====
-  const [mode, setMode] = useState<'work' | 'break'>('work')
-  const [secondsLeft, setSecondsLeft] = useState(settings.workDuration * 60)
-  const [isRunning, setIsRunning] = useState(false)
-
-  // ===== Stopwatch state =====
-  const [stopwatchSeconds, setStopwatchSeconds] = useState(0)
-  const [stopwatchRunning, setStopwatchRunning] = useState(false)
-  const [stopwatchProjectId, setStopwatchProjectId] = useState(pomodoroProjectId)
-
-  const workSeconds = settings.workDuration * 60
-  const breakSeconds = settings.breakDuration * 60
-
-  // Pomodoro interval
-  useEffect(() => {
-    if (!isRunning) return
-    const timer = window.setInterval(() => {
-      setSecondsLeft(value => {
-        if (value > 1) return value - 1
-        setIsRunning(false)
-        if (mode === 'work') {
-          const session: PomodoroSession = {
-            id: uid(),
-            projectId: pomodoroProjectId,
-            date: todayKey(),
-            minutes: settings.workDuration,
-            createdAt: new Date().toISOString(),
-          }
-          pomodoroSessions.create(session).catch(reportApiError)
-          notify('🍅 专注完成！', `完成了 ${settings.workDuration} 分钟的专注，休息一下吧`)
-          requestNotificationPermission()
-          setMode('break')
-          return breakSeconds
-        }
-        notify('☕ 休息结束', '休息时间结束，准备开始下一轮专注')
-        requestNotificationPermission()
-        setMode('work')
-        return workSeconds
-      })
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [
-    isRunning,
+  // ===== Global pomodoro timer (from PomodoroTimerProvider) =====
+  const {
     mode,
-    pomodoroProjectId,
-    pomodoroSessions,
-    workSeconds,
-    breakSeconds,
-    settings.workDuration,
-  ])
+    isRunning,
+    secondsLeft,
+    start: startPomodoro,
+    pause: pausePomodoro,
+    reset: resetPomodoro,
+    switchMode,
+    adjustMinutes,
+    setMinutes: setPomodoroMinutes,
+  } = usePomodoroTimer()
 
-  // Stopwatch interval
-  useEffect(() => {
-    if (!stopwatchRunning) return
-    const timer = window.setInterval(() => {
-      setStopwatchSeconds(s => s + 1)
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [stopwatchRunning])
+  // ===== Global stopwatch timer (from StopwatchTimerProvider) =====
+  const stopwatch = useStopwatchTimer()
+  const [stopwatchProjectId, setStopwatchProjectId] = useState(pomodoroProjectId)
 
   const minutes = Math.floor(secondsLeft / 60)
   const seconds = secondsLeft % 60
   const monthDate = fromDateKey(date)
   const monthLabel = `${monthDate.getFullYear()}年${monthDate.getMonth() + 1}月`
 
-  const swHours = Math.floor(stopwatchSeconds / 3600)
-  const swMinutes = Math.floor((stopwatchSeconds % 3600) / 60)
-  const swSecs = stopwatchSeconds % 60
+  const swHours = Math.floor(stopwatch.elapsedSeconds / 3600)
+  const swMinutes = Math.floor((stopwatch.elapsedSeconds % 3600) / 60)
+  const swSecs = stopwatch.elapsedSeconds % 60
 
   const monthDays = useMemo(() => {
     const selectedMonth = fromDateKey(date)
@@ -205,12 +143,6 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
     () => Object.fromEntries(projects.items.map(p => [p.id, p])),
     [projects.items],
   )
-
-  const resetPomodoro = (nextMode = mode) => {
-    setMode(nextMode)
-    setSecondsLeft(nextMode === 'work' ? settings.workDuration * 60 : settings.breakDuration * 60)
-    setIsRunning(false)
-  }
 
   const addQuickItem = () => {
     if (!quick.trim()) return
@@ -351,7 +283,7 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
           const Icon = t.icon
           const isActive = activeTab === t.id
           const badge =
-            t.id === 'timer' && (isRunning || stopwatchRunning)
+            t.id === 'timer' && (isRunning || stopwatch.isRunning)
               ? isRunning
                 ? `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
                 : `${String(swMinutes).padStart(2, '0')}:${String(swSecs).padStart(2, '0')}`
@@ -401,10 +333,7 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
               <button
                 type="button"
                 className="btn btn-ghost pomodoro-duration-btn"
-                onClick={() => {
-                  const next = Math.max(1, Math.floor(secondsLeft / 60) - 1)
-                  setSecondsLeft(next * 60)
-                }}
+                onClick={() => adjustMinutes(-1)}
                 disabled={isRunning}
                 aria-label="减少1分钟"
               >
@@ -418,7 +347,7 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
                   value={Math.floor(secondsLeft / 60)}
                   onChange={e => {
                     const v = Math.max(1, Math.min(120, Number(e.target.value) || 1))
-                    setSecondsLeft(v * 60)
+                    setPomodoroMinutes(v)
                   }}
                   disabled={isRunning}
                   aria-label="番茄钟分钟数"
@@ -428,10 +357,7 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
               <button
                 type="button"
                 className="btn btn-ghost pomodoro-duration-btn"
-                onClick={() => {
-                  const next = Math.min(120, Math.floor(secondsLeft / 60) + 1)
-                  setSecondsLeft(next * 60)
-                }}
+                onClick={() => adjustMinutes(1)}
                 disabled={isRunning}
                 aria-label="增加1分钟"
               >
@@ -455,14 +381,14 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
               <button
                 type="button"
                 className={`btn btn-ghost${mode === 'work' ? ' active' : ''}`}
-                onClick={() => resetPomodoro('work')}
+                onClick={() => switchMode('work')}
               >
                 专注
               </button>
               <button
                 type="button"
                 className={`btn btn-ghost${mode === 'break' ? ' active' : ''}`}
-                onClick={() => resetPomodoro('break')}
+                onClick={() => switchMode('break')}
               >
                 休息
               </button>
@@ -471,7 +397,7 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={() => setIsRunning(!isRunning)}
+                onClick={isRunning ? pausePomodoro : startPomodoro}
               >
                 {isRunning ? <Pause size={16} /> : <Play size={16} />}
                 {isRunning ? '暂停' : '开始'}
@@ -510,30 +436,27 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
             <div className="stopwatch-actions">
               <button
                 type="button"
-                className={`btn btn-ghost${stopwatchRunning ? ' active' : ''}`}
-                onClick={() => setStopwatchRunning(!stopwatchRunning)}
+                className={`btn btn-ghost${stopwatch.isRunning ? ' active' : ''}`}
+                onClick={stopwatch.isRunning ? stopwatch.pause : stopwatch.start}
               >
-                {stopwatchRunning ? <Pause size={16} /> : <Play size={16} />}
-                {stopwatchRunning ? '暂停' : '开始'}
+                {stopwatch.isRunning ? <Pause size={16} /> : <Play size={16} />}
+                {stopwatch.isRunning ? '暂停' : '开始'}
               </button>
               <button
                 type="button"
                 className="btn btn-ghost"
-                onClick={() => {
-                  setStopwatchRunning(false)
-                  setStopwatchSeconds(0)
-                }}
+                onClick={stopwatch.reset}
               >
                 <RotateCcw size={16} />
                 重置
               </button>
             </div>
-            {stopwatchSeconds > 0 && (
+            {stopwatch.elapsedSeconds > 0 && (
               <button
                 type="button"
                 className="btn btn-primary stopwatch-save"
                 onClick={() => {
-                  const mins = Math.max(1, Math.round(stopwatchSeconds / 60))
+                  const mins = Math.max(1, Math.round(stopwatch.elapsedSeconds / 60))
                   pomodoroSessions
                     .create({
                       id: uid(),
@@ -543,12 +466,11 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
                       createdAt: new Date().toISOString(),
                     })
                     .catch(reportApiError)
-                  setStopwatchRunning(false)
-                  setStopwatchSeconds(0)
+                  stopwatch.reset()
                 }}
               >
                 <Square size={14} />
-                记录 {Math.max(1, Math.round(stopwatchSeconds / 60))} 分钟
+                记录 {Math.max(1, Math.round(stopwatch.elapsedSeconds / 60))} 分钟
               </button>
             )}
 
