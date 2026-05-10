@@ -15,7 +15,15 @@ export const RESEARCH_LOG_KINDS = [
 ] as const
 export const TASK_SOURCES = ['task', 'schedule'] as const
 export const SCHEDULE_BLOCK_TYPES = ['task', 'diary'] as const
-export const DIARY_CATEGORIES = ['childcare', 'commute', 'chores', 'rest', 'meal', 'exercise', 'other'] as const
+export const DIARY_CATEGORIES = [
+  'childcare',
+  'commute',
+  'chores',
+  'rest',
+  'meal',
+  'exercise',
+  'other',
+] as const
 export const READING_STATUSES = ['unread', 'reading', 'read', 'reviewed'] as const
 
 // ── Enum types (derived from constants above — single source of truth) ──────

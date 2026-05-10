@@ -102,8 +102,7 @@ export function useScheduleActions() {
 
     const existingBlock = blocks.items.find(b => b.taskId === params.taskId)
     const duration =
-      params.duration ??
-      (existingBlock ? existingBlock.end - existingBlock.start : 30)
+      params.duration ?? (existingBlock ? existingBlock.end - existingBlock.start : 30)
 
     const start = clamp(params.start, DAY_START, DAY_END - duration)
     const end = start + duration
@@ -144,17 +143,11 @@ export function useScheduleActions() {
     }
   }
 
-  const updateBlock = async (
-    blockId: string,
-    patch: Partial<ScheduleBlock>,
-  ) => {
+  const updateBlock = async (blockId: string, patch: Partial<ScheduleBlock>) => {
     await blocks.update(blockId, patch).catch(reportApiError)
   }
 
-  const updateBlockTask = async (
-    taskId: string,
-    patch: Partial<Task>,
-  ) => {
+  const updateBlockTask = async (taskId: string, patch: Partial<Task>) => {
     await tasks.update(taskId, patch).catch(reportApiError)
   }
 
@@ -211,9 +204,7 @@ export function useScheduleActions() {
     const block = blocks.items.find(b => b.id === blockId)
     if (!block || block.blockType !== 'task') return
 
-    const task = block.taskId
-      ? tasks.items.find(t => t.id === block.taskId)
-      : undefined
+    const task = block.taskId ? tasks.items.find(t => t.id === block.taskId) : undefined
 
     const hasOtherBlocks = block.taskId
       ? blocks.items.some(b => b.id !== block.id && b.taskId === block.taskId)

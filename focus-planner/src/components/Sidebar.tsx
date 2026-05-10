@@ -35,7 +35,11 @@ export function Sidebar() {
   const [expandedGroups, setExpandedGroups] = useState<Record<ProjectKind, boolean>>(() => {
     const saved = localStorage.getItem('focus-planner-sidebar-groups')
     if (saved) {
-      try { return JSON.parse(saved) } catch { /* ignore */ }
+      try {
+        return JSON.parse(saved)
+      } catch {
+        /* ignore */
+      }
     }
     return { research: true, admin: true }
   })
@@ -116,17 +120,11 @@ export function Sidebar() {
         {isSidebarOpen ? '‹' : '›'}
       </button>
       <nav className="nav-list">
-        <NavLink
-          to="/today"
-          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-        >
+        <NavLink to="/today" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
           <CalendarDays size={18} />
           <span>今天</span>
         </NavLink>
-        <NavLink
-          to="/planner"
-          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-        >
+        <NavLink to="/planner" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
           <TimerReset size={18} />
           <span>规划表</span>
         </NavLink>
@@ -145,17 +143,11 @@ export function Sidebar() {
           <FileText size={18} />
           <span>研究日志</span>
         </NavLink>
-        <NavLink
-          to="/habits"
-          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-        >
+        <NavLink to="/habits" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
           <Flame size={18} />
           <span>习惯</span>
         </NavLink>
-        <NavLink
-          to="/summary"
-          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-        >
+        <NavLink to="/summary" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
           <Save size={18} />
           <span>今日总结</span>
         </NavLink>
@@ -202,24 +194,25 @@ export function Sidebar() {
                 {isExpanded && groupProjects.length === 0 && (
                   <div className="sidebar-empty-group">暂无项目</div>
                 )}
-                {isExpanded && groupProjects.map(project => {
-                  const ProjIcon = getProjectIcon(project.icon)
-                  return (
-                    <NavLink
-                      key={project.id}
-                      to={`/projects/${project.id}`}
-                      className={({ isActive }) =>
-                        `project-filter project-filter-nested${isActive ? ' active' : ''}`
-                      }
-                      onClick={() => setProjectFilterId(project.id)}
-                    >
-                      <span className="project-icon-dot" data-project-color={project.color}>
-                        <ProjIcon size={13} />
-                      </span>
-                      {project.name}
-                    </NavLink>
-                  )
-                })}
+                {isExpanded &&
+                  groupProjects.map(project => {
+                    const ProjIcon = getProjectIcon(project.icon)
+                    return (
+                      <NavLink
+                        key={project.id}
+                        to={`/projects/${project.id}`}
+                        className={({ isActive }) =>
+                          `project-filter project-filter-nested${isActive ? ' active' : ''}`
+                        }
+                        onClick={() => setProjectFilterId(project.id)}
+                      >
+                        <span className="project-icon-dot" data-project-color={project.color}>
+                          <ProjIcon size={13} />
+                        </span>
+                        {project.name}
+                      </NavLink>
+                    )
+                  })}
               </div>
             )
           })}

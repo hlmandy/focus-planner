@@ -408,7 +408,10 @@ export function initDatabase(): Database.Database {
 
   // 4. Add block_type and title columns to schedule_blocks (if migrating from old schema)
   //    Use PRAGMA table_info to check whether columns already exist
-  const blockCols = db.prepare("PRAGMA table_info(schedule_blocks)").all() as { name: string; notnull: number }[]
+  const blockCols = db.prepare('PRAGMA table_info(schedule_blocks)').all() as {
+    name: string
+    notnull: number
+  }[]
   const blockColNames = new Set(blockCols.map(c => c.name))
   if (!blockColNames.has('block_type')) {
     db.exec(`ALTER TABLE schedule_blocks ADD COLUMN block_type TEXT NOT NULL DEFAULT 'task'`)
@@ -659,7 +662,17 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
       )
     }
     for (const b of state.blocks ?? []) {
-      insBlock.run(b.id, b.taskId ?? null, b.blockType ?? 'task', b.title ?? '', b.date, b.start, b.end, b.note ?? '', b.category ?? null)
+      insBlock.run(
+        b.id,
+        b.taskId ?? null,
+        b.blockType ?? 'task',
+        b.title ?? '',
+        b.date,
+        b.start,
+        b.end,
+        b.note ?? '',
+        b.category ?? null,
+      )
     }
     for (const h of state.habits ?? []) {
       insHabit.run(h.id, h.title, h.color, h.createdAt)

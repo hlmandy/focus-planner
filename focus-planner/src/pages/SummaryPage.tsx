@@ -72,7 +72,9 @@ export function SummaryPage() {
         (task.createdAt === date ||
           allBlocks.some(block => block.taskId === task.id && block.date === date)),
     )
-    const completedBlocks = selectedDayBlocks.filter(block => block.taskId && tasksById[block.taskId]?.done)
+    const completedBlocks = selectedDayBlocks.filter(
+      block => block.taskId && tasksById[block.taskId]?.done,
+    )
     const completedMinutes = completedBlocks.reduce(
       (sum, block) => sum + block.end - block.start,
       0,

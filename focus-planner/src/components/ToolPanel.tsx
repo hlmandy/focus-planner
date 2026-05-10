@@ -144,7 +144,15 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
       })
     }, 1000)
     return () => window.clearInterval(timer)
-  }, [isRunning, mode, pomodoroProjectId, pomodoroSessions, workSeconds, breakSeconds, settings.workDuration])
+  }, [
+    isRunning,
+    mode,
+    pomodoroProjectId,
+    pomodoroSessions,
+    workSeconds,
+    breakSeconds,
+    settings.workDuration,
+  ])
 
   // Stopwatch interval
   useEffect(() => {

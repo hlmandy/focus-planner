@@ -29,7 +29,9 @@ export const normalizeProjects = (projects?: Project[]) => {
   if (!hasLegacySeedProject) {
     return projects.map(project => ({
       ...project,
-      icon: project.icon ?? (normalizeKind(project.kind ?? 'research') === 'research' ? 'flask' : 'briefcase'),
+      icon:
+        project.icon ??
+        (normalizeKind(project.kind ?? 'research') === 'research' ? 'flask' : 'briefcase'),
       kind: normalizeKind(project.kind ?? 'research'),
       status: project.status ?? 'active',
       goal: project.goal ?? '',
@@ -49,7 +51,9 @@ export const normalizeProjects = (projects?: Project[]) => {
       })
       .map(project => ({
         ...project,
-        icon: project.icon ?? (normalizeKind(project.kind ?? 'research') === 'research' ? 'flask' : 'briefcase'),
+        icon:
+          project.icon ??
+          (normalizeKind(project.kind ?? 'research') === 'research' ? 'flask' : 'briefcase'),
         kind: normalizeKind(project.kind ?? 'research'),
         status: project.status ?? 'active',
         goal: project.goal ?? '',

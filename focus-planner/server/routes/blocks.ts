@@ -104,7 +104,7 @@ export function blockRoutes(app: Hono, db: Database.Database) {
     const nextEnd = jsonNum(body, 'end', current.end)
     const nextNote = (body.note as string) ?? current.note
     const nextCategory = Object.prototype.hasOwnProperty.call(body, 'category')
-      ? (body.category as string | null) ?? null
+      ? ((body.category as string | null) ?? null)
       : (current.category ?? null)
 
     if (nextBlockType === 'task' && !nextTaskId) {
@@ -113,7 +113,17 @@ export function blockRoutes(app: Hono, db: Database.Database) {
 
     db.prepare(
       `UPDATE schedule_blocks SET task_id = ?, block_type = ?, title = ?, date = ?, start_min = ?, end_min = ?, note = ?, category = ? WHERE id = ?`,
-    ).run(nextTaskId, nextBlockType, nextTitle, nextDate, nextStart, nextEnd, nextNote, nextCategory, id)
+    ).run(
+      nextTaskId,
+      nextBlockType,
+      nextTitle,
+      nextDate,
+      nextStart,
+      nextEnd,
+      nextNote,
+      nextCategory,
+      id,
+    )
     return c.json({ ok: true })
   })
 

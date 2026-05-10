@@ -53,7 +53,16 @@ export function projectRoutes(app: Hono, db: Database.Database) {
     if (err) return c.json({ error: err }, 400)
     db.prepare(
       `INSERT INTO projects (id, name, color, icon, kind, status, goal, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(body.id, body.name, body.color, body.icon ?? 'flask', kind, status, body.goal ?? '', body.dueDate ?? '')
+    ).run(
+      body.id,
+      body.name,
+      body.color,
+      body.icon ?? 'flask',
+      kind,
+      status,
+      body.goal ?? '',
+      body.dueDate ?? '',
+    )
     return c.json({ ok: true }, 201)
   })
 
@@ -74,7 +83,16 @@ export function projectRoutes(app: Hono, db: Database.Database) {
 
     db.prepare(
       `UPDATE projects SET name = ?, color = ?, icon = ?, kind = ?, status = ?, goal = ?, due_date = ? WHERE id = ?`,
-    ).run(next.name, next.color, next.icon ?? 'flask', next.kind, next.status, next.goal ?? '', next.dueDate ?? '', id)
+    ).run(
+      next.name,
+      next.color,
+      next.icon ?? 'flask',
+      next.kind,
+      next.status,
+      next.goal ?? '',
+      next.dueDate ?? '',
+      id,
+    )
     return c.json({ ok: true })
   })
 

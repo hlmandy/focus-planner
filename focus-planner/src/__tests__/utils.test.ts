@@ -73,28 +73,73 @@ describe('isProjectTask', () => {
 
 describe('blockTitleText', () => {
   it('returns task title when present', () => {
-    const block = { id: 'b1', taskId: 't1', blockType: 'task', title: '', date: '2026-05-07', start: 540, end: 600, note: '' } satisfies ScheduleBlock
+    const block = {
+      id: 'b1',
+      taskId: 't1',
+      blockType: 'task',
+      title: '',
+      date: '2026-05-07',
+      start: 540,
+      end: 600,
+      note: '',
+    } satisfies ScheduleBlock
     const task = { title: 'Read papers' } as Task
     expect(blockTitleText(block, task)).toBe('Read papers')
   })
 
   it('returns weekday fallback when task title is empty', () => {
-    const block = { id: 'b1', taskId: 't1', blockType: 'task', title: '', date: '2026-05-07', start: 540, end: 600, note: '' } satisfies ScheduleBlock
+    const block = {
+      id: 'b1',
+      taskId: 't1',
+      blockType: 'task',
+      title: '',
+      date: '2026-05-07',
+      start: 540,
+      end: 600,
+      note: '',
+    } satisfies ScheduleBlock
     expect(blockTitleText(block, { title: '' } as Task)).toMatch(/周四/)
   })
 
   it('returns weekday fallback when task is undefined', () => {
-    const block = { id: 'b1', taskId: 't1', blockType: 'task', title: '', date: '2026-05-07', start: 540, end: 600, note: '' } satisfies ScheduleBlock
+    const block = {
+      id: 'b1',
+      taskId: 't1',
+      blockType: 'task',
+      title: '',
+      date: '2026-05-07',
+      start: 540,
+      end: 600,
+      note: '',
+    } satisfies ScheduleBlock
     expect(blockTitleText(block, undefined)).toMatch(/周四/)
   })
 
   it('returns block title for diary blocks', () => {
-    const block = { id: 'b1', taskId: null, blockType: 'diary', title: '午饭', date: '2026-05-07', start: 720, end: 780, note: '' } satisfies ScheduleBlock
+    const block = {
+      id: 'b1',
+      taskId: null,
+      blockType: 'diary',
+      title: '午饭',
+      date: '2026-05-07',
+      start: 720,
+      end: 780,
+      note: '',
+    } satisfies ScheduleBlock
     expect(blockTitleText(block, undefined)).toBe('午饭')
   })
 
   it('returns fallback for diary blocks with empty title', () => {
-    const block = { id: 'b1', taskId: null, blockType: 'diary', title: '', date: '2026-05-07', start: 720, end: 780, note: '' } satisfies ScheduleBlock
+    const block = {
+      id: 'b1',
+      taskId: null,
+      blockType: 'diary',
+      title: '',
+      date: '2026-05-07',
+      start: 720,
+      end: 780,
+      note: '',
+    } satisfies ScheduleBlock
     expect(blockTitleText(block, undefined)).toBe('日程')
   })
 })

@@ -181,15 +181,11 @@ export function PlannerPage() {
         const nextStart = clamp(initialStart + delta, DAY_START, DAY_END - length)
         localPatch.start = nextStart
         localPatch.end = nextStart + length
-        blocks.setItems(prev =>
-          prev.map(b => (b.id === block.id ? { ...b, ...localPatch } : b)),
-        )
+        blocks.setItems(prev => prev.map(b => (b.id === block.id ? { ...b, ...localPatch } : b)))
       } else {
         const nextEnd = clamp(initialEnd + delta, initialStart + MIN_BLOCK, DAY_END)
         localPatch.end = nextEnd
-        blocks.setItems(prev =>
-          prev.map(b => (b.id === block.id ? { ...b, ...localPatch } : b)),
-        )
+        blocks.setItems(prev => prev.map(b => (b.id === block.id ? { ...b, ...localPatch } : b)))
       }
     }
 
@@ -325,7 +321,19 @@ export function PlannerPage() {
         </button>
         <div className="planner-week-title">
           <strong>
-            {blockTitleText({ date, start: 0, end: 0, taskId: '', id: '', note: '', blockType: 'task', title: '' }, undefined)}
+            {blockTitleText(
+              {
+                date,
+                start: 0,
+                end: 0,
+                taskId: '',
+                id: '',
+                note: '',
+                blockType: 'task',
+                title: '',
+              },
+              undefined,
+            )}
           </strong>
           <span>
             {weekStart} - {weekEnd}
@@ -427,19 +435,16 @@ export function PlannerPage() {
                   {dayBlocks.map(block => {
                     const isDiary = block.blockType === 'diary'
                     const task = !isDiary && block.taskId ? tasksById[block.taskId] : undefined
-                    const project =
-                      !isDiary
-                        ? projectsById[
-                            task?.projectId ??
-                              getFallbackProjectId(projects.items, defaultProjects[0].id)
-                          ]
-                        : undefined
+                    const project = !isDiary
+                      ? projectsById[
+                          task?.projectId ??
+                            getFallbackProjectId(projects.items, defaultProjects[0].id)
+                        ]
+                      : undefined
                     const blockStatus = getBlockViewStatus(block, task, todayKey(), currentMinute)
                     const duration = block.end - block.start
-                    const blockColor = isDiary ? '#94a3b8' : project?.color ?? '#3a7afe'
-                    const blockTitle = isDiary
-                      ? block.title || '日程'
-                      : blockTitleText(block, task)
+                    const blockColor = isDiary ? '#94a3b8' : (project?.color ?? '#3a7afe')
+                    const blockTitle = isDiary ? block.title || '日程' : blockTitleText(block, task)
                     return (
                       <article
                         key={block.id}
@@ -511,8 +516,14 @@ export function PlannerPage() {
           <div className="block-editor-head">
             <strong>
               编辑时间块
-              <span className={`source-badge ${editingBlock.blockType === 'diary' ? 'diary' : editingTask?.source ?? 'task'}`}>
-                {editingBlock.blockType === 'diary' ? '普通日程' : editingTask?.source === 'schedule' ? '日程占位' : '任务'}
+              <span
+                className={`source-badge ${editingBlock.blockType === 'diary' ? 'diary' : (editingTask?.source ?? 'task')}`}
+              >
+                {editingBlock.blockType === 'diary'
+                  ? '普通日程'
+                  : editingTask?.source === 'schedule'
+                    ? '日程占位'
+                    : '任务'}
               </span>
             </strong>
             <button
@@ -546,7 +557,9 @@ export function PlannerPage() {
           <label>
             标题
             <input
-              value={editingBlock.blockType === 'diary' ? editingBlock.title : editingTask?.title ?? ''}
+              value={
+                editingBlock.blockType === 'diary' ? editingBlock.title : (editingTask?.title ?? '')
+              }
               onChange={event => {
                 const title = event.target.value
                 if (editingBlock.blockType === 'diary') {
@@ -565,21 +578,21 @@ export function PlannerPage() {
           {editingBlock.blockType === 'diary' ? (
             <p className="muted">普通日程，不关联项目</p>
           ) : editingTask ? (
-          <label>
-            项目
-            <select
-              value={editingTask.projectId}
-              onChange={event => {
-                scheduleActions.updateBlockTask(editingTask.id, { projectId: event.target.value })
-              }}
-            >
-              {projects.items.map(project => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </label>
+            <label>
+              项目
+              <select
+                value={editingTask.projectId}
+                onChange={event => {
+                  scheduleActions.updateBlockTask(editingTask.id, { projectId: event.target.value })
+                }}
+              >
+                {projects.items.map(project => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </label>
           ) : null}
           <label>
             日期
@@ -644,26 +657,28 @@ export function PlannerPage() {
             />
           </label>
           {editingBlock.blockType !== 'diary' && editingTask && (
-          <label className="block-editor-check">
-            <input
-              type="checkbox"
-              checked={editingTask.done}
-              onChange={event => {
-                scheduleActions.updateBlockTask(editingTask.id, { done: event.target.checked })
-              }}
-            />
-            标记完成
-          </label>
+            <label className="block-editor-check">
+              <input
+                type="checkbox"
+                checked={editingTask.done}
+                onChange={event => {
+                  scheduleActions.updateBlockTask(editingTask.id, { done: event.target.checked })
+                }}
+              />
+              标记完成
+            </label>
           )}
         </aside>
       )}
       {contextMenu && (
         <div
           className="planner-context-menu"
-          style={{
-            '--menu-x': `${contextMenu.x}px`,
-            '--menu-y': `${contextMenu.y}px`,
-          } as React.CSSProperties}
+          style={
+            {
+              '--menu-x': `${contextMenu.x}px`,
+              '--menu-y': `${contextMenu.y}px`,
+            } as React.CSSProperties
+          }
           onClick={event => event.stopPropagation()}
           onContextMenu={event => event.preventDefault()}
         >

@@ -51,15 +51,8 @@ interface TaskEditForm {
 }
 
 export function TodayPage() {
-  const {
-    tasks,
-    blocks,
-    projects,
-    researchLogs,
-    date,
-    projectFilterId,
-    pomodoroSessions,
-  } = useApp()
+  const { tasks, blocks, projects, researchLogs, date, projectFilterId, pomodoroSessions } =
+    useApp()
 
   const navigate = useNavigate()
   const scheduleActions = useScheduleActions()
@@ -235,10 +228,13 @@ export function TodayPage() {
 
   const toggleTodo = (id: string) => {
     const task = tasks.items.find(t => t.id === id)
-    if (task) tasks.update(id, { done: !task.done }).catch(reportApiError)
+    if (task) scheduleActions.updateBlockTask(id, { done: !task.done })
   }
 
   const deleteTodo = (id: string) => {
+    const ok = window.confirm('确定删除这个事项吗？关联的日程时间块也会一起删除。')
+    if (!ok) return
+
     const idsToDelete = new Set([id, ...getTaskDescendantIds(id, tasks.items)])
     idsToDelete.forEach(tid => scheduleActions.deleteTask(tid))
   }
@@ -258,7 +254,7 @@ export function TodayPage() {
     const block = blocks.items.find(b => b.id === blockId)
     if (!block || block.blockType !== 'task' || !block.taskId) return
     const task = tasks.items.find(t => t.id === block.taskId)
-    if (task) tasks.update(task.id, { done: !task.done }).catch(reportApiError)
+    if (task) scheduleActions.updateBlockTask(task.id, { done: !task.done })
   }
 
   const deleteBlock = (blockId: string) => {
@@ -272,7 +268,7 @@ export function TodayPage() {
     const task = block.taskId ? tasksById[block.taskId] : undefined
     setEditingBlockId(block.id)
     setEditForm({
-      title: block.blockType === 'diary' ? block.title : task?.title ?? '',
+      title: block.blockType === 'diary' ? block.title : (task?.title ?? ''),
       start: timeText(block.start),
       end: timeText(block.end),
       projectId: task?.projectId ?? '',
@@ -298,42 +294,39 @@ export function TodayPage() {
     const title = editForm.title.trim()
 
     if (editForm.blockType === 'diary') {
-      blocks
-        .update(block.id, {
-          title: title || '普通日程',
-          start: clamp(newStart, DAY_START, newEnd - MIN_BLOCK),
-          end: clamp(newEnd, newStart + MIN_BLOCK, DAY_END),
-          note: editForm.note,
-          category: editForm.category || undefined,
-        })
-        .catch(reportApiError)
+      scheduleActions.updateBlock(block.id, {
+        title: title || '普通日程',
+        start: clamp(newStart, DAY_START, newEnd - MIN_BLOCK),
+        end: clamp(newEnd, newStart + MIN_BLOCK, DAY_END),
+        note: editForm.note,
+        category: editForm.category || undefined,
+      })
       setEditingBlockId(null)
       return
     }
 
     const task = block.taskId ? tasksById[block.taskId] : undefined
-    if (!task) { setEditingBlockId(null); return }
+    if (!task) {
+      setEditingBlockId(null)
+      return
+    }
 
     const promoteSource = task.source === 'schedule' && title !== ''
     const newTitle = title || task.title
 
-    tasks
-      .update(task.id, {
-        title: newTitle,
-        projectId: editForm.projectId,
-        done: editForm.done,
-        ...(promoteSource ? { source: 'task' as const } : {}),
-      })
-      .catch(reportApiError)
+    scheduleActions.updateBlockTask(task.id, {
+      title: newTitle,
+      projectId: editForm.projectId,
+      done: editForm.done,
+      ...(promoteSource ? { source: 'task' as const } : {}),
+    })
 
-    blocks
-      .update(block.id, {
-        title: newTitle,
-        start: clamp(newStart, DAY_START, newEnd - MIN_BLOCK),
-        end: clamp(newEnd, newStart + MIN_BLOCK, DAY_END),
-        note: editForm.note,
-      })
-      .catch(reportApiError)
+    scheduleActions.updateBlock(block.id, {
+      title: newTitle,
+      start: clamp(newStart, DAY_START, newEnd - MIN_BLOCK),
+      end: clamp(newEnd, newStart + MIN_BLOCK, DAY_END),
+      note: editForm.note,
+    })
 
     setEditingBlockId(null)
   }
@@ -456,9 +449,7 @@ export function TodayPage() {
                         <input
                           className="editor-title"
                           value={taskEditForm.title}
-                          onChange={e =>
-                            setTaskEditForm(f => ({ ...f, title: e.target.value }))
-                          }
+                          onChange={e => setTaskEditForm(f => ({ ...f, title: e.target.value }))}
                           placeholder="事项标题"
                         />
                         <select
@@ -479,18 +470,14 @@ export function TodayPage() {
                         <input
                           className="editor-tags"
                           value={taskEditForm.tags}
-                          onChange={e =>
-                            setTaskEditForm(f => ({ ...f, tags: e.target.value }))
-                          }
+                          onChange={e => setTaskEditForm(f => ({ ...f, tags: e.target.value }))}
                           placeholder="标签，例如 论文 学生"
                         />
                         <label className="editor-done-label">
                           <input
                             type="checkbox"
                             checked={taskEditForm.done}
-                            onChange={e =>
-                              setTaskEditForm(f => ({ ...f, done: e.target.checked }))
-                            }
+                            onChange={e => setTaskEditForm(f => ({ ...f, done: e.target.checked }))}
                           />
                           完成
                         </label>
@@ -515,10 +502,7 @@ export function TodayPage() {
                   ) : (
                     <div className="today-focus-item">
                       <span className="today-focus-num">{i + 1}</span>
-                      <span
-                        className="today-focus-title"
-                        onDoubleClick={() => startEditTask(task)}
-                      >
+                      <span className="today-focus-title" onDoubleClick={() => startEditTask(task)}>
                         {task.title}
                       </span>
                       {project && (
@@ -588,7 +572,9 @@ export function TodayPage() {
               aria-label="日程类别"
             >
               {(Object.entries(diaryCategoryLabels) as [string, string][]).map(([k, label]) => (
-                <option key={k} value={k}>{label}</option>
+                <option key={k} value={k}>
+                  {label}
+                </option>
               ))}
             </select>
           )}
@@ -607,7 +593,12 @@ export function TodayPage() {
               ))}
             </select>
           )}
-          <button type="button" className="btn btn-primary" onClick={addQuickItem} aria-label="添加">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={addQuickItem}
+            aria-label="添加"
+          >
             <Plus size={16} />
           </button>
         </div>
@@ -619,9 +610,7 @@ export function TodayPage() {
             {todayBlocks.map(block => {
               const task = block.taskId ? tasksById[block.taskId] : undefined
               const project =
-                block.blockType === 'task'
-                  ? projectsById[task?.projectId ?? '']
-                  : undefined
+                block.blockType === 'task' ? projectsById[task?.projectId ?? ''] : undefined
               const blockTitle =
                 block.blockType === 'diary'
                   ? block.title || '普通日程'
@@ -666,9 +655,7 @@ export function TodayPage() {
                       </span>
                     )}
                     {block.blockType === 'diary' && (
-                      <span className="today-block-project today-block-diary">
-                        普通日程
-                      </span>
+                      <span className="today-block-project today-block-diary">普通日程</span>
                     )}
                     {block.blockType === 'task' && (
                       <button
@@ -708,12 +695,19 @@ export function TodayPage() {
                         {editForm.blockType === 'diary' && (
                           <select
                             value={editForm.category}
-                            onChange={e => setEditForm(f => ({ ...f, category: e.target.value as DiaryCategory | '' }))}
+                            onChange={e =>
+                              setEditForm(f => ({
+                                ...f,
+                                category: e.target.value as DiaryCategory | '',
+                              }))
+                            }
                             aria-label="日程类别"
                           >
                             {(Object.entries(diaryCategoryLabels) as [string, string][]).map(
                               ([k, label]) => (
-                                <option key={k} value={k}>{label}</option>
+                                <option key={k} value={k}>
+                                  {label}
+                                </option>
                               ),
                             )}
                           </select>
@@ -847,24 +841,40 @@ export function TodayPage() {
               </option>
             ))}
           </select>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={addQuickLog}
-            aria-label="记录"
-          >
+          <button type="button" className="btn btn-primary" onClick={addQuickLog} aria-label="记录">
             <Plus size={16} />
           </button>
         </div>
         <div className="today-quick-log-hint">
           快速记为
-          <button type="button" className="btn btn-ghost today-log-type-btn" onClick={() => { setQuickLogKind('writing'); addQuickLog(); }}>
+          <button
+            type="button"
+            className="btn btn-ghost today-log-type-btn"
+            onClick={() => {
+              setQuickLogKind('writing')
+              addQuickLog()
+            }}
+          >
             研究日志
           </button>
-          <button type="button" className="btn btn-ghost today-log-type-btn" onClick={() => { setQuickLogKind('admin'); addQuickLog(); }}>
+          <button
+            type="button"
+            className="btn btn-ghost today-log-type-btn"
+            onClick={() => {
+              setQuickLogKind('admin')
+              addQuickLog()
+            }}
+          >
             事务记录
           </button>
-          <button type="button" className="btn btn-ghost today-log-type-btn" onClick={() => { setQuickLogKind('meeting'); addQuickLog(); }}>
+          <button
+            type="button"
+            className="btn btn-ghost today-log-type-btn"
+            onClick={() => {
+              setQuickLogKind('meeting')
+              addQuickLog()
+            }}
+          >
             学生指导
           </button>
         </div>
@@ -890,9 +900,7 @@ export function TodayPage() {
                         <input
                           className="editor-title"
                           value={taskEditForm.title}
-                          onChange={e =>
-                            setTaskEditForm(f => ({ ...f, title: e.target.value }))
-                          }
+                          onChange={e => setTaskEditForm(f => ({ ...f, title: e.target.value }))}
                           placeholder="事项标题"
                         />
                         <select
@@ -913,18 +921,14 @@ export function TodayPage() {
                         <input
                           className="editor-tags"
                           value={taskEditForm.tags}
-                          onChange={e =>
-                            setTaskEditForm(f => ({ ...f, tags: e.target.value }))
-                          }
+                          onChange={e => setTaskEditForm(f => ({ ...f, tags: e.target.value }))}
                           placeholder="标签，例如 论文 学生"
                         />
                         <label className="editor-done-label">
                           <input
                             type="checkbox"
                             checked={taskEditForm.done}
-                            onChange={e =>
-                              setTaskEditForm(f => ({ ...f, done: e.target.checked }))
-                            }
+                            onChange={e => setTaskEditForm(f => ({ ...f, done: e.target.checked }))}
                           />
                           完成
                         </label>

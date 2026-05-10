@@ -167,9 +167,7 @@ export function ProjectsPage() {
       (projectStatusFilter === 'all' || p.status === projectStatusFilter),
   )
 
-  const activeProjectStats = projectId
-    ? projectStats.find(p => p.id === projectId)
-    : undefined
+  const activeProjectStats = projectId ? projectStats.find(p => p.id === projectId) : undefined
   const activeProjectTasks = projectId
     ? tasks.items.filter(t => t.projectId === projectId && isProjectTask(t))
     : []
@@ -241,9 +239,7 @@ export function ProjectsPage() {
     const pomodoroSnapshot = pomodoroSessions.items
 
     projects.setItems(prev => prev.filter(p => p.id !== pid))
-    tasks.setItems(prev =>
-      prev.map(t => (t.projectId === pid ? { ...t, projectId: targetId } : t)),
-    )
+    tasks.setItems(prev => prev.map(t => (t.projectId === pid ? { ...t, projectId: targetId } : t)))
     thesisStudents.setItems(prev =>
       prev.map(s => (s.projectId === pid ? { ...s, projectId: targetId } : s)),
     )
@@ -461,7 +457,10 @@ export function ProjectsPage() {
             >
               <div className="project-card-header">
                 <span className="project-card-icon" data-project-color={project.color}>
-                  {(() => { const I = getProjectIcon(project.icon); return <I size={14} />; })()}
+                  {(() => {
+                    const I = getProjectIcon(project.icon)
+                    return <I size={14} />
+                  })()}
                 </span>
                 <strong>{project.name}</strong>
                 <span className={`kind-pill ${project.kind}`}>
@@ -553,7 +552,10 @@ export function ProjectsPage() {
         <section className="project-detail">
           <div className="project-detail-header">
             <span className="project-card-icon" data-project-color={activeProjectStats.color}>
-              {(() => { const I = getProjectIcon(activeProjectStats.icon); return <I size={18} />; })()}
+              {(() => {
+                const I = getProjectIcon(activeProjectStats.icon)
+                return <I size={18} />
+              })()}
             </span>
             <div>
               <h2>{activeProjectStats.name}</h2>

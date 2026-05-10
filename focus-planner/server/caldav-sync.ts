@@ -48,7 +48,7 @@ interface SyncMapRow {
 }
 
 export function getContentHash(block: BlockWithTask): string {
-  const summary = block.blockType === 'diary' ? block.blockTitle : block.title ?? ''
+  const summary = block.blockType === 'diary' ? block.blockTitle : (block.title ?? '')
   return [
     block.blockId,
     summary,
@@ -174,9 +174,7 @@ export async function runSync(db: Database.Database): Promise<{
     const uid = `${block.blockId}@focus-planner-caldav`
 
     if (!existing) {
-      const summary = block.blockType === 'diary'
-        ? block.blockTitle
-        : block.title ?? ''
+      const summary = block.blockType === 'diary' ? block.blockTitle : (block.title ?? '')
       const ics = buildIcs({
         uid,
         summary: (block.done ? '✓ ' : '') + summary,
@@ -211,9 +209,7 @@ export async function runSync(db: Database.Database): Promise<{
       }
     } else if (existing.contentHash !== hash) {
       if (!existing.eventUrl) continue
-      const summary = block.blockType === 'diary'
-        ? block.blockTitle
-        : block.title ?? ''
+      const summary = block.blockType === 'diary' ? block.blockTitle : (block.title ?? '')
       const ics = buildIcs({
         uid: existing.eventUid || uid,
         summary: (block.done ? '✓ ' : '') + summary,

@@ -51,7 +51,6 @@ interface AppContextValue {
   toolPanelWidth: number
   setToolPanelWidth: (width: number) => void
   persistenceStatus: PersistenceStatus
-
 }
 
 const AppContext = createContext<AppContextValue | null>(null)

@@ -98,16 +98,36 @@
   background: var(--project-card-icon-color, var(--muted));
 }
 
-.project-card-icon[data-project-color="#3c9638"] { --project-card-icon-color: #3c9638; }
-.project-card-icon[data-project-color="#2b8a6e"] { --project-card-icon-color: #2b8a6e; }
-.project-card-icon[data-project-color="#2563eb"] { --project-card-icon-color: #2563eb; }
-.project-card-icon[data-project-color="#7c3aed"] { --project-card-icon-color: #7c3aed; }
-.project-card-icon[data-project-color="#f59e0b"] { --project-card-icon-color: #f59e0b; }
-.project-card-icon[data-project-color="#ef4444"] { --project-card-icon-color: #ef4444; }
-.project-card-icon[data-project-color="#64748b"] { --project-card-icon-color: #64748b; }
-.project-card-icon[data-project-color="#0f766e"] { --project-card-icon-color: #0f766e; }
-.project-card-icon[data-project-color="#3a7afe"] { --project-card-icon-color: #3a7afe; }
-.project-card-icon[data-project-color="#00a884"] { --project-card-icon-color: #00a884; }
+.project-card-icon[data-project-color='#3c9638'] {
+  --project-card-icon-color: #3c9638;
+}
+.project-card-icon[data-project-color='#2b8a6e'] {
+  --project-card-icon-color: #2b8a6e;
+}
+.project-card-icon[data-project-color='#2563eb'] {
+  --project-card-icon-color: #2563eb;
+}
+.project-card-icon[data-project-color='#7c3aed'] {
+  --project-card-icon-color: #7c3aed;
+}
+.project-card-icon[data-project-color='#f59e0b'] {
+  --project-card-icon-color: #f59e0b;
+}
+.project-card-icon[data-project-color='#ef4444'] {
+  --project-card-icon-color: #ef4444;
+}
+.project-card-icon[data-project-color='#64748b'] {
+  --project-card-icon-color: #64748b;
+}
+.project-card-icon[data-project-color='#0f766e'] {
+  --project-card-icon-color: #0f766e;
+}
+.project-card-icon[data-project-color='#3a7afe'] {
+  --project-card-icon-color: #3a7afe;
+}
+.project-card-icon[data-project-color='#00a884'] {
+  --project-card-icon-color: #00a884;
+}
 
 .project-card-header strong,
 .project-log-row strong,
@@ -324,7 +344,10 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
 }
 
 .icon-choice:hover {
@@ -343,7 +366,9 @@
   border-radius: 999px;
   border: 2px solid transparent;
   cursor: pointer;
-  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .palette-dot:hover {
@@ -356,14 +381,30 @@
 }
 
 /* Palette dot colors — must match PROJECT_PALETTE in constants.ts */
-.palette-dot[data-color="#3c9638"] { background: #3c9638; }
-.palette-dot[data-color="#2b8a6e"] { background: #2b8a6e; }
-.palette-dot[data-color="#2563eb"] { background: #2563eb; }
-.palette-dot[data-color="#7c3aed"] { background: #7c3aed; }
-.palette-dot[data-color="#f59e0b"] { background: #f59e0b; }
-.palette-dot[data-color="#ef4444"] { background: #ef4444; }
-.palette-dot[data-color="#64748b"] { background: #64748b; }
-.palette-dot[data-color="#0f766e"] { background: #0f766e; }
+.palette-dot[data-color='#3c9638'] {
+  background: #3c9638;
+}
+.palette-dot[data-color='#2b8a6e'] {
+  background: #2b8a6e;
+}
+.palette-dot[data-color='#2563eb'] {
+  background: #2563eb;
+}
+.palette-dot[data-color='#7c3aed'] {
+  background: #7c3aed;
+}
+.palette-dot[data-color='#f59e0b'] {
+  background: #f59e0b;
+}
+.palette-dot[data-color='#ef4444'] {
+  background: #ef4444;
+}
+.palette-dot[data-color='#64748b'] {
+  background: #64748b;
+}
+.palette-dot[data-color='#0f766e'] {
+  background: #0f766e;
+}
 
 .project-meta-editor label,
 .thesis-composer label {
