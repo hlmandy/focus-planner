@@ -346,27 +346,35 @@ export function initDatabase(): Database.Database {
   // --- Schema migrations (run after CREATE TABLE IF NOT EXISTS) ---
 
   // 1. Add CHECK constraints to schedule_blocks (SQLite doesn't support ALTER TABLE ADD CHECK,
-  //    so we use a trigger to enforce range checks)
+  //    so we use a trigger to enforce range checks).
+  //    MAX_SCHEDULE_MINUTE = 1620 (27:00) to support late-night scheduling.
+  //    Drop existing triggers first since IF NOT EXISTS won't update them.
   db.exec(`
-    CREATE TRIGGER IF NOT EXISTS trg_blocks_start_min_check
+    DROP TRIGGER IF EXISTS trg_blocks_start_min_check;
+    DROP TRIGGER IF EXISTS trg_blocks_end_min_check;
+    DROP TRIGGER IF EXISTS trg_blocks_start_min_update_check;
+    DROP TRIGGER IF EXISTS trg_blocks_end_min_update_check;
+  `)
+  db.exec(`
+    CREATE TRIGGER trg_blocks_start_min_check
     BEFORE INSERT ON schedule_blocks
-    FOR EACH ROW WHEN NEW.start_min < 0 OR NEW.start_min >= 1440
-    BEGIN SELECT RAISE(ABORT, 'start_min must be 0..1439'); END;
+    FOR EACH ROW WHEN NEW.start_min < 0 OR NEW.start_min >= 1620
+    BEGIN SELECT RAISE(ABORT, 'start_min must be 0..1619'); END;
 
-    CREATE TRIGGER IF NOT EXISTS trg_blocks_end_min_check
+    CREATE TRIGGER trg_blocks_end_min_check
     BEFORE INSERT ON schedule_blocks
-    FOR EACH ROW WHEN NEW.end_min <= NEW.start_min OR NEW.end_min > 1440
-    BEGIN SELECT RAISE(ABORT, 'end_min must be > start_min and <= 1440'); END;
+    FOR EACH ROW WHEN NEW.end_min <= NEW.start_min OR NEW.end_min > 1620
+    BEGIN SELECT RAISE(ABORT, 'end_min must be > start_min and <= 1620'); END;
 
-    CREATE TRIGGER IF NOT EXISTS trg_blocks_start_min_update_check
+    CREATE TRIGGER trg_blocks_start_min_update_check
     BEFORE UPDATE ON schedule_blocks
-    FOR EACH ROW WHEN NEW.start_min < 0 OR NEW.start_min >= 1440
-    BEGIN SELECT RAISE(ABORT, 'start_min must be 0..1439'); END;
+    FOR EACH ROW WHEN NEW.start_min < 0 OR NEW.start_min >= 1620
+    BEGIN SELECT RAISE(ABORT, 'start_min must be 0..1619'); END;
 
-    CREATE TRIGGER IF NOT EXISTS trg_blocks_end_min_update_check
+    CREATE TRIGGER trg_blocks_end_min_update_check
     BEFORE UPDATE ON schedule_blocks
-    FOR EACH ROW WHEN NEW.end_min <= NEW.start_min OR NEW.end_min > 1440
-    BEGIN SELECT RAISE(ABORT, 'end_min must be > start_min and <= 1440'); END;
+    FOR EACH ROW WHEN NEW.end_min <= NEW.start_min OR NEW.end_min > 1620
+    BEGIN SELECT RAISE(ABORT, 'end_min must be > start_min and <= 1620'); END;
   `)
 
   // 2. Add UNIQUE constraint to habit_entries (habit_id, date)

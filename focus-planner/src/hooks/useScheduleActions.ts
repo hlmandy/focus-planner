@@ -85,6 +85,7 @@ export function useScheduleActions() {
       await blocks.create(block)
       return block.id
     } catch (err) {
+      await tasks.remove(task.id).catch(() => undefined)
       reportApiError(err)
       return null
     }
@@ -110,15 +111,17 @@ export function useScheduleActions() {
     setDate(params.date)
 
     if (existingBlock) {
-      await blocks
-        .update(existingBlock.id, {
+      try {
+        await blocks.update(existingBlock.id, {
           date: params.date,
           start,
           end,
         })
-        .catch(reportApiError)
-
-      return existingBlock.id
+        return existingBlock.id
+      } catch (err) {
+        reportApiError(err)
+        return null
+      }
     }
 
     const block: ScheduleBlock = {
@@ -132,8 +135,13 @@ export function useScheduleActions() {
       note: '',
     }
 
-    await blocks.create(block).catch(reportApiError)
-    return block.id
+    try {
+      await blocks.create(block)
+      return block.id
+    } catch (err) {
+      reportApiError(err)
+      return null
+    }
   }
 
   const updateBlock = async (
