@@ -239,7 +239,7 @@ export function TodayPage() {
   // --- Inline block editor ---
 
   const startEditBlock = (block: ScheduleBlock) => {
-    const task = tasksById[block.taskId]
+    const task = block.taskId ? tasksById[block.taskId] : undefined
     setEditingBlockId(block.id)
     setEditForm({
       title: task?.title ?? '',
@@ -258,7 +258,7 @@ export function TodayPage() {
   const saveEditBlock = () => {
     const block = blocks.items.find(b => b.id === editingBlockId)
     if (!block) return
-    const task = tasksById[block.taskId]
+    const task = block.taskId ? tasksById[block.taskId] : undefined
     if (!task) return
 
     const [sh, sm] = editForm.start.split(':').map(Number)
@@ -310,7 +310,7 @@ export function TodayPage() {
 
   // --- Convert block to research log ---
   const blockToResearchLog = (block: ScheduleBlock) => {
-    const task = tasksById[block.taskId]
+    const task = block.taskId ? tasksById[block.taskId] : undefined
     if (!task) return
     researchLogs
       .create({
@@ -433,7 +433,7 @@ export function TodayPage() {
         ) : (
           <div className="today-blocks">
             {todayBlocks.map(block => {
-              const task = tasksById[block.taskId]
+              const task = block.taskId ? tasksById[block.taskId] : undefined
               const project = projectsById[task?.projectId ?? '']
               const status = getBlockViewStatus(block, task, date, nowMinutes)
               const isActive = status === 'now'

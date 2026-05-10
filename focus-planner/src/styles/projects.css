@@ -88,6 +88,27 @@
   gap: 9px;
 }
 
+.project-card-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-grid;
+  place-items: center;
+  color: #fff;
+  background: var(--project-card-icon-color, var(--muted));
+}
+
+.project-card-icon[data-project-color="#3c9638"] { --project-card-icon-color: #3c9638; }
+.project-card-icon[data-project-color="#2b8a6e"] { --project-card-icon-color: #2b8a6e; }
+.project-card-icon[data-project-color="#2563eb"] { --project-card-icon-color: #2563eb; }
+.project-card-icon[data-project-color="#7c3aed"] { --project-card-icon-color: #7c3aed; }
+.project-card-icon[data-project-color="#f59e0b"] { --project-card-icon-color: #f59e0b; }
+.project-card-icon[data-project-color="#ef4444"] { --project-card-icon-color: #ef4444; }
+.project-card-icon[data-project-color="#64748b"] { --project-card-icon-color: #64748b; }
+.project-card-icon[data-project-color="#0f766e"] { --project-card-icon-color: #0f766e; }
+.project-card-icon[data-project-color="#3a7afe"] { --project-card-icon-color: #3a7afe; }
+.project-card-icon[data-project-color="#00a884"] { --project-card-icon-color: #00a884; }
+
 .project-card-header strong,
 .project-log-row strong,
 .thesis-student-head strong {
@@ -215,6 +236,12 @@
   gap: 12px;
 }
 
+.project-detail-header .project-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
 .project-detail-header h2 {
   margin: 0;
   font-size: 21px;
@@ -267,6 +294,76 @@
   grid-template-columns: minmax(0, 1fr) auto auto auto;
   gap: 10px;
 }
+
+.project-meta-picker {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 6px;
+}
+
+.project-meta-picker label {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.icon-picker,
+.palette-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.icon-choice {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-muted, var(--muted));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.icon-choice:hover {
+  border-color: var(--line-strong);
+}
+
+.icon-choice.active {
+  border-color: var(--color-primary, #3a7afe);
+  background: var(--blue-soft, rgba(58, 122, 254, 0.12));
+  color: var(--color-primary, #3a7afe);
+}
+
+.palette-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.palette-dot:hover {
+  border-color: var(--line-strong);
+}
+
+.palette-dot.active {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+/* Palette dot colors — must match PROJECT_PALETTE in constants.ts */
+.palette-dot[data-color="#3c9638"] { background: #3c9638; }
+.palette-dot[data-color="#2b8a6e"] { background: #2b8a6e; }
+.palette-dot[data-color="#2563eb"] { background: #2563eb; }
+.palette-dot[data-color="#7c3aed"] { background: #7c3aed; }
+.palette-dot[data-color="#f59e0b"] { background: #f59e0b; }
+.palette-dot[data-color="#ef4444"] { background: #ef4444; }
+.palette-dot[data-color="#64748b"] { background: #64748b; }
+.palette-dot[data-color="#0f766e"] { background: #0f766e; }
 
 .project-meta-editor label,
 .thesis-composer label {

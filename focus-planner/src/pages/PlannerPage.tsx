@@ -67,7 +67,7 @@ export function PlannerPage() {
       blocks.items
         .filter(block => weekKeys.includes(block.date))
         .filter(block => {
-          const task = tasksById[block.taskId]
+          const task = block.taskId ? tasksById[block.taskId] : undefined
           return projectFilterId === 'all' || task?.projectId === projectFilterId
         })
         .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start),
@@ -113,14 +113,16 @@ export function PlannerPage() {
     const block = blocks.items.find(b => b.id === id)
     if (block) {
       const taskId = block.taskId
-      const task = tasks.items.find(t => t.id === taskId)
-      const hasOtherBlocks = blocks.items.some(b => b.id !== id && b.taskId === taskId)
+      const task = taskId ? tasks.items.find(t => t.id === taskId) : undefined
+      const hasOtherBlocks = taskId
+        ? blocks.items.some(b => b.id !== id && b.taskId === taskId)
+        : false
       if (task?.source === 'schedule' && !hasOtherBlocks) {
         blocks.setItems(prev => prev.filter(b => b.id !== id))
         tasks.setItems(prev => prev.filter(t => t.id !== taskId))
         // Sync to API
         blocks.remove(id).catch(reportApiError)
-        tasks.remove(taskId).catch(reportApiError)
+        if (taskId) tasks.remove(taskId).catch(reportApiError)
       } else {
         blocks.setItems(prev => prev.filter(b => b.id !== id))
         blocks.remove(id).catch(reportApiError)
@@ -158,23 +160,6 @@ export function PlannerPage() {
     tasks.setItems(prev => [task, ...prev])
     blocks.setItems(prev => [...prev, block])
     tasks.create(task).catch(reportApiError)
-    blocks.create(block).catch(reportApiError)
-    setDate(blockDate)
-    return block.id
-  }
-
-  const createDiaryBlock = (blockDate: string, start: number, end: number, title: string): string => {
-    const block: ScheduleBlock = {
-      id: uid(),
-      taskId: null,
-      blockType: 'diary',
-      title,
-      date: blockDate,
-      start,
-      end,
-      note: '',
-    }
-    blocks.setItems(prev => [...prev, block])
     blocks.create(block).catch(reportApiError)
     setDate(blockDate)
     return block.id
@@ -346,7 +331,7 @@ export function PlannerPage() {
   }
 
   const editingBlock = blocks.items.find(block => block.id === editingBlockId)
-  const editingTask = editingBlock ? tasksById[editingBlock.taskId] : undefined
+  const editingTask = editingBlock?.taskId ? tasksById[editingBlock.taskId] : undefined
 
   return (
     <div className="planner-page">

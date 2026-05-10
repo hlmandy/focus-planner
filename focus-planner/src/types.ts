@@ -6,6 +6,7 @@ export type {
   ThesisStage,
   ResearchLogKind,
   TaskSource,
+  ScheduleBlockType,
   ReadingStatus,
   // Entity types
   Project,
@@ -53,6 +54,7 @@ export {
   THESIS_STAGES,
   RESEARCH_LOG_KINDS,
   TASK_SOURCES,
+  SCHEDULE_BLOCK_TYPES,
   READING_STATUSES,
   DEFAULT_USER_SETTINGS,
 } from '../shared/types'

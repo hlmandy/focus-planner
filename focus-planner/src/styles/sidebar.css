@@ -148,6 +148,33 @@
   background: #8aa1bd;
 }
 
+.project-icon-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  color: #fff;
+  background: var(--project-dot-color, var(--muted));
+}
+
+.project-icon-dot svg {
+  width: 13px;
+  height: 13px;
+}
+
+.project-icon-dot[data-project-color="#3c9638"] { --project-dot-color: #3c9638; }
+.project-icon-dot[data-project-color="#2b8a6e"] { --project-dot-color: #2b8a6e; }
+.project-icon-dot[data-project-color="#2563eb"] { --project-dot-color: #2563eb; }
+.project-icon-dot[data-project-color="#7c3aed"] { --project-dot-color: #7c3aed; }
+.project-icon-dot[data-project-color="#f59e0b"] { --project-dot-color: #f59e0b; }
+.project-icon-dot[data-project-color="#ef4444"] { --project-dot-color: #ef4444; }
+.project-icon-dot[data-project-color="#64748b"] { --project-dot-color: #64748b; }
+.project-icon-dot[data-project-color="#0f766e"] { --project-dot-color: #0f766e; }
+.project-icon-dot[data-project-color="#3a7afe"] { --project-dot-color: #3a7afe; }
+.project-icon-dot[data-project-color="#00a884"] { --project-dot-color: #00a884; }
+
 .project-filter {
   width: 100%;
   min-height: 30px;

@@ -72,7 +72,7 @@ export function SummaryPage() {
         (task.createdAt === date ||
           allBlocks.some(block => block.taskId === task.id && block.date === date)),
     )
-    const completedBlocks = selectedDayBlocks.filter(block => tasksById[block.taskId]?.done)
+    const completedBlocks = selectedDayBlocks.filter(block => block.taskId && tasksById[block.taskId]?.done)
     const completedMinutes = completedBlocks.reduce(
       (sum, block) => sum + block.end - block.start,
       0,
@@ -91,7 +91,7 @@ export function SummaryPage() {
       '## 今日安排',
       ...(selectedDayBlocks.length
         ? selectedDayBlocks.map(block => {
-            const task = tasksById[block.taskId]
+            const task = block.taskId ? tasksById[block.taskId] : undefined
             const project =
               projectsById[task?.projectId ?? projects.items[0]?.id ?? 'affairs-admin']
             const done = task?.done ? '[x]' : '[ ]'
@@ -152,7 +152,7 @@ export function SummaryPage() {
       t => t.projectId === projectFilterId && isProjectTask(t),
     )
     const projectBlocks = blocks.items.filter(b => {
-      const task = tasksById[b.taskId]
+      const task = b.taskId ? tasksById[b.taskId] : undefined
       return task?.projectId === projectFilterId
     })
     const projectLogs = researchLogs.items
@@ -198,7 +198,7 @@ export function SummaryPage() {
         ? projectBlocks
             .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start)
             .map(b => {
-              const task = tasksById[b.taskId]
+              const task = b.taskId ? tasksById[b.taskId] : undefined
               return `- ${b.date} ${timeText(b.start)}-${timeText(b.end)} ${task?.title ?? '未命名'}${b.note ? `：${b.note}` : ''}`
             })
         : ['- 暂无时间块']),

@@ -18,6 +18,7 @@ import { useApp } from '../hooks/useAppContext'
 import { uid } from '../utils'
 import { reportApiError } from '../api/client'
 import { colors, projectTemplateGoals } from '../constants'
+import { getProjectIcon } from '../utils/projectIcons'
 import { createTasksFromTemplate } from '../seed'
 import type { ProjectKind } from '../../shared/types'
 
@@ -86,6 +87,7 @@ export function Sidebar() {
       id: uid(),
       name,
       color: colors[projects.items.length % colors.length],
+      icon: newProjectKind === 'research' ? 'flask' : 'briefcase',
       kind: newProjectKind,
       status: 'active' as const,
       goal: projectTemplateGoals[newProjectKind],
@@ -219,18 +221,22 @@ export function Sidebar() {
                 {isExpanded && groupProjects.length === 0 && (
                   <div className="sidebar-empty-group">暂无项目</div>
                 )}
-                {isExpanded && groupProjects.map(project => (
-                  <button
-                    key={project.id}
-                    type="button"
-                    className={`btn btn-ghost project-filter project-filter-nested ${projectFilterId === project.id ? 'active' : ''}`}
-                    onClick={() => openProject(project.id)}
-                  >
-                    {/* eslint-disable-next-line react/forbid-dom-props */}
-                    <span className="dot" style={{ background: project.color }} />
-                    {project.name}
-                  </button>
-                ))}
+                {isExpanded && groupProjects.map(project => {
+                  const ProjIcon = getProjectIcon(project.icon)
+                  return (
+                    <button
+                      key={project.id}
+                      type="button"
+                      className={`btn btn-ghost project-filter project-filter-nested ${projectFilterId === project.id ? 'active' : ''}`}
+                      onClick={() => openProject(project.id)}
+                    >
+                      <span className="project-icon-dot" data-project-color={project.color}>
+                        <ProjIcon size={13} />
+                      </span>
+                      {project.name}
+                    </button>
+                  )
+                })}
               </div>
             )
           })}
@@ -248,18 +254,22 @@ export function Sidebar() {
                 <span className={`chevron ${showArchived ? 'open' : ''}`}>›</span>
               </button>
               {showArchived &&
-                archivedProjects.map(project => (
-                  <button
-                    key={project.id}
-                    type="button"
-                    className={`btn btn-ghost project-filter archived ${projectFilterId === project.id ? 'active' : ''}`}
-                    onClick={() => openProject(project.id)}
-                  >
-                    {/* eslint-disable-next-line react/forbid-dom-props */}
-                    <span className="dot" style={{ background: project.color }} />
-                    {project.name}
-                  </button>
-                ))}
+                archivedProjects.map(project => {
+                  const ProjIcon = getProjectIcon(project.icon)
+                  return (
+                    <button
+                      key={project.id}
+                      type="button"
+                      className={`btn btn-ghost project-filter archived ${projectFilterId === project.id ? 'active' : ''}`}
+                      onClick={() => openProject(project.id)}
+                    >
+                      <span className="project-icon-dot" data-project-color={project.color}>
+                        <ProjIcon size={13} />
+                      </span>
+                      {project.name}
+                    </button>
+                  )
+                })}
             </>
           )}
           {isSidebarProjectComposerOpen && (

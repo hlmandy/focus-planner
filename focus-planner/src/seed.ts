@@ -1,4 +1,4 @@
-import type { AppState, LegacyState, Project, ProjectKind, Task } from './types'
+import type { AppState, LegacyState, Project, ProjectKind, ScheduleBlock, Task } from './types'
 import { todayKey, uid, getFallbackProjectId } from './utils'
 import {
   STORAGE_KEY,
@@ -237,7 +237,7 @@ export const normalizeState = (state: LegacyState): AppState => {
       return {
         id: block.id ?? uid(),
         taskId: existingTaskId,
-        blockType: (block as { blockType?: string }).blockType ?? 'task',
+        blockType: (block as { blockType?: ScheduleBlock['blockType'] }).blockType ?? 'task',
         title: (block as { title?: string }).title ?? '',
         date: block.date,
         start: block.start,
@@ -267,7 +267,7 @@ export const normalizeState = (state: LegacyState): AppState => {
     return {
       id: block.id ?? uid(),
       taskId,
-      blockType: (block.blockType as string) ?? 'task',
+      blockType: (block.blockType as ScheduleBlock['blockType']) ?? 'task',
       title: block.title ?? '',
       date: block.date,
       start: block.start,

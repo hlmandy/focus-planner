@@ -21,7 +21,6 @@ import {
   isProjectTask,
 } from '../utils'
 import {
-  colors,
   PROJECT_PALETTE,
   PROJECT_ICONS,
   projectKindLabels,
@@ -203,10 +202,13 @@ export function ProjectsPage() {
   const addProject = () => {
     const name = newProjectName.trim()
     if (!name) return
+    const defaultIcon = newProjectKind === 'research' ? 'flask' : 'briefcase'
+    const defaultColor = newProjectKind === 'research' ? '#3c9638' : '#f59e0b'
     const project: Project = {
       id: uid(),
       name,
-      color: colors[projects.items.length % colors.length],
+      color: defaultColor,
+      icon: defaultIcon,
       kind: newProjectKind,
       status: 'active',
       goal: projectTemplateGoals[newProjectKind],
@@ -449,7 +451,9 @@ export function ProjectsPage() {
               }}
             >
               <div className="project-card-header">
-                <span className="dot" style={{ background: project.color }} />
+                <span className="project-card-icon" data-project-color={project.color}>
+                  {(() => { const I = getProjectIcon(project.icon); return <I size={14} />; })()}
+                </span>
                 <strong>{project.name}</strong>
                 <span className={`kind-pill ${project.kind}`}>
                   {projectKindLabels[project.kind]}
@@ -541,7 +545,9 @@ export function ProjectsPage() {
       ) : activeProjectStats ? (
         <section className="project-detail">
           <div className="project-detail-header">
-            <span className="dot" style={{ background: activeProjectStats.color }} />
+            <span className="project-card-icon" data-project-color={activeProjectStats.color}>
+              {(() => { const I = getProjectIcon(activeProjectStats.icon); return <I size={18} />; })()}
+            </span>
             <div>
               <h2>{activeProjectStats.name}</h2>
               <p>
@@ -619,6 +625,40 @@ export function ProjectsPage() {
                   placeholder="这个项目的目标、范围、当前重点或注意事项"
                 />
               </label>
+              <div className="project-meta-picker">
+                <label>项目图标</label>
+                <div className="icon-picker">
+                  {PROJECT_ICONS.map(iconName => {
+                    const Icon = getProjectIcon(iconName)
+                    return (
+                      <button
+                        key={iconName}
+                        type="button"
+                        className={`icon-choice ${activeProjectStats.icon === iconName ? 'active' : ''}`}
+                        onClick={() => updateProject(activeProjectStats.id, { icon: iconName })}
+                        aria-label={`选择图标 ${iconName}`}
+                      >
+                        <Icon size={16} />
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+              <div className="project-meta-picker">
+                <label>项目颜色</label>
+                <div className="palette-row">
+                  {PROJECT_PALETTE.map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      className={`palette-dot ${activeProjectStats.color === c ? 'active' : ''}`}
+                      data-color={c}
+                      onClick={() => updateProject(activeProjectStats.id, { color: c })}
+                      aria-label={`选择颜色 ${c}`}
+                    />
+                  ))}
+                </div>
+              </div>
             </section>
           ) : (
             <section className="project-meta-view">
