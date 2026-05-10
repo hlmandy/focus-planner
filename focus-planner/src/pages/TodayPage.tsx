@@ -354,17 +354,15 @@ export function TodayPage() {
     const title = taskEditForm.title.trim()
     if (!title) return
 
-    tasks
-      .update(task.id, {
-        title,
-        projectId: taskEditForm.projectId,
-        done: taskEditForm.done,
-        tags: taskEditForm.tags
-          .split(/\s+/)
-          .map(t => t.replace(/^#/, '').trim())
-          .filter(Boolean),
-      })
-      .catch(reportApiError)
+    scheduleActions.updateBlockTask(task.id, {
+      title,
+      projectId: taskEditForm.projectId,
+      done: taskEditForm.done,
+      tags: taskEditForm.tags
+        .split(/\s+/)
+        .map(t => t.replace(/^#/, '').trim())
+        .filter(Boolean),
+    })
 
     setEditingTaskId(null)
   }
