@@ -16,6 +16,14 @@
   grid-template-columns: 56px minmax(0, 1fr);
 }
 
+.app-shell.tool-panel-collapsed {
+  grid-template-columns: 218px minmax(0, 1fr) 44px;
+}
+
+.app-shell.sidebar-collapsed.tool-panel-collapsed {
+  grid-template-columns: 56px minmax(0, 1fr) 44px;
+}
+
 .app-shell.sidebar-collapsed.tool-panel-open {
   grid-template-columns: 56px minmax(0, 1fr) var(--tool-panel-width, 248px);
 }

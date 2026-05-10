@@ -295,6 +295,7 @@ export function TodayPage() {
       note: block.note,
       done: task?.done ?? false,
       category: block.category ?? 'other',
+      blockType: block.blockType,
     })
   }
 
@@ -310,11 +311,12 @@ export function TodayPage() {
     const [eh, em] = editForm.end.split(':').map(Number)
     const newStart = sh * 60 + sm
     const newEnd = eh * 60 + em
+    const title = editForm.title.trim()
 
-    if (block.blockType === 'diary') {
+    if (editForm.blockType === 'diary') {
       blocks
         .update(block.id, {
-          title: editForm.title.trim() || block.title,
+          title: title || '普通日程',
           start: clamp(newStart, DAY_START, newEnd - MIN_BLOCK),
           end: clamp(newEnd, newStart + MIN_BLOCK, DAY_END),
           note: editForm.note,
@@ -328,8 +330,8 @@ export function TodayPage() {
     const task = block.taskId ? tasksById[block.taskId] : undefined
     if (!task) { setEditingBlockId(null); return }
 
-    const promoteSource = task.source === 'schedule' && editForm.title.trim() !== ''
-    const newTitle = editForm.title.trim() || task.title
+    const promoteSource = task.source === 'schedule' && title !== ''
+    const newTitle = title || task.title
 
     tasks
       .update(task.id, {
@@ -342,6 +344,7 @@ export function TodayPage() {
 
     blocks
       .update(block.id, {
+        title: newTitle,
         start: clamp(newStart, DAY_START, newEnd - MIN_BLOCK),
         end: clamp(newEnd, newStart + MIN_BLOCK, DAY_END),
         note: editForm.note,
@@ -349,6 +352,44 @@ export function TodayPage() {
       .catch(reportApiError)
 
     setEditingBlockId(null)
+  }
+
+  // --- Inline task editor (for unscheduled tasks without time) ---
+
+  const startEditTask = (task: Task) => {
+    setEditingTaskId(task.id)
+    setTaskEditForm({
+      title: task.title,
+      projectId: task.projectId,
+      done: task.done,
+      tags: task.tags.join(' '),
+    })
+  }
+
+  const cancelEditTask = () => {
+    setEditingTaskId(null)
+  }
+
+  const saveEditTask = () => {
+    const task = tasks.items.find(t => t.id === editingTaskId)
+    if (!task) return
+
+    const title = taskEditForm.title.trim()
+    if (!title) return
+
+    tasks
+      .update(task.id, {
+        title,
+        projectId: taskEditForm.projectId,
+        done: taskEditForm.done,
+        tags: taskEditForm.tags
+          .split(/\s+/)
+          .map(t => t.replace(/^#/, '').trim())
+          .filter(Boolean),
+      })
+      .catch(reportApiError)
+
+    setEditingTaskId(null)
   }
 
   // --- Schedule an unscheduled task ---
@@ -428,27 +469,108 @@ export function TodayPage() {
           <div className="today-focus-list">
             {focusTasks.map((task, i) => {
               const project = projectsById[task.projectId]
+              const isEditing = editingTaskId === task.id
+
               return (
-                <div key={task.id} className="today-focus-item">
-                  <span className="today-focus-num">{i + 1}</span>
-                  <span className="today-focus-title">{task.title}</span>
-                  {project && (
-                    <span
-                      className="today-focus-project"
-                      style={{ '--project-color': project.color } as React.CSSProperties}
-                    >
-                      {project.name}
-                    </span>
-                  )}
-                  {!scheduledTaskIds.has(task.id) && (
-                    <button
-                      type="button"
-                      className="btn btn-ghost today-schedule-btn"
-                      onClick={() => scheduleTaskQuick(task.id)}
-                      title="排入日程"
-                    >
-                      <CalendarClock size={13} />
-                    </button>
+                <div key={task.id}>
+                  {isEditing ? (
+                    <div className="today-task-editor">
+                      <div className="editor-row">
+                        <input
+                          className="editor-title"
+                          value={taskEditForm.title}
+                          onChange={e =>
+                            setTaskEditForm(f => ({ ...f, title: e.target.value }))
+                          }
+                          placeholder="事项标题"
+                        />
+                        <select
+                          value={taskEditForm.projectId}
+                          onChange={e =>
+                            setTaskEditForm(f => ({ ...f, projectId: e.target.value }))
+                          }
+                          aria-label="项目"
+                        >
+                          {projects.items.map(p => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="editor-row">
+                        <input
+                          className="editor-tags"
+                          value={taskEditForm.tags}
+                          onChange={e =>
+                            setTaskEditForm(f => ({ ...f, tags: e.target.value }))
+                          }
+                          placeholder="标签，例如 论文 学生"
+                        />
+                        <label className="editor-done-label">
+                          <input
+                            type="checkbox"
+                            checked={taskEditForm.done}
+                            onChange={e =>
+                              setTaskEditForm(f => ({ ...f, done: e.target.checked }))
+                            }
+                          />
+                          完成
+                        </label>
+                      </div>
+                      <div className="editor-actions">
+                        <button
+                          type="button"
+                          className="btn btn-primary editor-save"
+                          onClick={saveEditTask}
+                        >
+                          <Save size={14} /> 保存
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost editor-cancel"
+                          onClick={cancelEditTask}
+                        >
+                          <X size={14} /> 取消
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="today-focus-item">
+                      <span className="today-focus-num">{i + 1}</span>
+                      <span
+                        className="today-focus-title"
+                        onDoubleClick={() => startEditTask(task)}
+                      >
+                        {task.title}
+                      </span>
+                      {project && (
+                        <span
+                          className="today-focus-project"
+                          style={{ '--project-color': project.color } as React.CSSProperties}
+                        >
+                          {project.name}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        className="btn btn-ghost today-edit-btn"
+                        onClick={() => startEditTask(task)}
+                        title="编辑"
+                      >
+                        <PenLine size={13} />
+                      </button>
+                      {!scheduledTaskIds.has(task.id) && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost today-schedule-btn"
+                          onClick={() => scheduleTaskQuick(task.id)}
+                          title="排入日程"
+                        >
+                          <CalendarClock size={13} />
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               )
@@ -606,7 +728,7 @@ export function TodayPage() {
                           onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
                           placeholder="标题"
                         />
-                        {block.blockType === 'diary' && (
+                        {editForm.blockType === 'diary' && (
                           <select
                             value={editForm.category}
                             onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))}
@@ -619,7 +741,7 @@ export function TodayPage() {
                             )}
                           </select>
                         )}
-                        {block.blockType === 'task' && (
+                        {editForm.blockType === 'task' && (
                           <select
                             value={editForm.projectId}
                             onChange={e => setEditForm(f => ({ ...f, projectId: e.target.value }))}
@@ -650,7 +772,7 @@ export function TodayPage() {
                             onChange={e => setEditForm(f => ({ ...f, end: e.target.value }))}
                           />
                         </label>
-                        {block.blockType === 'task' && (
+                        {editForm.blockType === 'task' && (
                           <label className="editor-done-label">
                             <input
                               type="checkbox"
@@ -781,41 +903,124 @@ export function TodayPage() {
           <div className="today-unscheduled">
             {unscheduledTasks.map(task => {
               const project = projectsById[task.projectId]
+              const isEditing = editingTaskId === task.id
+
               return (
-                <div key={task.id} className="todo">
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    onClick={() => toggleTodo(task.id)}
-                    aria-label="切换完成状态"
-                  >
-                    {task.done ? <Check size={17} /> : <Circle size={17} />}
-                  </button>
-                  <span>{task.title}</span>
-                  {project && (
-                    <span
-                      className="today-block-project"
-                      style={{ '--project-color': project.color } as React.CSSProperties}
-                    >
-                      {project.name}
-                    </span>
+                <div key={task.id}>
+                  {isEditing ? (
+                    <div className="today-task-editor">
+                      <div className="editor-row">
+                        <input
+                          className="editor-title"
+                          value={taskEditForm.title}
+                          onChange={e =>
+                            setTaskEditForm(f => ({ ...f, title: e.target.value }))
+                          }
+                          placeholder="事项标题"
+                        />
+                        <select
+                          value={taskEditForm.projectId}
+                          onChange={e =>
+                            setTaskEditForm(f => ({ ...f, projectId: e.target.value }))
+                          }
+                          aria-label="项目"
+                        >
+                          {projects.items.map(p => (
+                            <option key={p.id} value={p.id}>
+                              {p.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="editor-row">
+                        <input
+                          className="editor-tags"
+                          value={taskEditForm.tags}
+                          onChange={e =>
+                            setTaskEditForm(f => ({ ...f, tags: e.target.value }))
+                          }
+                          placeholder="标签，例如 论文 学生"
+                        />
+                        <label className="editor-done-label">
+                          <input
+                            type="checkbox"
+                            checked={taskEditForm.done}
+                            onChange={e =>
+                              setTaskEditForm(f => ({ ...f, done: e.target.checked }))
+                            }
+                          />
+                          完成
+                        </label>
+                      </div>
+                      <div className="editor-actions">
+                        <button
+                          type="button"
+                          className="btn btn-primary editor-save"
+                          onClick={saveEditTask}
+                        >
+                          <Save size={14} /> 保存
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost editor-cancel"
+                          onClick={cancelEditTask}
+                        >
+                          <X size={14} /> 取消
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger editor-delete"
+                          onClick={() => deleteTodo(task.id)}
+                        >
+                          <Trash2 size={14} /> 删除
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="todo">
+                      <button
+                        type="button"
+                        className="btn btn-ghost"
+                        onClick={() => toggleTodo(task.id)}
+                        aria-label="切换完成状态"
+                      >
+                        {task.done ? <Check size={17} /> : <Circle size={17} />}
+                      </button>
+                      <span onDoubleClick={() => startEditTask(task)}>{task.title}</span>
+                      {project && (
+                        <span
+                          className="today-block-project"
+                          style={{ '--project-color': project.color } as React.CSSProperties}
+                        >
+                          {project.name}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        className="btn btn-ghost today-edit-btn"
+                        onClick={() => startEditTask(task)}
+                        title="编辑"
+                      >
+                        <PenLine size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-ghost today-schedule-btn"
+                        onClick={() => scheduleTaskQuick(task.id)}
+                        title="安排到今天"
+                      >
+                        <CalendarClock size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger"
+                        onClick={() => deleteTodo(task.id)}
+                        aria-label="删除 TODO"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   )}
-                  <button
-                    type="button"
-                    className="btn btn-ghost today-schedule-btn"
-                    onClick={() => scheduleTaskQuick(task.id)}
-                    title="安排到今天"
-                  >
-                    <CalendarClock size={13} />
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    onClick={() => deleteTodo(task.id)}
-                    aria-label="删除 TODO"
-                  >
-                    <Trash2 size={15} />
-                  </button>
                 </div>
               )
             })}

@@ -699,3 +699,48 @@
   grid-template-columns: 1fr;
   gap: 4px;
 }
+
+/* ===== Collapse button (inside panel) ===== */
+.tool-panel-collapse {
+  position: absolute;
+  top: 10px;
+  left: 8px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 3;
+}
+
+.tool-panel-collapse:hover {
+  color: var(--ink);
+  border-color: var(--teal);
+}
+
+/* ===== Collapsed rail (replaces panel) ===== */
+.tool-panel-rail {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: var(--surface-soft, #e8f0e4);
+  color: var(--muted);
+  writing-mode: vertical-rl;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  display: grid;
+  place-items: center;
+}
+
+.tool-panel-rail:hover {
+  background: var(--surface);
+  color: var(--ink);
+}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import {
   Check,
   FileText,
+  PanelRightClose,
   Pause,
   Pencil,
   Play,
@@ -41,7 +42,11 @@ const tabs: { id: TabId; label: string; icon: typeof Timer }[] = [
   { id: 'quick-log', label: '记录', icon: FileText },
 ]
 
-export function ToolPanel() {
+interface ToolPanelProps {
+  onCollapse: () => void
+}
+
+export function ToolPanel({ onCollapse }: ToolPanelProps) {
   const {
     projects,
     tasks,
@@ -299,7 +304,7 @@ export function ToolPanel() {
     const startX = event.clientX
     const startWidth = toolPanelWidth
     const onMove = (moveEvent: PointerEvent) =>
-      setToolPanelWidth(clamp(startWidth + startX - moveEvent.clientX, 220, 380))
+      setToolPanelWidth(clamp(startWidth + startX - moveEvent.clientX, 220, 340))
     const onUp = () => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
@@ -321,6 +326,16 @@ export function ToolPanel() {
         aria-label="调整工具栏宽度"
         title="拖拽调整宽度"
       />
+
+      <button
+        type="button"
+        className="tool-panel-collapse"
+        onClick={onCollapse}
+        aria-label="折叠工具栏"
+        title="折叠工具栏"
+      >
+        <PanelRightClose size={16} />
+      </button>
 
       {/* Tab bar */}
       <div className="tool-tabs">

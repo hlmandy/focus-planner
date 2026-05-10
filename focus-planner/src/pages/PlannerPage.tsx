@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { reportApiError } from '../api/client'
@@ -36,6 +36,11 @@ export function PlannerPage() {
     useApp()
 
   const [isLateNightOpen, setIsLateNightOpen] = useState(false)
+  const [contextMenu, setContextMenu] = useState<{
+    blockId: string
+    x: number
+    y: number
+  } | null>(null)
   const [dragCreate, setDragCreate] = useState<{ date: string; start: number; end: number } | null>(
     null,
   )
@@ -131,6 +136,28 @@ export function PlannerPage() {
     }
     if (editingBlockId === id) setEditingBlockId(null)
   }
+
+  const openBlockContextMenu = (event: React.MouseEvent, blockId: string) => {
+    event.preventDefault()
+    event.stopPropagation()
+    setContextMenu({
+      blockId,
+      x: clamp(event.clientX, 8, window.innerWidth - 180),
+      y: clamp(event.clientY, 8, window.innerHeight - 96),
+    })
+  }
+
+  const closeContextMenu = () => {
+    setContextMenu(null)
+  }
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setContextMenu(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   const createBlock = (blockDate: string, start: number, end: number): string => {
     const block: ScheduleBlock = {
@@ -318,7 +345,7 @@ export function PlannerPage() {
   const editingTask = editingBlock?.taskId ? tasksById[editingBlock.taskId] : undefined
 
   return (
-    <div className="planner-page">
+    <div className="planner-page" onClick={closeContextMenu}>
       <div className="planner-controls">
         <button
           type="button"
@@ -455,11 +482,15 @@ export function PlannerPage() {
                           borderColor: blockColor,
                           background: `${blockColor}18`,
                         }}
+                        onContextMenu={event => openBlockContextMenu(event, block.id)}
                       >
                         <button
                           type="button"
                           className="btn btn-ghost drag-area"
-                          onPointerDown={event => startPointerAction(event, block, 'move')}
+                          onPointerDown={event => {
+                            if (event.button !== 0) return
+                            startPointerAction(event, block, 'move')
+                          }}
                         >
                           <strong>{blockTitle}</strong>
                           <span>
@@ -476,19 +507,11 @@ export function PlannerPage() {
                         </button>
                         <button
                           type="button"
-                          className="btn btn-ghost delete-block"
-                          onClick={event => {
-                            event.stopPropagation()
-                            removeBlock(block.id)
-                          }}
-                          aria-label="删除时间块"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                        <button
-                          type="button"
                           className="btn btn-ghost resize-handle"
-                          onPointerDown={event => startPointerAction(event, block, 'resize')}
+                          onPointerDown={event => {
+                            if (event.button !== 0) return
+                            startPointerAction(event, block, 'resize')
+                          }}
                           aria-label="调整时长"
                         />
                       </article>
@@ -718,6 +741,41 @@ export function PlannerPage() {
             删除时间块
           </button>
         </aside>
+      )}
+      {contextMenu && (
+        <div
+          className="planner-context-menu"
+          style={{
+            '--menu-x': `${contextMenu.x}px`,
+            '--menu-y': `${contextMenu.y}px`,
+          } as React.CSSProperties}
+          onClick={event => event.stopPropagation()}
+          onContextMenu={event => event.preventDefault()}
+        >
+          <button
+            type="button"
+            className="planner-context-menu-item"
+            onClick={() => {
+              const block = blocks.items.find(b => b.id === contextMenu.blockId)
+              if (block) {
+                openBlockEditor(block.id, contextMenu.x, contextMenu.y)
+              }
+              setContextMenu(null)
+            }}
+          >
+            编辑
+          </button>
+          <button
+            type="button"
+            className="planner-context-menu-item danger"
+            onClick={() => {
+              removeBlock(contextMenu.blockId)
+              setContextMenu(null)
+            }}
+          >
+            删除时间块
+          </button>
+        </div>
       )}
     </div>
   )

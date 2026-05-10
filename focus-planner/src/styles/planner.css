@@ -321,10 +321,6 @@
   color: #3a7afe;
 }
 
-.time-block.todo .delete-block {
-  color: #7b8ca2;
-}
-
 .time-block.done {
   opacity: 0.6;
 }
@@ -423,18 +419,6 @@
   display: block;
 }
 
-.time-block.compact .delete-block {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  display: none;
-}
-
-.time-block.compact:hover .delete-block,
-.time-block.compact:focus-within .delete-block {
-  display: grid;
-}
-
 .time-block.regular .drag-area em {
   display: none;
 }
@@ -451,27 +435,6 @@
   padding: 1px 5px;
   font-size: 10px;
   font-weight: 650;
-}
-
-.delete-block {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 20px;
-  height: 20px;
-  display: grid;
-  place-items: center;
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.72);
-  color: #766f65;
-}
-
-/* .time-block:not(.compact) .drag-area {
-  padding-right: 30px;
-} */
-
-.delete-block:hover {
-  background: rgba(255, 255, 255, 0.95);
 }
 
 .resize-handle {
@@ -570,4 +533,44 @@
   border-radius: var(--radius-sm);
   background: var(--coral-soft);
   color: var(--coral);
+}
+
+.planner-context-menu {
+  position: fixed;
+  z-index: 80;
+  left: var(--menu-x);
+  top: var(--menu-y);
+  min-width: 148px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.planner-context-menu-item {
+  width: 100%;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.planner-context-menu-item:hover {
+  background: var(--surface-soft);
+}
+
+.planner-context-menu-item.danger {
+  color: var(--coral);
+}
+
+.planner-context-menu-item.danger:hover {
+  background: var(--coral-soft);
 }

@@ -103,28 +103,32 @@ function AppShellInner({ shellRef }: { shellRef: React.RefObject<HTMLElement | n
     return pageLabels[page] ?? ''
   }, [page, projectIdFromUrl, projects.items])
 
+  // Auto-collapse tool panel when window drops below 1320px
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1320px)')
+    const sync = (event?: MediaQueryListEvent) => {
+      const matches = event ? event.matches : media.matches
+      if (matches) setIsToolPanelOpen(false)
+    }
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
+
+  const shellClassName = [
+    'app-shell',
+    isSidebarOpen ? '' : 'sidebar-collapsed',
+    isToolPanelOpen ? 'tool-panel-open' : 'tool-panel-collapsed',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
-    <main
-      ref={shellRef}
-      className={`app-shell ${isSidebarOpen ? '' : 'sidebar-collapsed'} ${isToolPanelOpen ? 'tool-panel-open' : ''}`}
-    >
+    <main ref={shellRef} className={shellClassName}>
       <Sidebar />
       <section className={`workspace ${page === 'planner' ? 'planner-workspace' : ''}`}>
         <header className="app-header">
           <h1>{headerTitle}</h1>
-          <div className="header-actions">
-            {!isToolPanelOpen && (
-              <button
-                type="button"
-                className="btn btn-ghost tool-trigger"
-                onClick={() => setIsToolPanelOpen(true)}
-                aria-expanded="false"
-                aria-label="打开工具面板"
-              >
-                <MoreHorizontal size={22} />
-              </button>
-            )}
-          </div>
         </header>
         <Routes>
           <Route path="/" element={<Navigate to="/planner" replace />} />
@@ -139,12 +143,20 @@ function AppShellInner({ shellRef }: { shellRef: React.RefObject<HTMLElement | n
           <Route path="*" element={<Navigate to="/planner" replace />} />
         </Routes>
       </section>
-      {isToolPanelOpen && <ToolPanel />}
+      {isToolPanelOpen ? (
+        <ToolPanel onCollapse={() => setIsToolPanelOpen(false)} />
+      ) : (
+        <button
+          type="button"
+          className="tool-panel-rail"
+          onClick={() => setIsToolPanelOpen(true)}
+          title="展开工具栏"
+        >
+          工具栏
+        </button>
+      )}
     </main>
   )
 }
-
-// Need MoreHorizontal for the header button
-import { MoreHorizontal } from 'lucide-react'
 
 export default AppShell
