@@ -205,14 +205,14 @@ export function TodayPage() {
     setQuickInput('')
   }
 
-  const addQuickLog = () => {
+  const addQuickLog = (kind = quickLogKind) => {
     if (!quickLogText.trim()) return
     researchLogs
       .create({
         id: uid(),
         date,
         projectId: effectiveLogProject,
-        kind: quickLogKind,
+        kind,
         title: quickLogText.trim(),
         source: '',
         note: '',
@@ -839,7 +839,12 @@ export function TodayPage() {
               </option>
             ))}
           </select>
-          <button type="button" className="btn btn-primary" onClick={addQuickLog} aria-label="记录">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => addQuickLog()}
+            aria-label="记录"
+          >
             <Plus size={16} />
           </button>
         </div>
@@ -850,7 +855,7 @@ export function TodayPage() {
             className="btn btn-ghost today-log-type-btn"
             onClick={() => {
               setQuickLogKind('writing')
-              addQuickLog()
+              addQuickLog('writing')
             }}
           >
             研究日志
@@ -860,7 +865,7 @@ export function TodayPage() {
             className="btn btn-ghost today-log-type-btn"
             onClick={() => {
               setQuickLogKind('admin')
-              addQuickLog()
+              addQuickLog('admin')
             }}
           >
             事务记录
@@ -870,7 +875,7 @@ export function TodayPage() {
             className="btn btn-ghost today-log-type-btn"
             onClick={() => {
               setQuickLogKind('meeting')
-              addQuickLog()
+              addQuickLog('meeting')
             }}
           >
             学生指导

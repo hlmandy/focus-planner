@@ -443,7 +443,11 @@ export function initDatabase(): Database.Database {
         FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
         CHECK(block_type != 'task' OR task_id IS NOT NULL)
       );
-      INSERT INTO schedule_blocks_new SELECT * FROM schedule_blocks;
+      INSERT INTO schedule_blocks_new
+        (id, task_id, block_type, title, date, start_min, end_min, note, category)
+      SELECT
+        id, task_id, block_type, title, date, start_min, end_min, note, category
+      FROM schedule_blocks;
       DROP TABLE schedule_blocks;
       ALTER TABLE schedule_blocks_new RENAME TO schedule_blocks;
     `)

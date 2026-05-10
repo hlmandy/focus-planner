@@ -80,12 +80,14 @@ export function useScheduleActions() {
 
     setDate(params.date)
 
+    let taskCreated = false
     try {
       await tasks.create(task)
+      taskCreated = true
       await blocks.create(block)
       return block.id
     } catch (err) {
-      await tasks.remove(task.id).catch(() => undefined)
+      if (taskCreated) await tasks.remove(task.id).catch(() => undefined)
       reportApiError(err)
       return null
     }
@@ -157,14 +159,18 @@ export function useScheduleActions() {
 
     const taskId = block.taskId
     const task = taskId ? tasks.items.find(t => t.id === taskId) : undefined
-    const hasOtherBlocks = taskId
-      ? blocks.items.some(b => b.id !== blockId && b.taskId === taskId)
-      : false
+    const shouldDeleteTask =
+      Boolean(taskId) &&
+      task?.source === 'schedule' &&
+      !blocks.items.some(b => b.id !== blockId && b.taskId === taskId)
 
-    await blocks.remove(blockId).catch(reportApiError)
-
-    if (task?.source === 'schedule' && taskId && !hasOtherBlocks) {
-      await tasks.remove(taskId).catch(reportApiError)
+    try {
+      await blocks.remove(blockId)
+      if (shouldDeleteTask && taskId) {
+        await tasks.remove(taskId)
+      }
+    } catch (err) {
+      reportApiError(err)
     }
   }
 
@@ -210,16 +216,18 @@ export function useScheduleActions() {
       ? blocks.items.some(b => b.id !== block.id && b.taskId === block.taskId)
       : false
 
-    await blocks
-      .update(block.id, {
+    try {
+      await blocks.update(block.id, {
         blockType: 'diary',
         taskId: null,
         title: task?.title || block.title || '日程',
       })
-      .catch(reportApiError)
 
-    if (task?.source === 'schedule' && block.taskId && !hasOtherBlocks) {
-      await tasks.remove(block.taskId).catch(reportApiError)
+      if (task?.source === 'schedule' && block.taskId && !hasOtherBlocks) {
+        await tasks.remove(block.taskId)
+      }
+    } catch (err) {
+      reportApiError(err)
     }
   }
 
