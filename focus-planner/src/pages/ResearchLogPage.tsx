@@ -2,8 +2,7 @@ import { useMemo, useState } from 'react'
 import { reportApiError } from '../api/client'
 import { Check, ChevronDown, Paperclip, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
-import { uid, researchLogKindLabels, isWebLink, getFallbackProjectId } from '../utils'
-import { defaultProjects } from '../constants'
+import { uid, researchLogKindLabels, isWebLink } from '../utils'
 import type { ResearchLogKind, ReadingStatus } from '../../shared/types'
 
 const kindOptions: { value: ResearchLogKind | 'all'; label: string }[] = [
@@ -67,7 +66,7 @@ export function ResearchLogPage() {
       date,
       projectId:
         projectFilterId === 'all'
-          ? getFallbackProjectId(projects.items, defaultProjects[0].id)
+          ? projects.items[0]?.id ?? ''
           : projectFilterId,
       kind: quickKind,
       title: title || researchLogKindLabels[quickKind],

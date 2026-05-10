@@ -10,6 +10,7 @@ export function useEntityResource<T extends { id: string }>(
   initialData: T[],
 ) {
   const [items, setItems] = useState<T[]>(initialData)
+  const [isHydrated, setIsHydrated] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const mountedRef = useRef(false)
   // Use ref to always have latest items for rollback
@@ -42,6 +43,7 @@ export function useEntityResource<T extends { id: string }>(
         if (!cancelled) {
           setItems(fresh)
           setError(null)
+          setIsHydrated(true)
           localStorage.setItem(`cache_${key}`, JSON.stringify(fresh))
         }
       })
@@ -55,6 +57,7 @@ export function useEntityResource<T extends { id: string }>(
               /* ignore */
             }
           }
+          setIsHydrated(true)
         }
       })
 
@@ -112,5 +115,5 @@ export function useEntityResource<T extends { id: string }>(
     [apiDelete, commitItems],
   )
 
-  return { items, setItems: commitItems, error, create, update, remove }
+  return { items, setItems: commitItems, isHydrated, error, create, update, remove }
 }

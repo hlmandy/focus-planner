@@ -92,38 +92,7 @@ export const projectTaskTemplates: Record<
   ],
 }
 
-export const defaultProjects: Project[] = [
-  {
-    id: 'research-topic-a',
-    name: '科研',
-    color: '#3a7afe',
-    icon: 'flask',
-    kind: 'research',
-    status: 'active',
-    goal: '',
-    dueDate: '',
-  },
-  {
-    id: 'research-topic-b',
-    name: '科研（二）',
-    color: '#00a884',
-    icon: 'chart',
-    kind: 'research',
-    status: 'active',
-    goal: '',
-    dueDate: '',
-  },
-  {
-    id: 'affairs-admin',
-    name: '事务',
-    color: '#f59e0b',
-    icon: 'briefcase',
-    kind: 'admin',
-    status: 'active',
-    goal: '',
-    dueDate: '',
-  },
-]
+export const defaultProjects: Project[] = []
 
 export const legacyProjectIdMap: Record<string, string> = {
   inbox: 'affairs-admin',

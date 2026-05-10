@@ -14,7 +14,6 @@ import {
   parseClockTime,
   blockTitleText,
   getBlockViewStatus,
-  getFallbackProjectId,
 } from '../utils'
 import {
   DAY_START,
@@ -24,7 +23,6 @@ import {
   PIXELS_PER_MINUTE,
   TIMELINE_HEADER_HEIGHT,
   blockStatusLabels,
-  defaultProjects,
   getCalendarDayInfo,
 } from '../constants'
 import type { ScheduleBlock } from '../../shared/types'
@@ -437,8 +435,7 @@ export function PlannerPage() {
                     const task = !isDiary && block.taskId ? tasksById[block.taskId] : undefined
                     const project = !isDiary
                       ? projectsById[
-                          task?.projectId ??
-                            getFallbackProjectId(projects.items, defaultProjects[0].id)
+                          task?.projectId ?? projects.items[0]?.id ?? ''
                         ]
                       : undefined
                     const blockStatus = getBlockViewStatus(block, task, todayKey(), currentMinute)

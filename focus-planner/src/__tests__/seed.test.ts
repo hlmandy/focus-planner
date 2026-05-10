@@ -9,9 +9,9 @@ import {
 import type { LegacyState } from '../types'
 
 describe('seedState', () => {
-  it('returns a valid AppState with default projects and empty entity arrays', () => {
+  it('returns empty AppState', () => {
     const state = seedState()
-    expect(state.projects.length).toBeGreaterThan(0)
+    expect(state.projects).toEqual([])
     expect(state.tasks).toEqual([])
     expect(state.blocks).toEqual([])
     expect(state.habits).toEqual([])
@@ -23,9 +23,9 @@ describe('seedState', () => {
 })
 
 describe('normalizeState', () => {
-  it('returns default projects and empty arrays for empty input', () => {
+  it('returns empty arrays for empty input', () => {
     const result = normalizeState({})
-    expect(result.projects.length).toBeGreaterThan(0)
+    expect(result.projects).toEqual([])
     expect(result.tasks).toEqual([])
     expect(result.blocks).toEqual([])
     expect(result.thesisStudents).toEqual([])
@@ -273,9 +273,9 @@ describe('normalizeState', () => {
 })
 
 describe('normalizeProjects', () => {
-  it('returns defaults when no projects provided', () => {
+  it('returns empty array when no projects provided', () => {
     const result = normalizeProjects([])
-    expect(result.length).toBeGreaterThan(0)
+    expect(result).toEqual([])
   })
 
   it('preserves valid projects as-is', () => {

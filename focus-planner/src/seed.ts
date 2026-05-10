@@ -1,15 +1,14 @@
 import type { AppState, LegacyState, Project, ProjectKind, ScheduleBlock, Task } from './types'
-import { todayKey, uid, getFallbackProjectId } from './utils'
+import { todayKey, uid } from './utils'
 import {
   STORAGE_KEY,
-  defaultProjects,
   legacyProjectIdMap,
   legacyProjectIds,
   projectTaskTemplates,
 } from './constants'
 
 export const resolveProjectId = (projectId: string | undefined, projects: Project[]) => {
-  const defaultId = getFallbackProjectId(projects, defaultProjects[0].id)
+  const defaultId = projects[0]?.id ?? ''
   const migratedProjectId = legacyProjectIdMap[projectId ?? ''] ?? projectId
   return migratedProjectId && projects.some(project => project.id === migratedProjectId)
     ? migratedProjectId
@@ -23,7 +22,7 @@ const normalizeKind = (kind: string): ProjectKind => {
 }
 
 export const normalizeProjects = (projects?: Project[]) => {
-  if (!projects?.length) return defaultProjects
+  if (!projects?.length) return []
 
   const hasLegacySeedProject = projects.some(project => legacyProjectIds.has(project.id))
   if (!hasLegacySeedProject) {
@@ -40,26 +39,18 @@ export const normalizeProjects = (projects?: Project[]) => {
   }
 
   const customProjects = projects.filter(project => !legacyProjectIds.has(project.id))
-  const usedIds = new Set(defaultProjects.map(project => project.id))
-  return [
-    ...defaultProjects,
-    ...customProjects
-      .filter(project => {
-        if (usedIds.has(project.id)) return false
-        usedIds.add(project.id)
-        return true
-      })
-      .map(project => ({
-        ...project,
-        icon:
-          project.icon ??
-          (normalizeKind(project.kind ?? 'research') === 'research' ? 'flask' : 'briefcase'),
-        kind: normalizeKind(project.kind ?? 'research'),
-        status: project.status ?? 'active',
-        goal: project.goal ?? '',
-        dueDate: project.dueDate ?? '',
-      })),
-  ]
+  return customProjects
+    .filter((project, i, arr) => arr.findIndex(p => p.id === project.id) === i)
+    .map(project => ({
+      ...project,
+      icon:
+        project.icon ??
+        (normalizeKind(project.kind ?? 'research') === 'research' ? 'flask' : 'briefcase'),
+      kind: normalizeKind(project.kind ?? 'research'),
+      status: project.status ?? 'active',
+      goal: project.goal ?? '',
+      dueDate: project.dueDate ?? '',
+    }))
 }
 
 export const createTasksFromTemplate = (projectId: string, kind: ProjectKind) => {
@@ -91,7 +82,7 @@ export const createTasksFromTemplate = (projectId: string, kind: ProjectKind) =>
 }
 
 export const seedState = (): AppState => ({
-  projects: [...defaultProjects],
+  projects: [],
   tasks: [],
   blocks: [],
   habits: [],
