@@ -1,6 +1,6 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
-import type { ScheduleBlock, ScheduleBlockRow } from '../types.js'
+import type { ScheduleBlock, ScheduleBlockRow, DiaryCategory } from '../types.js'
 import { requireFields, jsonNum } from '../validate.js'
 
 function toBlock(r: ScheduleBlockRow): ScheduleBlock {
@@ -13,7 +13,7 @@ function toBlock(r: ScheduleBlockRow): ScheduleBlock {
     start: r.start_min,
     end: r.end_min,
     note: r.note,
-    category: r.category ?? undefined,
+    category: (r.category as DiaryCategory) ?? undefined,
   }
 }
 
@@ -103,14 +103,17 @@ export function blockRoutes(app: Hono, db: Database.Database) {
     const nextStart = jsonNum(body, 'start', current.start)
     const nextEnd = jsonNum(body, 'end', current.end)
     const nextNote = (body.note as string) ?? current.note
+    const nextCategory = Object.prototype.hasOwnProperty.call(body, 'category')
+      ? (body.category as string | null) ?? null
+      : (current.category ?? null)
 
     if (nextBlockType === 'task' && !nextTaskId) {
       return c.json({ error: 'task block requires taskId' }, 400)
     }
 
     db.prepare(
-      `UPDATE schedule_blocks SET task_id = ?, block_type = ?, title = ?, date = ?, start_min = ?, end_min = ?, note = ? WHERE id = ?`,
-    ).run(nextTaskId, nextBlockType, nextTitle, nextDate, nextStart, nextEnd, nextNote, id)
+      `UPDATE schedule_blocks SET task_id = ?, block_type = ?, title = ?, date = ?, start_min = ?, end_min = ?, note = ?, category = ? WHERE id = ?`,
+    ).run(nextTaskId, nextBlockType, nextTitle, nextDate, nextStart, nextEnd, nextNote, nextCategory, id)
     return c.json({ ok: true })
   })
 

@@ -15,6 +15,7 @@ import type {
   Project,
   Task,
   ScheduleBlock,
+  DiaryCategory,
   ThesisStudent,
   ResearchLogEntry,
   ProjectRow,
@@ -495,7 +496,7 @@ export function loadFullState(db: Database.Database): AppState {
       start: row.start_min,
       end: row.end_min,
       note: row.note,
-      category: row.category ?? undefined,
+      category: (row.category as DiaryCategory) ?? undefined,
     }),
   )
 

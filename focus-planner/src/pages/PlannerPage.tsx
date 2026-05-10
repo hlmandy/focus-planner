@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Trash2 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
-import { reportApiError } from '../api/client'
+import { useScheduleActions } from '../hooks/useScheduleActions'
 import {
   toDateKey,
   todayKey,
@@ -9,7 +8,6 @@ import {
   addDays,
   getWeekDays,
   weekDayText,
-  uid,
   clamp,
   snap,
   timeText,
@@ -29,11 +27,12 @@ import {
   defaultProjects,
   getCalendarDayInfo,
 } from '../constants'
-import type { ScheduleBlock, Task } from '../../shared/types'
+import type { ScheduleBlock } from '../../shared/types'
 
 export function PlannerPage() {
   const { projects, blocks, tasks, date, setDate, projectFilterId, isToolPanelOpen, settings } =
     useApp()
+  const scheduleActions = useScheduleActions()
 
   const [isLateNightOpen, setIsLateNightOpen] = useState(false)
   const [contextMenu, setContextMenu] = useState<{
@@ -49,8 +48,13 @@ export function PlannerPage() {
   const [now] = useState(() => new Date())
   const timelineRef = useRef<HTMLDivElement | null>(null)
 
-  // Track blocks being dragged for local-only updates (API sync on pointerup)
-  const dragStartRef = useRef<{ id: string; initialStart: number; initialEnd: number } | null>(null)
+  // Track blocks being dragged for local-only preview (API sync on pointerup)
+  const dragStartRef = useRef<{
+    id: string
+    initialStart: number
+    initialEnd: number
+    action: 'move' | 'resize'
+  } | null>(null)
 
   const weekDays = getWeekDays(date)
   const weekKeys = useMemo(() => getWeekDays(date).map(toDateKey), [date])
@@ -106,37 +110,6 @@ export function PlannerPage() {
   const timelineHeight = TIMELINE_HEADER_HEIGHT + (displayDayEnd - DAY_START) * PIXELS_PER_MINUTE
   const isCurrentTimeInRange = currentMinute >= DAY_START && currentMinute <= displayDayEnd
 
-  // Local-only update for drag (no API call)
-  const setBlockLocal = (id: string, patch: Partial<ScheduleBlock>) => {
-    blocks.setItems(prev => prev.map(b => (b.id === id ? { ...b, ...patch } : b)))
-  }
-
-  const setTaskLocal = (id: string, patch: Partial<Task>) => {
-    tasks.setItems(prev => prev.map(t => (t.id === id ? { ...t, ...patch } : t)))
-  }
-
-  const removeBlock = (id: string) => {
-    const block = blocks.items.find(b => b.id === id)
-    if (block) {
-      const taskId = block.taskId
-      const task = taskId ? tasks.items.find(t => t.id === taskId) : undefined
-      const hasOtherBlocks = taskId
-        ? blocks.items.some(b => b.id !== id && b.taskId === taskId)
-        : false
-      if (task?.source === 'schedule' && !hasOtherBlocks) {
-        blocks.setItems(prev => prev.filter(b => b.id !== id))
-        tasks.setItems(prev => prev.filter(t => t.id !== taskId))
-        // Sync to API
-        blocks.remove(id).catch(reportApiError)
-        if (taskId) tasks.remove(taskId).catch(reportApiError)
-      } else {
-        blocks.setItems(prev => prev.filter(b => b.id !== id))
-        blocks.remove(id).catch(reportApiError)
-      }
-    }
-    if (editingBlockId === id) setEditingBlockId(null)
-  }
-
   const openBlockContextMenu = (event: React.MouseEvent, blockId: string) => {
     event.preventDefault()
     event.stopPropagation()
@@ -159,21 +132,17 @@ export function PlannerPage() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  const createBlock = (blockDate: string, start: number, end: number): string => {
-    const block: ScheduleBlock = {
-      id: uid(),
-      taskId: null,
-      blockType: 'diary',
-      title: '',
+  const createBlock = async (
+    blockDate: string,
+    start: number,
+    end: number,
+  ): Promise<string | null> => {
+    return scheduleActions.createDiaryBlock({
       date: blockDate,
       start,
       end,
-      note: '',
-    }
-    blocks.setItems(prev => [...prev, block])
-    blocks.create(block).catch(reportApiError)
-    setDate(blockDate)
-    return block.id
+      title: '日程',
+    })
   }
 
   const openBlockEditor = (blockId: string, clientX: number, clientY: number) => {
@@ -191,12 +160,16 @@ export function PlannerPage() {
     action: 'move' | 'resize',
   ) => {
     event.preventDefault()
+    event.stopPropagation()
     const startX = event.clientX
     const startY = event.clientY
     const initialStart = block.start
     const initialEnd = block.end
     let didDrag = false
-    dragStartRef.current = { id: block.id, initialStart, initialEnd }
+    dragStartRef.current = { id: block.id, initialStart, initialEnd, action }
+
+    // Local preview state for drag (updated in move, committed in up)
+    const localPatch: Partial<ScheduleBlock> = {}
 
     const move = (moveEvent: PointerEvent) => {
       if (Math.abs(moveEvent.clientX - startX) > 3 || Math.abs(moveEvent.clientY - startY) > 3) {
@@ -206,10 +179,17 @@ export function PlannerPage() {
       if (action === 'move') {
         const length = initialEnd - initialStart
         const nextStart = clamp(initialStart + delta, DAY_START, DAY_END - length)
-        setBlockLocal(block.id, { start: nextStart, end: nextStart + length })
+        localPatch.start = nextStart
+        localPatch.end = nextStart + length
+        blocks.setItems(prev =>
+          prev.map(b => (b.id === block.id ? { ...b, ...localPatch } : b)),
+        )
       } else {
         const nextEnd = clamp(initialEnd + delta, initialStart + MIN_BLOCK, DAY_END)
-        setBlockLocal(block.id, { end: nextEnd })
+        localPatch.end = nextEnd
+        blocks.setItems(prev =>
+          prev.map(b => (b.id === block.id ? { ...b, ...localPatch } : b)),
+        )
       }
     }
 
@@ -221,9 +201,10 @@ export function PlannerPage() {
       if (didDrag && dragStartRef.current) {
         const currentBlock = blocks.items.find(b => b.id === block.id)
         if (currentBlock) {
-          blocks
-            .update(block.id, { start: currentBlock.start, end: currentBlock.end })
-            .catch(reportApiError)
+          scheduleActions.updateBlock(block.id, {
+            start: currentBlock.start,
+            end: currentBlock.end,
+          })
         }
       }
       dragStartRef.current = null
@@ -235,13 +216,18 @@ export function PlannerPage() {
     window.addEventListener('pointerup', up)
   }
 
-  const createBlockAtPointer = (event: React.MouseEvent<HTMLElement>, blockDate: string) => {
-    if (event.currentTarget !== event.target) return
+  const createBlockAtPointer = async (event: React.MouseEvent<HTMLElement>, blockDate: string) => {
+    const target = event.target as HTMLElement
+    if (target.closest('.time-block')) return
+
     const rect = event.currentTarget.getBoundingClientRect()
     const y = event.clientY - rect.top - TIMELINE_HEADER_HEIGHT
     const start = clamp(snap(y / PIXELS_PER_MINUTE + DAY_START), DAY_START, DAY_END - 30)
-    const blockId = createBlock(blockDate, start, start + 30)
-    openBlockEditor(blockId, event.clientX, event.clientY)
+
+    const blockId = await createBlock(blockDate, start, start + 30)
+    if (blockId) {
+      openBlockEditor(blockId, event.clientX, event.clientY)
+    }
   }
 
   const minuteFromPointer = (
@@ -254,8 +240,12 @@ export function PlannerPage() {
   }
 
   const startCreateBlockDrag = (event: React.PointerEvent<HTMLElement>, blockDate: string) => {
-    if (event.currentTarget !== event.target) return
+    if (event.button !== 0) return
+    const target = event.target as HTMLElement
+    if (target.closest('.time-block')) return
+    if (target.closest('button, input, select, textarea')) return
     event.preventDefault()
+
     const column = event.currentTarget
     const start = clamp(minuteFromPointer(event, column), DAY_START, DAY_END - MIN_BLOCK)
     const startY = event.clientY
@@ -276,6 +266,12 @@ export function PlannerPage() {
     }
 
     const up = (upEvent: PointerEvent) => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      if (!didDrag) {
+        setDragCreate(null)
+        return
+      }
       const pointerMinute = minuteFromPointer(upEvent, column)
       const nextStart = clamp(Math.min(start, pointerMinute), DAY_START, DAY_END - MIN_BLOCK)
       const nextEnd = clamp(
@@ -283,52 +279,16 @@ export function PlannerPage() {
         nextStart + MIN_BLOCK,
         DAY_END,
       )
-      if (didDrag) {
-        const blockId = createBlock(blockDate, nextStart, nextEnd)
-        openBlockEditor(blockId, upEvent.clientX, upEvent.clientY)
-      }
       setDragCreate(null)
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
+      void createBlock(blockDate, nextStart, nextEnd).then(blockId => {
+        if (blockId) {
+          openBlockEditor(blockId, upEvent.clientX, upEvent.clientY)
+        }
+      })
     }
 
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
-  }
-
-  const scheduleTodoAt = (taskId: string, blockDate: string, start: number) => {
-    const task = tasks.items.find(item => item.id === taskId)
-    if (!task) return
-    const existing = blocks.items.find(block => block.taskId === taskId)
-    const duration = existing ? existing.end - existing.start : 30
-    const nextStart = clamp(start, DAY_START, DAY_END - duration)
-    const nextEnd = nextStart + duration
-
-    setDate(blockDate)
-    const oldBlock = blocks.items.find(b => b.taskId === taskId)
-    if (oldBlock) {
-      blocks.setItems(prev =>
-        prev.map(b =>
-          b.taskId === taskId ? { ...b, date: blockDate, start: nextStart, end: nextEnd } : b,
-        ),
-      )
-      blocks
-        .update(oldBlock.id, { date: blockDate, start: nextStart, end: nextEnd })
-        .catch(reportApiError)
-    } else {
-      const newBlock: ScheduleBlock = {
-        id: uid(),
-        taskId,
-        blockType: 'task',
-        title: '',
-        date: blockDate,
-        start: nextStart,
-        end: nextEnd,
-        note: '',
-      }
-      blocks.setItems(prev => [...prev, newBlock])
-      blocks.create(newBlock).catch(reportApiError)
-    }
   }
 
   const scheduleTodoFromDrop = (event: React.DragEvent<HTMLElement>, blockDate: string) => {
@@ -338,7 +298,11 @@ export function PlannerPage() {
     const rect = event.currentTarget.getBoundingClientRect()
     const y = event.clientY - rect.top - TIMELINE_HEADER_HEIGHT
     const start = clamp(snap(y / PIXELS_PER_MINUTE + DAY_START), DAY_START, DAY_END - 30)
-    scheduleTodoAt(taskId, blockDate, start)
+    scheduleActions.scheduleExistingTask({
+      taskId,
+      date: blockDate,
+      start,
+    })
   }
 
   const editingBlock = blocks.items.find(block => block.id === editingBlockId)
@@ -565,45 +529,9 @@ export function PlannerPage() {
                 if (nextType === editingBlock.blockType) return
 
                 if (nextType === 'diary') {
-                  // Switching diary → task: detach task, clean up orphan schedule tasks
-                  const oldTaskId = editingBlock.taskId
-                  const oldTask = oldTaskId ? tasks.items.find(t => t.id === oldTaskId) : undefined
-                  const hasOtherBlocks = oldTaskId
-                    ? blocks.items.some(b => b.id !== editingBlock.id && b.taskId === oldTaskId)
-                    : false
-                  const title = editingTask?.title ?? editingBlock.title
-
-                  setBlockLocal(editingBlock.id, { blockType: 'diary', taskId: null, title })
-                  blocks
-                    .update(editingBlock.id, { blockType: 'diary', taskId: null, title })
-                    .catch(reportApiError)
-
-                  if (oldTask?.source === 'schedule' && oldTaskId && !hasOtherBlocks) {
-                    tasks.setItems(prev => prev.filter(t => t.id !== oldTaskId))
-                    tasks.remove(oldTaskId).catch(reportApiError)
-                  }
+                  scheduleActions.convertTaskBlockToDiary(editingBlock.id)
                 } else {
-                  // Switching diary → task: create a new task
-                  const projectId =
-                    projectFilterId === 'all'
-                      ? getFallbackProjectId(projects.items, defaultProjects[0].id)
-                      : projectFilterId
-                  const task: Task = {
-                    id: uid(),
-                    title: editingBlock.title,
-                    projectId,
-                    parentId: undefined,
-                    tags: [],
-                    done: false,
-                    createdAt: editingBlock.date,
-                    source: 'schedule',
-                  }
-                  tasks.setItems(prev => [task, ...prev])
-                  setBlockLocal(editingBlock.id, { blockType: 'task', taskId: task.id, title: '' })
-                  tasks.create(task).catch(reportApiError)
-                  blocks
-                    .update(editingBlock.id, { blockType: 'task', taskId: task.id, title: '' })
-                    .catch(reportApiError)
+                  scheduleActions.convertDiaryToTask(editingBlock.id)
                 }
               }}
             >
@@ -618,14 +546,13 @@ export function PlannerPage() {
               onChange={event => {
                 const title = event.target.value
                 if (editingBlock.blockType === 'diary') {
-                  setBlockLocal(editingBlock.id, { title })
-                  blocks.update(editingBlock.id, { title }).catch(reportApiError)
+                  scheduleActions.updateBlock(editingBlock.id, { title })
                 } else if (editingTask) {
                   const promote = editingTask.source === 'schedule' && title.trim() !== ''
-                  setTaskLocal(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) })
-                  tasks
-                    .update(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) })
-                    .catch(reportApiError)
+                  scheduleActions.updateBlockTask(editingTask.id, {
+                    title,
+                    ...(promote ? { source: 'task' } : {}),
+                  })
                 }
               }}
               placeholder={editingBlock.blockType === 'diary' ? '例如：午饭、带娃、通勤' : '可选'}
@@ -639,10 +566,7 @@ export function PlannerPage() {
             <select
               value={editingTask.projectId}
               onChange={event => {
-                setTaskLocal(editingTask.id, { projectId: event.target.value })
-                tasks
-                  .update(editingTask.id, { projectId: event.target.value })
-                  .catch(reportApiError)
+                scheduleActions.updateBlockTask(editingTask.id, { projectId: event.target.value })
               }}
             >
               {projects.items.map(project => (
@@ -659,8 +583,7 @@ export function PlannerPage() {
               type="date"
               value={editingBlock.date}
               onChange={event => {
-                setBlockLocal(editingBlock.id, { date: event.target.value })
-                blocks.update(editingBlock.id, { date: event.target.value }).catch(reportApiError)
+                scheduleActions.updateBlock(editingBlock.id, { date: event.target.value })
               }}
             />
           </label>
@@ -681,8 +604,7 @@ export function PlannerPage() {
                     DAY_START,
                     editingBlock.end - MIN_BLOCK,
                   )
-                  setBlockLocal(editingBlock.id, { start: nextStart })
-                  blocks.update(editingBlock.id, { start: nextStart }).catch(reportApiError)
+                  scheduleActions.updateBlock(editingBlock.id, { start: nextStart })
                 }}
               />
             </label>
@@ -702,8 +624,7 @@ export function PlannerPage() {
                     editingBlock.start + MIN_BLOCK,
                     DAY_END,
                   )
-                  setBlockLocal(editingBlock.id, { end: nextEnd })
-                  blocks.update(editingBlock.id, { end: nextEnd }).catch(reportApiError)
+                  scheduleActions.updateBlock(editingBlock.id, { end: nextEnd })
                 }}
               />
             </label>
@@ -713,8 +634,7 @@ export function PlannerPage() {
             <textarea
               value={editingBlock.note}
               onChange={event => {
-                setBlockLocal(editingBlock.id, { note: event.target.value })
-                blocks.update(editingBlock.id, { note: event.target.value }).catch(reportApiError)
+                scheduleActions.updateBlock(editingBlock.id, { note: event.target.value })
               }}
               placeholder="读了哪篇文献、卡点、临时记录..."
             />
@@ -725,21 +645,12 @@ export function PlannerPage() {
               type="checkbox"
               checked={editingTask.done}
               onChange={event => {
-                setTaskLocal(editingTask.id, { done: event.target.checked })
-                tasks.update(editingTask.id, { done: event.target.checked }).catch(reportApiError)
+                scheduleActions.updateBlockTask(editingTask.id, { done: event.target.checked })
               }}
             />
             标记完成
           </label>
           )}
-          <button
-            type="button"
-            className="btn btn-danger block-editor-delete"
-            onClick={() => removeBlock(editingBlock.id)}
-          >
-            <Trash2 size={15} />
-            删除时间块
-          </button>
         </aside>
       )}
       {contextMenu && (
@@ -769,7 +680,8 @@ export function PlannerPage() {
             type="button"
             className="planner-context-menu-item danger"
             onClick={() => {
-              removeBlock(contextMenu.blockId)
+              scheduleActions.deleteBlock(contextMenu.blockId)
+              setEditingBlockId(null)
               setContextMenu(null)
             }}
           >

@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
+import { useScheduleActions } from '../hooks/useScheduleActions'
 import {
   isProjectTask,
   getTaskDescendantIds,
@@ -29,7 +30,7 @@ import {
 } from '../utils'
 import { DAY_START, DAY_END, MIN_BLOCK, diaryCategoryLabels } from '../constants'
 import { researchLogKindLabels } from '../utils'
-import type { ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
+import type { DiaryCategory, ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
 
 interface BlockEditForm {
   title: string
@@ -61,12 +62,13 @@ export function TodayPage() {
   } = useApp()
 
   const navigate = useNavigate()
+  const scheduleActions = useScheduleActions()
 
   // --- Quick-add state ---
   const [quickInput, setQuickInput] = useState('')
   const [quickBlockType, setQuickBlockType] = useState<'task' | 'diary'>('diary')
   const [quickProject, setQuickProject] = useState('')
-  const [quickCategory, setQuickCategory] = useState('other')
+  const [quickCategory, setQuickCategory] = useState<DiaryCategory>('other')
 
   // --- Inline block editor state ---
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null)
@@ -105,6 +107,7 @@ export function TodayPage() {
     return blocks.items
       .filter(b => b.date === date)
       .filter(b => {
+        if (b.blockType === 'diary') return true
         const task = tasks.items.find(t => t.id === b.taskId)
         return projectFilterId === 'all' || task?.projectId === projectFilterId
       })
@@ -185,44 +188,27 @@ export function TodayPage() {
     const parsed = parseQuickInput(quickInput, fallbackStart, DAY_START, DAY_END)
 
     if (quickBlockType === 'diary') {
-      const block: ScheduleBlock = {
-        id: uid(),
-        taskId: null,
-        blockType: 'diary',
-        title: parsed.title,
+      scheduleActions.createDiaryBlock({
         date,
         start: parsed.start,
         end: parsed.start + 30,
-        note: '',
+        title: parsed.title || '日程',
         category: quickCategory || undefined,
-      }
-      blocks.create(block).catch(reportApiError)
+      })
       setQuickInput('')
       return
     }
 
-    const task: Task = {
-      id: uid(),
-      title: parsed.title,
-      projectId: effectiveQuickProject,
-      parentId: undefined,
-      tags: parsed.tags,
-      done: false,
-      createdAt: date,
-      source: 'task',
-    }
-    const block: ScheduleBlock = {
-      id: uid(),
-      taskId: task.id,
-      blockType: 'task',
-      title: task.title,
+    scheduleActions.createTaskBlock({
       date,
       start: parsed.start,
       end: parsed.start + 30,
-      note: '',
-    }
-    tasks.create(task).catch(reportApiError)
-    blocks.create(block).catch(reportApiError)
+      title: parsed.title || '未命名任务',
+      projectId: effectiveQuickProject,
+      tags: parsed.tags,
+      source: 'task',
+    })
+
     setQuickInput('')
   }
 
@@ -254,7 +240,18 @@ export function TodayPage() {
 
   const deleteTodo = (id: string) => {
     const idsToDelete = new Set([id, ...getTaskDescendantIds(id, tasks.items)])
-    idsToDelete.forEach(tid => tasks.remove(tid).catch(reportApiError))
+    idsToDelete.forEach(tid => scheduleActions.deleteTask(tid))
+  }
+
+  const deleteEditingTask = () => {
+    const taskId = editingTaskId
+    if (!taskId) return
+
+    const ok = window.confirm('确定删除这个事项吗？关联的日程时间块也会一起删除。')
+    if (!ok) return
+
+    scheduleActions.deleteTask(taskId)
+    setEditingTaskId(null)
   }
 
   const toggleBlockTask = (blockId: string) => {
@@ -265,20 +262,7 @@ export function TodayPage() {
   }
 
   const deleteBlock = (blockId: string) => {
-    const block = blocks.items.find(b => b.id === blockId)
-    if (!block) return
-    if (block.blockType === 'diary' || !block.taskId) {
-      blocks.remove(blockId).catch(reportApiError)
-    } else {
-      const task = tasks.items.find(t => t.id === block.taskId)
-      const hasOtherBlocks = blocks.items.some(b => b.id !== blockId && b.taskId === block.taskId)
-      if (task?.source === 'schedule' && !hasOtherBlocks) {
-        blocks.remove(blockId).catch(reportApiError)
-        tasks.remove(task.id).catch(reportApiError)
-      } else {
-        blocks.remove(blockId).catch(reportApiError)
-      }
-    }
+    scheduleActions.deleteBlock(blockId)
     if (editingBlockId === blockId) setEditingBlockId(null)
   }
 
@@ -397,18 +381,11 @@ export function TodayPage() {
   const scheduleTaskQuick = (taskId: string) => {
     const lastEnd = todayBlocks.length > 0 ? Math.max(...todayBlocks.map(b => b.end)) : nowMinutes
     const start = clamp(snap(lastEnd + 30), DAY_START, DAY_END - 30)
-    const task = tasks.items.find(t => t.id === taskId)
-    const block: ScheduleBlock = {
-      id: uid(),
+    scheduleActions.scheduleExistingTask({
       taskId,
-      blockType: 'task',
-      title: task?.title ?? '',
       date,
       start,
-      end: start + 30,
-      note: '',
-    }
-    blocks.create(block).catch(reportApiError)
+    })
   }
 
   // --- Convert block to research log ---
@@ -606,7 +583,7 @@ export function TodayPage() {
           {quickBlockType === 'diary' && (
             <select
               value={quickCategory}
-              onChange={e => setQuickCategory(e.target.value)}
+              onChange={e => setQuickCategory(e.target.value as DiaryCategory)}
               className="today-quick-category"
               aria-label="日程类别"
             >
@@ -731,7 +708,7 @@ export function TodayPage() {
                         {editForm.blockType === 'diary' && (
                           <select
                             value={editForm.category}
-                            onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))}
+                            onChange={e => setEditForm(f => ({ ...f, category: e.target.value as DiaryCategory | '' }))}
                             aria-label="日程类别"
                           >
                             {(Object.entries(diaryCategoryLabels) as [string, string][]).map(
@@ -969,8 +946,8 @@ export function TodayPage() {
                         </button>
                         <button
                           type="button"
-                          className="btn btn-danger editor-delete"
-                          onClick={() => deleteTodo(task.id)}
+                          className="btn btn-danger"
+                          onClick={deleteEditingTask}
                         >
                           <Trash2 size={14} /> 删除
                         </button>
