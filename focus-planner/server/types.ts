@@ -7,6 +7,7 @@ export type {
   ResearchLogKind,
   TaskSource,
   ScheduleBlockType,
+  DiaryCategory,
   ReadingStatus,
   // Entity types
   Project,
@@ -53,6 +54,7 @@ export {
   RESEARCH_LOG_KINDS,
   TASK_SOURCES,
   SCHEDULE_BLOCK_TYPES,
+  DIARY_CATEGORIES,
   READING_STATUSES,
   DEFAULT_USER_SETTINGS,
 } from '../shared/types'
@@ -89,6 +91,7 @@ export interface ScheduleBlockRow {
   start_min: number
   end_min: number
   note: string
+  category: string | null
 }
 
 export interface HabitRow {

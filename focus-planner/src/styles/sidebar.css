@@ -39,9 +39,8 @@
   gap: 2px;
 }
 
-.nav-list button,
-.project-filter,
-.sidebar-footer button {
+.nav-item,
+.project-filter {
   min-height: 32px;
   display: flex;
   align-items: center;
@@ -52,6 +51,8 @@
   color: #3d4147;
   padding: 0 8px;
   text-align: left;
+  text-decoration: none;
+  cursor: pointer;
   transition:
     background 0.16s ease,
     color 0.16s ease,
@@ -59,39 +60,33 @@
   font-size: 14px;
 }
 
-.nav-list button svg,
-.sidebar-footer button svg {
+.nav-item svg {
   flex: 0 0 auto;
   color: #71846f;
   width: 16px;
   height: 16px;
 }
 
-.nav-list button:hover,
-.nav-list button.active,
+.nav-item:hover,
+.nav-item.active,
 .project-filter:hover,
-.project-filter.active,
-.sidebar-footer button:hover,
-.sidebar-footer button.active {
+.project-filter.active {
   background: var(--surface);
   color: var(--blue);
   box-shadow: var(--shadow-sm);
 }
 
-.nav-list button.active svg,
-.sidebar-footer button.active svg {
+.nav-item.active svg {
   color: var(--blue);
 }
 
-.sidebar-collapsed .nav-list button,
-.sidebar-collapsed .sidebar-footer button {
+.sidebar-collapsed .nav-item {
   width: 32px;
   justify-content: center;
   padding: 0;
 }
 
-.sidebar-collapsed .nav-list span,
-.sidebar-collapsed .sidebar-footer span,
+.sidebar-collapsed .nav-item span,
 .sidebar-collapsed .sidebar-section {
   display: none;
 }

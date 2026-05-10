@@ -4,6 +4,7 @@ import type {
   ProjectStatus,
   ThesisStage,
   BlockViewStatus,
+  DiaryCategory,
   Project,
 } from './types'
 
@@ -221,6 +222,16 @@ export const getCalendarDayInfo = (dateKey: string) => {
   }
   _calendarDayInfoCache.set(dateKey, result)
   return result
+}
+
+export const diaryCategoryLabels: Record<DiaryCategory, string> = {
+  childcare: '带娃',
+  commute: '通勤',
+  chores: '家务',
+  rest: '休息',
+  meal: '吃饭',
+  exercise: '运动',
+  other: '其他',
 }
 
 export const pageLabels: Record<PageName, string> = {

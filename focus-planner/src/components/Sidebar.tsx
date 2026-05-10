@@ -118,14 +118,14 @@ export function Sidebar() {
       <nav className="nav-list">
         <NavLink
           to="/today"
-          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
+          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
         >
           <CalendarDays size={18} />
           <span>今天</span>
         </NavLink>
         <NavLink
           to="/planner"
-          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
+          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
         >
           <TimerReset size={18} />
           <span>规划表</span>
@@ -133,28 +133,28 @@ export function Sidebar() {
         <NavLink
           to="/projects"
           end
-          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
+          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
         >
           <FolderKanban size={18} />
           <span>项目</span>
         </NavLink>
         <NavLink
           to="/research-log"
-          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
+          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
         >
           <FileText size={18} />
           <span>研究日志</span>
         </NavLink>
         <NavLink
           to="/habits"
-          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
+          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
         >
           <Flame size={18} />
           <span>习惯</span>
         </NavLink>
         <NavLink
           to="/summary"
-          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
+          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
         >
           <Save size={18} />
           <span>今日总结</span>
@@ -175,7 +175,7 @@ export function Sidebar() {
           </div>
           <button
             type="button"
-            className={`btn btn-ghost project-filter ${projectFilterId === 'all' ? 'active' : ''}`}
+            className={`project-filter ${projectFilterId === 'all' ? 'active' : ''}`}
             onClick={() => openProject('all')}
           >
             <span className="dot muted" />
@@ -209,7 +209,7 @@ export function Sidebar() {
                       key={project.id}
                       to={`/projects/${project.id}`}
                       className={({ isActive }) =>
-                        `btn btn-ghost project-filter project-filter-nested${isActive ? ' active' : ''}`
+                        `project-filter project-filter-nested${isActive ? ' active' : ''}`
                       }
                       onClick={() => setProjectFilterId(project.id)}
                     >
@@ -244,7 +244,7 @@ export function Sidebar() {
                       key={project.id}
                       to={`/projects/${project.id}`}
                       className={({ isActive }) =>
-                        `btn btn-ghost project-filter archived${isActive ? ' active' : ''}`
+                        `project-filter archived${isActive ? ' active' : ''}`
                       }
                       onClick={() => setProjectFilterId(project.id)}
                     >
@@ -287,7 +287,7 @@ export function Sidebar() {
       <div className="sidebar-footer">
         <NavLink
           to="/settings"
-          className={({ isActive }) => `btn btn-ghost${isActive ? ' active' : ''}`}
+          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
         >
           <Settings size={18} />
           <span>设置</span>

@@ -407,14 +407,19 @@ export function initDatabase(): Database.Database {
     db.exec(`ALTER TABLE schedule_blocks ADD COLUMN title TEXT NOT NULL DEFAULT ''`)
   }
 
-  // 5. Migrate old project kinds to new two-category system
+  // 5. Add category column to schedule_blocks (diary classification)
+  if (!blockColNames.has('category')) {
+    db.exec(`ALTER TABLE schedule_blocks ADD COLUMN category TEXT`)
+  }
+
+  // 7. Migrate old project kinds to new two-category system
   //    paper → research, student/admin → admin
   db.exec(`
     UPDATE projects SET kind = 'research' WHERE kind = 'paper';
     UPDATE projects SET kind = 'admin' WHERE kind IN ('student');
   `)
 
-  // 6. Add icon column to projects (if migrating from old schema)
+  // 8. Add icon column to projects (if migrating from old schema)
   const projectCols = db.prepare(`PRAGMA table_info(projects)`).all() as Array<{ name: string }>
   const hasIcon = projectCols.some(col => col.name === 'icon')
   if (!hasIcon) {
@@ -490,6 +495,7 @@ export function loadFullState(db: Database.Database): AppState {
       start: row.start_min,
       end: row.end_min,
       note: row.note,
+      category: row.category ?? undefined,
     }),
   )
 
@@ -580,8 +586,8 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
       db.prepare(`INSERT INTO tasks (id, title, project_id, parent_id, tags, done, created_at, source)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
     const insBlock =
-      db.prepare(`INSERT INTO schedule_blocks (id, task_id, block_type, title, date, start_min, end_min, note)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+      db.prepare(`INSERT INTO schedule_blocks (id, task_id, block_type, title, date, start_min, end_min, note, category)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     const insHabit = db.prepare(
       `INSERT INTO habits (id, title, color, created_at) VALUES (?, ?, ?, ?)`,
     )
@@ -614,7 +620,7 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
       )
     }
     for (const b of state.blocks ?? []) {
-      insBlock.run(b.id, b.taskId ?? null, b.blockType ?? 'task', b.title ?? '', b.date, b.start, b.end, b.note ?? '')
+      insBlock.run(b.id, b.taskId ?? null, b.blockType ?? 'task', b.title ?? '', b.date, b.start, b.end, b.note ?? '', b.category ?? null)
     }
     for (const h of state.habits ?? []) {
       insHabit.run(h.id, h.title, h.color, h.createdAt)

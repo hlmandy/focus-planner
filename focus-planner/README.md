@@ -16,7 +16,7 @@ Implemented:
 - Multiple concrete research projects, such as separate papers and research topics.
 - Support workflows for undergraduate thesis supervision and academic/admin work.
 - Project management with type/status filters (persisted to localStorage) plus an edit button for name, type, status, goal, and due date metadata.
-- Type-specific templates for research topics, papers, undergraduate supervision, and admin/support workflows.
+- Project creation auto-generates template tasks based on kind (research vs admin).
 - Hierarchical task trees inside each work object for phases, work packages, and nested subtasks.
 - Undergraduate thesis supervision tracks multiple students by progress stage, next milestone, due date, and notes rather than research diary/literature output.
 - Pomodoro sessions are linked to a work object so focused time can be attributed to a project or supervision workflow. Sessions can be edited or deleted from the tool panel.
@@ -61,6 +61,7 @@ Research diary entries and literature records share the `ResearchLogEntry` struc
 - **Frontend**: React 19 + Vite 8 + TypeScript, runs on localhost:5173
 - **Backend**: Hono + better-sqlite3, runs on localhost:8787
 - **Shared types**: `shared/types.ts` is the single source of truth for all entity types, used by both frontend and backend
+- **Routing**: react-router (`BrowserRouter`) with `NavLink` / `navigate()`, URL-driven page and project detail (`/projects/:projectId`)
 - **State management**: Entity-level hooks with optimistic updates, API sync, and localStorage cache fallback
 - **API**: Per-entity REST endpoints (`/api/projects`, `/api/tasks`, etc.) plus `/api/state` for full sync, `/api/search` for global search, `/api/settings` for user preferences
 
@@ -171,9 +172,9 @@ focus-planner/
 │   ├── __tests__/            # vitest tests (36 total)
 │   │   ├── utils.test.ts
 │   │   └── seed.test.ts
-│   ├── App.tsx               # app shell: Provider + routing
+│   ├── App.tsx               # app shell: Provider + react-router + dynamic header
 │   ├── App.css               # style entry point (@import styles/)
-│   └── main.tsx              # Vite entry
+│   └── main.tsx              # Vite entry (BrowserRouter)
 ├── server/
 │   ├── index.ts              # Hono route registration (14 route modules)
 │   ├── db.ts                 # SQLite schema, init, migration, backup

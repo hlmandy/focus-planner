@@ -67,6 +67,7 @@ export function PlannerPage() {
       blocks.items
         .filter(block => weekKeys.includes(block.date))
         .filter(block => {
+          if (block.blockType === 'diary') return true
           const task = block.taskId ? tasksById[block.taskId] : undefined
           return projectFilterId === 'all' || task?.projectId === projectFilterId
         })
@@ -132,34 +133,17 @@ export function PlannerPage() {
   }
 
   const createBlock = (blockDate: string, start: number, end: number): string => {
-    const projectId =
-      projectFilterId === 'all'
-        ? getFallbackProjectId(projects.items, defaultProjects[0].id)
-        : projectFilterId
-    const task: Task = {
-      id: uid(),
-      title: '',
-      projectId,
-      parentId: undefined,
-      tags: [],
-      done: false,
-      createdAt: blockDate,
-      source: 'schedule',
-    }
     const block: ScheduleBlock = {
       id: uid(),
-      taskId: task.id,
-      blockType: 'task',
+      taskId: null,
+      blockType: 'diary',
       title: '',
       date: blockDate,
       start,
       end,
       note: '',
     }
-    // Optimistic local + API
-    tasks.setItems(prev => [task, ...prev])
     blocks.setItems(prev => [...prev, block])
-    tasks.create(task).catch(reportApiError)
     blocks.create(block).catch(reportApiError)
     setDate(blockDate)
     return block.id
@@ -550,6 +534,61 @@ export function PlannerPage() {
             </button>
           </div>
           <label>
+            类型
+            <select
+              value={editingBlock.blockType}
+              onChange={event => {
+                const nextType = event.target.value as 'task' | 'diary'
+                if (nextType === editingBlock.blockType) return
+
+                if (nextType === 'diary') {
+                  // Switching diary → task: detach task, clean up orphan schedule tasks
+                  const oldTaskId = editingBlock.taskId
+                  const oldTask = oldTaskId ? tasks.items.find(t => t.id === oldTaskId) : undefined
+                  const hasOtherBlocks = oldTaskId
+                    ? blocks.items.some(b => b.id !== editingBlock.id && b.taskId === oldTaskId)
+                    : false
+                  const title = editingTask?.title ?? editingBlock.title
+
+                  setBlockLocal(editingBlock.id, { blockType: 'diary', taskId: null, title })
+                  blocks
+                    .update(editingBlock.id, { blockType: 'diary', taskId: null, title })
+                    .catch(reportApiError)
+
+                  if (oldTask?.source === 'schedule' && oldTaskId && !hasOtherBlocks) {
+                    tasks.setItems(prev => prev.filter(t => t.id !== oldTaskId))
+                    tasks.remove(oldTaskId).catch(reportApiError)
+                  }
+                } else {
+                  // Switching diary → task: create a new task
+                  const projectId =
+                    projectFilterId === 'all'
+                      ? getFallbackProjectId(projects.items, defaultProjects[0].id)
+                      : projectFilterId
+                  const task: Task = {
+                    id: uid(),
+                    title: editingBlock.title,
+                    projectId,
+                    parentId: undefined,
+                    tags: [],
+                    done: false,
+                    createdAt: editingBlock.date,
+                    source: 'schedule',
+                  }
+                  tasks.setItems(prev => [task, ...prev])
+                  setBlockLocal(editingBlock.id, { blockType: 'task', taskId: task.id, title: '' })
+                  tasks.create(task).catch(reportApiError)
+                  blocks
+                    .update(editingBlock.id, { blockType: 'task', taskId: task.id, title: '' })
+                    .catch(reportApiError)
+                }
+              }}
+            >
+              <option value="diary">普通日程</option>
+              <option value="task">项目任务</option>
+            </select>
+          </label>
+          <label>
             标题
             <input
               value={editingBlock.blockType === 'diary' ? editingBlock.title : editingTask?.title ?? ''}
@@ -570,22 +609,13 @@ export function PlannerPage() {
             />
           </label>
           {editingBlock.blockType === 'diary' ? (
-            <label className="block-editor-check">
-              <input
-                type="checkbox"
-                checked={!!editingBlock.note}
-                onChange={() => {}}
-                disabled
-              />
-              普通日程 · 不关联项目
-            </label>
-          ) : (
+            <p className="muted">普通日程，不关联项目</p>
+          ) : editingTask ? (
           <label>
             项目
             <select
-              value={editingTask?.projectId ?? ''}
+              value={editingTask.projectId}
               onChange={event => {
-                if (!editingTask) return
                 setTaskLocal(editingTask.id, { projectId: event.target.value })
                 tasks
                   .update(editingTask.id, { projectId: event.target.value })
@@ -599,7 +629,7 @@ export function PlannerPage() {
               ))}
             </select>
           </label>
-          )}
+          ) : null}
           <label>
             日期
             <input

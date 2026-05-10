@@ -27,7 +27,7 @@ import {
   snap,
   getFallbackProjectId,
 } from '../utils'
-import { DAY_START, DAY_END, MIN_BLOCK } from '../constants'
+import { DAY_START, DAY_END, MIN_BLOCK, diaryCategoryLabels } from '../constants'
 import { researchLogKindLabels } from '../utils'
 import type { ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
 
@@ -38,6 +38,15 @@ interface BlockEditForm {
   projectId: string
   note: string
   done: boolean
+  category: import('../../shared/types').DiaryCategory | ''
+  blockType: 'task' | 'diary'
+}
+
+interface TaskEditForm {
+  title: string
+  projectId: string
+  done: boolean
+  tags: string
 }
 
 export function TodayPage() {
@@ -57,8 +66,9 @@ export function TodayPage() {
   const [quickInput, setQuickInput] = useState('')
   const [quickBlockType, setQuickBlockType] = useState<'task' | 'diary'>('diary')
   const [quickProject, setQuickProject] = useState('')
+  const [quickCategory, setQuickCategory] = useState('other')
 
-  // --- Inline editor state ---
+  // --- Inline block editor state ---
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<BlockEditForm>({
     title: '',
@@ -67,6 +77,17 @@ export function TodayPage() {
     projectId: '',
     note: '',
     done: false,
+    category: 'other',
+    blockType: 'task',
+  })
+
+  // --- Inline task editor state ---
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
+  const [taskEditForm, setTaskEditForm] = useState<TaskEditForm>({
+    title: '',
+    projectId: '',
+    done: false,
+    tags: '',
   })
 
   // --- Quick-log state ---
@@ -173,6 +194,7 @@ export function TodayPage() {
         start: parsed.start,
         end: parsed.start + 30,
         note: '',
+        category: quickCategory || undefined,
       }
       blocks.create(block).catch(reportApiError)
       setQuickInput('')
@@ -272,6 +294,7 @@ export function TodayPage() {
       projectId: task?.projectId ?? '',
       note: block.note,
       done: task?.done ?? false,
+      category: block.category ?? 'other',
     })
   }
 
@@ -295,6 +318,7 @@ export function TodayPage() {
           start: clamp(newStart, DAY_START, newEnd - MIN_BLOCK),
           end: clamp(newEnd, newStart + MIN_BLOCK, DAY_END),
           note: editForm.note,
+          category: editForm.category || undefined,
         })
         .catch(reportApiError)
       setEditingBlockId(null)
@@ -457,6 +481,18 @@ export function TodayPage() {
             <option value="diary">普通日程</option>
             <option value="task">项目任务</option>
           </select>
+          {quickBlockType === 'diary' && (
+            <select
+              value={quickCategory}
+              onChange={e => setQuickCategory(e.target.value)}
+              className="today-quick-category"
+              aria-label="日程类别"
+            >
+              {(Object.entries(diaryCategoryLabels) as [string, string][]).map(([k, label]) => (
+                <option key={k} value={k}>{label}</option>
+              ))}
+            </select>
+          )}
           {quickBlockType === 'task' && (
             <select
               value={quickProject}
@@ -570,6 +606,19 @@ export function TodayPage() {
                           onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
                           placeholder="标题"
                         />
+                        {block.blockType === 'diary' && (
+                          <select
+                            value={editForm.category}
+                            onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))}
+                            aria-label="日程类别"
+                          >
+                            {(Object.entries(diaryCategoryLabels) as [string, string][]).map(
+                              ([k, label]) => (
+                                <option key={k} value={k}>{label}</option>
+                              ),
+                            )}
+                          </select>
+                        )}
                         {block.blockType === 'task' && (
                           <select
                             value={editForm.projectId}

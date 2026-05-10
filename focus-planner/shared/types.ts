@@ -15,6 +15,7 @@ export const RESEARCH_LOG_KINDS = [
 ] as const
 export const TASK_SOURCES = ['task', 'schedule'] as const
 export const SCHEDULE_BLOCK_TYPES = ['task', 'diary'] as const
+export const DIARY_CATEGORIES = ['childcare', 'commute', 'chores', 'rest', 'meal', 'exercise', 'other'] as const
 export const READING_STATUSES = ['unread', 'reading', 'read', 'reviewed'] as const
 
 // ── Enum types (derived from constants above — single source of truth) ──────
@@ -25,6 +26,7 @@ export type ThesisStage = (typeof THESIS_STAGES)[number]
 export type ResearchLogKind = (typeof RESEARCH_LOG_KINDS)[number]
 export type TaskSource = (typeof TASK_SOURCES)[number]
 export type ScheduleBlockType = (typeof SCHEDULE_BLOCK_TYPES)[number]
+export type DiaryCategory = (typeof DIARY_CATEGORIES)[number]
 export type ReadingStatus = (typeof READING_STATUSES)[number]
 
 export interface Project {
@@ -58,6 +60,7 @@ export interface ScheduleBlock {
   start: number
   end: number
   note: string
+  category?: DiaryCategory
 }
 
 export interface Habit {
@@ -184,7 +187,7 @@ export type ProjectUpdateInput = Partial<Omit<Project, 'id'>>
 export type TaskCreateInput = Omit<Task, 'id' | 'createdAt'>
 export type TaskUpdateInput = Partial<Omit<Task, 'id' | 'createdAt'>>
 
-export type ScheduleBlockCreateInput = Omit<ScheduleBlock, 'id'>
+export type ScheduleBlockCreateInput = Omit<ScheduleBlock, 'id'> & { category?: DiaryCategory }
 export type ScheduleBlockUpdateInput = Partial<Omit<ScheduleBlock, 'id'>>
 
 export type HabitCreateInput = Omit<Habit, 'id' | 'createdAt'>
