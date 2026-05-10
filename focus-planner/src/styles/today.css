@@ -302,50 +302,6 @@
   color: var(--teal);
 }
 
-/* ===== Focus tasks ===== */
-.today-focus-list {
-  display: grid;
-  gap: 6px;
-}
-
-.today-focus-item {
-  display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  box-shadow: var(--shadow-sm);
-}
-
-.today-focus-num {
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--teal);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.today-focus-title {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 13px;
-}
-
-.today-focus-project {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--project-color, var(--muted));
-}
-
 /* ===== Block action button (pen icon) ===== */
 .today-block-action {
   display: grid;

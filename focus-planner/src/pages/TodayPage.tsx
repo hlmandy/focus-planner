@@ -140,26 +140,10 @@ export function TodayPage() {
     [researchLogs.items, date],
   )
 
-  // --- Today's focus tasks (max 5) ---
-  const focusTasks = useMemo(() => {
-    // 1. Tasks that have a schedule block today
-    const scheduled = visibleTasks.filter(t => scheduledTaskIds.has(t.id) && !t.done)
-    // 2. Tasks in active projects that are not yet scheduled
-    const activeProjectIds = new Set(
-      projects.items.filter(p => p.status === 'active').map(p => p.id),
-    )
-    const unscheduled = visibleTasks.filter(
-      t => !scheduledTaskIds.has(t.id) && !t.done && activeProjectIds.has(t.projectId),
-    )
-    // Merge: scheduled first, then unscheduled, max 5
-    return [...scheduled, ...unscheduled].slice(0, 5)
-  }, [visibleTasks, scheduledTaskIds, projects.items])
-
   // --- Unscheduled tasks for "待安排" section ---
   const unscheduledTasks = useMemo(() => {
-    const focusIds = new Set(focusTasks.map(t => t.id))
-    return visibleTasks.filter(t => !scheduledTaskIds.has(t.id) && !t.done && !focusIds.has(t.id))
-  }, [visibleTasks, scheduledTaskIds, focusTasks])
+    return visibleTasks.filter(t => !scheduledTaskIds.has(t.id) && !t.done)
+  }, [visibleTasks, scheduledTaskIds])
 
   // --- Actions ---
 
@@ -427,118 +411,7 @@ export function TodayPage() {
         </div>
       </div>
 
-      {/* ===== 2. 今日重点 ===== */}
-      {focusTasks.length > 0 && (
-        <div className="today-section">
-          <div className="today-section-header">
-            <Flame size={18} />
-            <span>今日重点</span>
-          </div>
-          <div className="today-focus-list">
-            {focusTasks.map((task, i) => {
-              const project = projectsById[task.projectId]
-              const isEditing = editingTaskId === task.id
-
-              return (
-                <div key={task.id}>
-                  {isEditing ? (
-                    <div className="today-task-editor">
-                      <div className="editor-row">
-                        <input
-                          className="editor-title"
-                          value={taskEditForm.title}
-                          onChange={e => setTaskEditForm(f => ({ ...f, title: e.target.value }))}
-                          placeholder="事项标题"
-                        />
-                        <select
-                          value={taskEditForm.projectId}
-                          onChange={e =>
-                            setTaskEditForm(f => ({ ...f, projectId: e.target.value }))
-                          }
-                          aria-label="项目"
-                        >
-                          {projects.items.map(p => (
-                            <option key={p.id} value={p.id}>
-                              {p.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="editor-row">
-                        <input
-                          className="editor-tags"
-                          value={taskEditForm.tags}
-                          onChange={e => setTaskEditForm(f => ({ ...f, tags: e.target.value }))}
-                          placeholder="标签，例如 论文 学生"
-                        />
-                        <label className="editor-done-label">
-                          <input
-                            type="checkbox"
-                            checked={taskEditForm.done}
-                            onChange={e => setTaskEditForm(f => ({ ...f, done: e.target.checked }))}
-                          />
-                          完成
-                        </label>
-                      </div>
-                      <div className="editor-actions">
-                        <button
-                          type="button"
-                          className="btn btn-primary editor-save"
-                          onClick={saveEditTask}
-                        >
-                          <Save size={14} /> 保存
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost editor-cancel"
-                          onClick={cancelEditTask}
-                        >
-                          <X size={14} /> 取消
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="today-focus-item">
-                      <span className="today-focus-num">{i + 1}</span>
-                      <span className="today-focus-title" onDoubleClick={() => startEditTask(task)}>
-                        {task.title}
-                      </span>
-                      {project && (
-                        <span
-                          className="today-focus-project"
-                          style={{ '--project-color': project.color } as React.CSSProperties}
-                        >
-                          {project.name}
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        className="btn btn-ghost today-edit-btn"
-                        onClick={() => startEditTask(task)}
-                        title="编辑"
-                      >
-                        <PenLine size={13} />
-                      </button>
-                      {!scheduledTaskIds.has(task.id) && (
-                        <button
-                          type="button"
-                          className="btn btn-ghost today-schedule-btn"
-                          onClick={() => scheduleTaskQuick(task.id)}
-                          title="排入日程"
-                        >
-                          <CalendarClock size={13} />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ===== 3. 今天的安排 ===== */}
+      {/* ===== 2. 今天的安排 ===== */}
       <div className="today-section">
         <div className="today-section-header">
           <CalendarClock size={18} />
