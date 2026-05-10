@@ -1,6 +1,18 @@
 import { useMemo, useState } from 'react'
 import { reportApiError } from '../api/client'
-import { CalendarClock, Check, Circle, Clock, ListTodo, Plus, Save, Trash2, X } from 'lucide-react'
+import {
+  BookOpen,
+  CalendarClock,
+  Check,
+  Circle,
+  Flame,
+  ListTodo,
+  PenLine,
+  Plus,
+  Save,
+  Trash2,
+  X,
+} from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import {
   isProjectTask,
@@ -15,7 +27,8 @@ import {
   getFallbackProjectId,
 } from '../utils'
 import { DAY_START, DAY_END, MIN_BLOCK } from '../constants'
-import type { ScheduleBlock, Task } from '../../shared/types'
+import { researchLogKindLabels } from '../utils'
+import type { ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
 
 interface BlockEditForm {
   title: string
@@ -27,7 +40,16 @@ interface BlockEditForm {
 }
 
 export function TodayPage() {
-  const { tasks, blocks, projects, date, setPage, projectFilterId, pomodoroSessions } = useApp()
+  const {
+    tasks,
+    blocks,
+    projects,
+    researchLogs,
+    date,
+    setPage,
+    projectFilterId,
+    pomodoroSessions,
+  } = useApp()
 
   // --- Quick-add state ---
   const [quickInput, setQuickInput] = useState('')
@@ -43,6 +65,11 @@ export function TodayPage() {
     note: '',
     done: false,
   })
+
+  // --- Quick-log state ---
+  const [quickLogText, setQuickLogText] = useState('')
+  const [quickLogKind, setQuickLogKind] = useState<ResearchLogKind>('writing')
+  const [quickLogProject, setQuickLogProject] = useState('')
 
   // --- Derived data ---
   const visibleTasks = tasks.items.filter(
@@ -75,31 +102,55 @@ export function TodayPage() {
     return now.getHours() * 60 + now.getMinutes()
   })()
 
-  // Block IDs that already have tasks scheduled today
   const scheduledTaskIds = useMemo(() => new Set(todayBlocks.map(b => b.taskId)), [todayBlocks])
 
-  // Unscheduled tasks: project tasks not yet in today's blocks
-  const unscheduledTasks = useMemo(() => {
-    return visibleTasks.filter(t => !scheduledTaskIds.has(t.id) && !t.done)
-  }, [visibleTasks, scheduledTaskIds])
+  // --- Today's stats ---
+  const completedTasksCount = useMemo(() => {
+    const todayTaskIds = new Set(todayBlocks.map(b => b.taskId))
+    return tasks.items.filter(t => todayTaskIds.has(t.id) && t.done).length
+  }, [tasks.items, todayBlocks])
 
-  // --- Stats ---
-  const todayBlockMinutes = todayBlocks.reduce((s, b) => s + (b.end - b.start), 0)
-  const completedBlocks = todayBlocks.filter(b => {
-    const task = tasksById[b.taskId]
-    return getBlockViewStatus(b, task, date, nowMinutes) === 'done'
-  }).length
+  const todayPomodoroMinutes = useMemo(() => {
+    const today = pomodoroSessions.items.filter(s => s.date === date)
+    return today.reduce((sum, s) => sum + s.minutes, 0)
+  }, [pomodoroSessions.items, date])
 
-  const todayPomodoros = useMemo(
-    () => pomodoroSessions.items.filter(s => s.date === date),
-    [pomodoroSessions.items, date],
+  const todayResearchLogCount = useMemo(
+    () => researchLogs.items.filter(l => l.date === date).length,
+    [researchLogs.items, date],
   )
-  const todayPomodoroMinutes = todayPomodoros.reduce((sum, s) => sum + s.minutes, 0)
+
+  // --- Today's focus tasks (max 5) ---
+  const focusTasks = useMemo(() => {
+    // 1. Tasks that have a schedule block today
+    const scheduled = visibleTasks.filter(t => scheduledTaskIds.has(t.id) && !t.done)
+    // 2. Tasks in active projects that are not yet scheduled
+    const activeProjectIds = new Set(
+      projects.items.filter(p => p.status === 'active').map(p => p.id),
+    )
+    const unscheduled = visibleTasks.filter(
+      t => !scheduledTaskIds.has(t.id) && !t.done && activeProjectIds.has(t.projectId),
+    )
+    // Merge: scheduled first, then unscheduled, max 5
+    return [...scheduled, ...unscheduled].slice(0, 5)
+  }, [visibleTasks, scheduledTaskIds, projects.items])
+
+  // --- Unscheduled tasks for "待安排" section ---
+  const unscheduledTasks = useMemo(() => {
+    const focusIds = new Set(focusTasks.map(t => t.id))
+    return visibleTasks.filter(t => !scheduledTaskIds.has(t.id) && !t.done && !focusIds.has(t.id))
+  }, [visibleTasks, scheduledTaskIds, focusTasks])
 
   // --- Actions ---
 
   const effectiveQuickProject =
     quickProject ||
+    (projectFilterId !== 'all'
+      ? projectFilterId
+      : getFallbackProjectId(projects.items, projects.items[0]?.id ?? ''))
+
+  const effectiveLogProject =
+    quickLogProject ||
     (projectFilterId !== 'all'
       ? projectFilterId
       : getFallbackProjectId(projects.items, projects.items[0]?.id ?? ''))
@@ -129,6 +180,27 @@ export function TodayPage() {
     tasks.create(task).catch(reportApiError)
     blocks.create(block).catch(reportApiError)
     setQuickInput('')
+  }
+
+  const addQuickLog = () => {
+    if (!quickLogText.trim()) return
+    researchLogs
+      .create({
+        id: uid(),
+        date,
+        projectId: effectiveLogProject,
+        kind: quickLogKind,
+        title: quickLogText.trim(),
+        source: '',
+        note: '',
+        attachments: [],
+        createdAt: date,
+        readingStatus: 'read',
+        keyFindings: '',
+        nextAction: '',
+      })
+      .catch(reportApiError)
+    setQuickLogText('')
   }
 
   const toggleTodo = (id: string) => {
@@ -187,13 +259,11 @@ export function TodayPage() {
     const task = tasksById[block.taskId]
     if (!task) return
 
-    // Parse HH:mm → minutes
     const [sh, sm] = editForm.start.split(':').map(Number)
     const [eh, em] = editForm.end.split(':').map(Number)
     const newStart = sh * 60 + sm
     const newEnd = eh * 60 + em
 
-    // Promote source if title was filled
     const promoteSource = task.source === 'schedule' && editForm.title.trim() !== ''
     const newTitle = editForm.title.trim() || task.title
 
@@ -220,7 +290,6 @@ export function TodayPage() {
   // --- Schedule an unscheduled task ---
 
   const scheduleTaskQuick = (taskId: string) => {
-    // Find the next available 30-min slot after the last block, or now+30
     const lastEnd = todayBlocks.length > 0 ? Math.max(...todayBlocks.map(b => b.end)) : nowMinutes
     const start = clamp(snap(lastEnd + 30), DAY_START, DAY_END - 30)
     const block: ScheduleBlock = {
@@ -234,64 +303,128 @@ export function TodayPage() {
     blocks.create(block).catch(reportApiError)
   }
 
+  // --- Convert block to research log ---
+  const blockToResearchLog = (block: ScheduleBlock) => {
+    const task = tasksById[block.taskId]
+    if (!task) return
+    researchLogs
+      .create({
+        id: uid(),
+        date,
+        projectId: task.projectId,
+        kind: 'writing',
+        title: task.title,
+        source: '',
+        note: block.note,
+        attachments: [],
+        createdAt: date,
+        readingStatus: 'read',
+        keyFindings: '',
+        nextAction: '',
+      })
+      .catch(reportApiError)
+  }
+
+  const todayDateText = (() => {
+    const d = new Date()
+    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
+  })()
+
   return (
     <div className="center-page">
-      <div className="today-empty">今日概览</div>
-
-      {/* ===== Zone 1: Quick-add bar ===== */}
-      <div className="today-quick-add">
-        <input
-          value={quickInput}
-          onChange={e => setQuickInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && addQuickItem()}
-          placeholder="添加任务或日程... #标签 @09:00"
-        />
-        <select
-          value={quickProject}
-          onChange={e => setQuickProject(e.target.value)}
-          className="today-quick-project"
-          aria-label="选择项目"
-        >
-          <option value="">— 项目 —</option>
-          {projects.items.map(p => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-        <button type="button" className="btn btn-primary" onClick={addQuickItem} aria-label="添加">
-          <Plus size={16} />
-        </button>
-      </div>
-
-      {/* ===== Daily stats ===== */}
-      <div className="today-stats">
-        <div className="today-stat-pill">
-          <CalendarClock size={14} />
-          <span>{todayBlocks.length} 时间段</span>
-          <em>{durationText(todayBlockMinutes)}</em>
-        </div>
-        <div className="today-stat-pill">
-          <Check size={14} />
-          <span>
-            {completedBlocks}/{todayBlocks.length} 完成
-          </span>
-        </div>
-        <div className="today-stat-pill">
-          <Clock size={14} />
-          <span>番茄 {todayPomodoros.length} 次</span>
-          <em>{todayPomodoroMinutes}m</em>
+      {/* ===== 1. 今日概览 ===== */}
+      <div className="today-overview">
+        <div className="today-date">{todayDateText}</div>
+        <div className="today-stats-row">
+          <div className="today-stat-pill">
+            <Flame size={14} />
+            <span>专注 {todayPomodoroMinutes}m</span>
+          </div>
+          <div className="today-stat-pill">
+            <Check size={14} />
+            <span>完成 {completedTasksCount} 个任务</span>
+          </div>
+          <div className="today-stat-pill">
+            <BookOpen size={14} />
+            <span>{todayResearchLogCount} 条记录</span>
+          </div>
         </div>
       </div>
 
-      {/* ===== Zone 2: Schedule blocks ===== */}
+      {/* ===== 2. 今日重点 ===== */}
+      {focusTasks.length > 0 && (
+        <div className="today-section">
+          <div className="today-section-header">
+            <Flame size={18} />
+            <span>今日重点</span>
+          </div>
+          <div className="today-focus-list">
+            {focusTasks.map((task, i) => {
+              const project = projectsById[task.projectId]
+              return (
+                <div key={task.id} className="today-focus-item">
+                  <span className="today-focus-num">{i + 1}</span>
+                  <span className="today-focus-title">{task.title}</span>
+                  {project && (
+                    <span
+                      className="today-focus-project"
+                      style={{ '--project-color': project.color } as React.CSSProperties}
+                    >
+                      {project.name}
+                    </span>
+                  )}
+                  {!scheduledTaskIds.has(task.id) && (
+                    <button
+                      type="button"
+                      className="btn btn-ghost today-schedule-btn"
+                      onClick={() => scheduleTaskQuick(task.id)}
+                      title="排入日程"
+                    >
+                      <CalendarClock size={13} />
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ===== 3. 今天的安排 ===== */}
       <div className="today-section">
         <div className="today-section-header">
           <CalendarClock size={18} />
-          <span>日程安排</span>
+          <span>今天的安排</span>
         </div>
+
+        {/* Quick-add bar */}
+        <div className="today-quick-add">
+          <input
+            value={quickInput}
+            onChange={e => setQuickInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addQuickItem()}
+            placeholder="添加日程... #标签 @09:00"
+          />
+          <select
+            value={quickProject}
+            onChange={e => setQuickProject(e.target.value)}
+            className="today-quick-project"
+            aria-label="选择项目"
+          >
+            <option value="">— 项目 —</option>
+            {projects.items.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <button type="button" className="btn btn-primary" onClick={addQuickItem} aria-label="添加">
+            <Plus size={16} />
+          </button>
+        </div>
+
         {todayBlocks.length === 0 ? (
-          <div className="today-section-empty">今天还没有安排，在上方输入框添加吧</div>
+          <div className="today-section-empty">今天还没有安排，在上方添加吧</div>
         ) : (
           <div className="today-blocks">
             {todayBlocks.map(block => {
@@ -304,7 +437,6 @@ export function TodayPage() {
 
               return (
                 <div key={block.id}>
-                  {/* Block row — click to edit */}
                   <div
                     className={`today-block ${isActive ? 'active' : ''} ${isDone ? 'done' : ''} ${isEditing ? 'editing' : ''}`}
                     onClick={() => !isEditing && startEditBlock(block)}
@@ -327,7 +459,25 @@ export function TodayPage() {
                       {isDone ? <Check size={17} /> : <Circle size={17} />}
                     </button>
                     <span className="today-block-title">{task?.title || '未命名'}</span>
-                    {project && <span className="today-block-project">{project.name}</span>}
+                    {project && (
+                      <span
+                        className="today-block-project"
+                        style={{ '--project-color': project.color } as React.CSSProperties}
+                      >
+                        {project.name}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      className="btn btn-ghost today-block-action"
+                      onClick={e => {
+                        e.stopPropagation()
+                        blockToResearchLog(block)
+                      }}
+                      title="转为研究日志"
+                    >
+                      <PenLine size={13} />
+                    </button>
                     <button
                       type="button"
                       className="btn btn-danger today-block-delete"
@@ -341,7 +491,6 @@ export function TodayPage() {
                     </button>
                   </div>
 
-                  {/* Inline editor */}
                   {isEditing && (
                     <div className="today-block-editor">
                       <div className="editor-row">
@@ -436,29 +585,81 @@ export function TodayPage() {
         </button>
       </div>
 
-      {/* ===== Zone 3: Unscheduled tasks ===== */}
+      {/* ===== 4. 快速记录 ===== */}
       <div className="today-section">
         <div className="today-section-header">
-          <ListTodo size={18} />
-          <span>待办事项</span>
-          <em>
-            {visibleTasks.filter(t => t.done).length}/{visibleTasks.length} 已完成
-          </em>
+          <PenLine size={18} />
+          <span>快速记录</span>
         </div>
+        <div className="today-quick-log">
+          <input
+            value={quickLogText}
+            onChange={e => setQuickLogText(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addQuickLog()}
+            placeholder="我刚刚完成了什么？"
+          />
+          <select
+            value={quickLogKind}
+            onChange={e => setQuickLogKind(e.target.value as ResearchLogKind)}
+            className="today-quick-log-kind"
+            aria-label="记录类型"
+          >
+            {(Object.entries(researchLogKindLabels) as [ResearchLogKind, string][]).map(
+              ([k, label]) => (
+                <option key={k} value={k}>
+                  {label}
+                </option>
+              ),
+            )}
+          </select>
+          <select
+            value={quickLogProject}
+            onChange={e => setQuickLogProject(e.target.value)}
+            className="today-quick-project"
+            aria-label="选择项目"
+          >
+            <option value="">— 项目 —</option>
+            {projects.items.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={addQuickLog}
+            aria-label="记录"
+          >
+            <Plus size={16} />
+          </button>
+        </div>
+        <div className="today-quick-log-hint">
+          记为
+          <button type="button" className="btn btn-ghost today-log-type-btn" onClick={() => { setQuickLogKind('writing'); addQuickLog(); }}>
+            研究日志
+          </button>
+          <button type="button" className="btn btn-ghost today-log-type-btn" onClick={() => { setQuickLogKind('admin'); addQuickLog(); }}>
+            事务记录
+          </button>
+          <button type="button" className="btn btn-ghost today-log-type-btn" onClick={() => { setQuickLogKind('meeting'); addQuickLog(); }}>
+            学生指导
+          </button>
+        </div>
+      </div>
 
-        {/* Unscheduled tasks with quick-schedule */}
-        {unscheduledTasks.length > 0 && (
+      {/* ===== 5. 待安排事项 ===== */}
+      {unscheduledTasks.length > 0 && (
+        <div className="today-section">
+          <div className="today-section-header">
+            <ListTodo size={18} />
+            <span>待安排</span>
+          </div>
           <div className="today-unscheduled">
-            <div className="today-unscheduled-label">未安排：</div>
             {unscheduledTasks.map(task => {
               const project = projectsById[task.projectId]
               return (
-                <div
-                  key={task.id}
-                  className="todo"
-                  draggable
-                  onDragStart={event => event.dataTransfer.setData('text/plain', task.id)}
-                >
+                <div key={task.id} className="todo">
                   <button
                     type="button"
                     className="btn btn-ghost"
@@ -468,12 +669,19 @@ export function TodayPage() {
                     {task.done ? <Check size={17} /> : <Circle size={17} />}
                   </button>
                   <span>{task.title}</span>
-                  {project && <span className="today-block-project">{project.name}</span>}
+                  {project && (
+                    <span
+                      className="today-block-project"
+                      style={{ '--project-color': project.color } as React.CSSProperties}
+                    >
+                      {project.name}
+                    </span>
+                  )}
                   <button
                     type="button"
                     className="btn btn-ghost today-schedule-btn"
                     onClick={() => scheduleTaskQuick(task.id)}
-                    title="排入日程"
+                    title="安排到今天"
                   >
                     <CalendarClock size={13} />
                   </button>
@@ -489,46 +697,8 @@ export function TodayPage() {
               )
             })}
           </div>
-        )}
-
-        {/* Already-scheduled tasks (done or not) that are in the task list */}
-        {visibleTasks.filter(t => scheduledTaskIds.has(t.id)).length > 0 && (
-          <div className="task-strip">
-            {visibleTasks
-              .filter(t => scheduledTaskIds.has(t.id))
-              .map(task => (
-                <div
-                  key={task.id}
-                  className={`todo ${task.done ? 'done' : ''}`}
-                  draggable
-                  onDragStart={event => event.dataTransfer.setData('text/plain', task.id)}
-                >
-                  <button
-                    type="button"
-                    className="btn btn-ghost"
-                    onClick={() => toggleTodo(task.id)}
-                    aria-label="切换完成状态"
-                  >
-                    {task.done ? <Check size={17} /> : <Circle size={17} />}
-                  </button>
-                  <span>{task.title}</span>
-                  <button
-                    type="button"
-                    className="btn btn-danger"
-                    onClick={() => deleteTodo(task.id)}
-                    aria-label="删除 TODO"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              ))}
-          </div>
-        )}
-
-        {visibleTasks.length === 0 && unscheduledTasks.length === 0 && (
-          <div className="today-section-empty">没有待办任务，可以从规划表拖拽过来</div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

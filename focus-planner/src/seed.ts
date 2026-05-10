@@ -16,6 +16,12 @@ export const resolveProjectId = (projectId: string | undefined, projects: Projec
     : defaultId
 }
 
+const normalizeKind = (kind: string): ProjectKind => {
+  if (kind === 'paper') return 'research'
+  if (kind === 'student' || kind === 'admin') return 'admin'
+  return (kind as ProjectKind) ?? 'research'
+}
+
 export const normalizeProjects = (projects?: Project[]) => {
   if (!projects?.length) return defaultProjects
 
@@ -23,7 +29,7 @@ export const normalizeProjects = (projects?: Project[]) => {
   if (!hasLegacySeedProject) {
     return projects.map(project => ({
       ...project,
-      kind: project.kind ?? 'research',
+      kind: normalizeKind(project.kind ?? 'research'),
       status: project.status ?? 'active',
       goal: project.goal ?? '',
       dueDate: project.dueDate ?? '',
@@ -42,7 +48,7 @@ export const normalizeProjects = (projects?: Project[]) => {
       })
       .map(project => ({
         ...project,
-        kind: project.kind ?? 'research',
+        kind: normalizeKind(project.kind ?? 'research'),
         status: project.status ?? 'active',
         goal: project.goal ?? '',
         dueDate: project.dueDate ?? '',

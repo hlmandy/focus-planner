@@ -209,7 +209,7 @@ function migrateFromJson(db: Database.Database): void {
         p.id,
         p.name,
         p.color,
-        p.kind ?? 'affairs',
+        p.kind ?? 'admin',
         p.status ?? 'active',
         p.goal ?? '',
         p.dueDate ?? '',
@@ -379,6 +379,13 @@ export function initDatabase(): Database.Database {
 
   db.prepare('INSERT OR IGNORE INTO caldav_config (id) VALUES (1)').run()
   db.prepare('INSERT OR IGNORE INTO user_config (id) VALUES (1)').run()
+
+  // 4. Migrate old project kinds to new two-category system
+  //    paper → research, student/admin → admin
+  db.exec(`
+    UPDATE projects SET kind = 'research' WHERE kind = 'paper';
+    UPDATE projects SET kind = 'admin' WHERE kind IN ('student');
+  `)
 
   const hasData = db.prepare('SELECT COUNT(*) as c FROM projects').get() as { c: number }
   if (hasData.c === 0) {

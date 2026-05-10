@@ -316,7 +316,7 @@ describe('resolveProjectId', () => {
         id: 'affairs-admin',
         name: 'Admin',
         color: '#f00',
-        kind: 'affairs' as const,
+        kind: 'admin' as const,
         status: 'active' as const,
         goal: '',
         dueDate: '',

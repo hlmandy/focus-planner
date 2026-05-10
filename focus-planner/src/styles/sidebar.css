@@ -273,3 +273,10 @@
   padding-left: 22px;
   font-size: 13px;
 }
+
+.sidebar-empty-group {
+  padding: 4px 6px 4px 22px;
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.6;
+}

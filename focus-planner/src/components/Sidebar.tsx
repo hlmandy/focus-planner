@@ -203,7 +203,6 @@ export function Sidebar() {
           </button>
           {kindGroups.map(group => {
             const groupProjects = projectsByKind(group.kind)
-            if (groupProjects.length === 0) return null
             const Icon = group.icon
             const isExpanded = expandedGroups[group.kind]
             return (
@@ -219,6 +218,9 @@ export function Sidebar() {
                   <span>{group.label}</span>
                   <span className="sidebar-kind-count">{groupProjects.length}</span>
                 </button>
+                {isExpanded && groupProjects.length === 0 && (
+                  <div className="sidebar-empty-group">暂无项目</div>
+                )}
                 {isExpanded && groupProjects.map(project => (
                   <button
                     key={project.id}
@@ -278,7 +280,7 @@ export function Sidebar() {
                 aria-label="项目类型"
               >
                 <option value="research">科研</option>
-                <option value="affairs">事务</option>
+                <option value="admin">事务</option>
               </select>
               <button type="button" className="btn btn-primary" onClick={addProject}>
                 <Plus size={15} />
