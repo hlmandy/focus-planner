@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS schedule_blocks (
   start_min INTEGER NOT NULL,
   end_min INTEGER NOT NULL,
   note TEXT NOT NULL DEFAULT '',
+  category TEXT,
   FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
   CHECK(block_type != 'task' OR task_id IS NOT NULL)
 );

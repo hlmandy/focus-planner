@@ -33,8 +33,14 @@ export function useScheduleActions() {
     }
 
     setDate(params.date)
-    await blocks.create(block).catch(reportApiError)
-    return block.id
+
+    try {
+      await blocks.create(block)
+      return block.id
+    } catch (err) {
+      reportApiError(err)
+      return null
+    }
   }
 
   const createTaskBlock = async (params: {
