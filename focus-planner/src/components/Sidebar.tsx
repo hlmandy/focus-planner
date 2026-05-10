@@ -13,9 +13,6 @@ import {
   ChevronRight,
   FlaskConical,
   Briefcase,
-  BookOpen,
-  Microscope,
-  PenLine,
 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { uid } from '../utils'
@@ -26,14 +23,6 @@ import type { ProjectKind } from '../../shared/types'
 
 const ARCHIVED_STORAGE_KEY = 'focus-planner-show-archived'
 
-type ResearchSubKind = 'literature' | 'experiment' | 'writing'
-
-const researchSubGroups: { sub: ResearchSubKind; label: string; icon: typeof BookOpen }[] = [
-  { sub: 'literature', label: '文献', icon: BookOpen },
-  { sub: 'experiment', label: '实验', icon: Microscope },
-  { sub: 'writing', label: '写作', icon: PenLine },
-]
-
 export function Sidebar() {
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectKind, setNewProjectKind] = useState<ProjectKind>('research')
@@ -41,12 +30,12 @@ export function Sidebar() {
   const [showArchived, setShowArchived] = useState(
     () => localStorage.getItem(ARCHIVED_STORAGE_KEY) === 'true',
   )
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() => {
+  const [expandedGroups, setExpandedGroups] = useState<Record<ProjectKind, boolean>>(() => {
     const saved = localStorage.getItem('focus-planner-sidebar-groups')
     if (saved) {
       try { return JSON.parse(saved) } catch { /* ignore */ }
     }
-    return { research: true, admin: true, literature: true, experiment: true, writing: true }
+    return { research: true, admin: true }
   })
 
   const {
@@ -68,8 +57,8 @@ export function Sidebar() {
     localStorage.setItem(ARCHIVED_STORAGE_KEY, String(next))
   }
 
-  const toggleGroup = (key: string) => {
-    const next = { ...expandedGroups, [key]: !expandedGroups[key] }
+  const toggleGroup = (kind: ProjectKind) => {
+    const next = { ...expandedGroups, [kind]: !expandedGroups[kind] }
     setExpandedGroups(next)
     localStorage.setItem('focus-planner-sidebar-groups', JSON.stringify(next))
   }
@@ -117,14 +106,10 @@ export function Sidebar() {
   const activeProjects = projects.items.filter(p => p.status !== 'archived')
   const archivedProjects = projects.items.filter(p => p.status === 'archived')
 
-  const researchProjects = activeProjects.filter(p => p.kind === 'research')
-  const adminProjects = activeProjects.filter(p => p.kind === 'admin')
-
-  // Distribute research projects round-robin into sub-groups
-  const researchBySub = (sub: ResearchSubKind) => {
-    const order: Record<ResearchSubKind, number> = { literature: 0, experiment: 1, writing: 2 }
-    return researchProjects.filter((_, i) => i % 3 === order[sub])
-  }
+  const groupDefs: { kind: ProjectKind; label: string; icon: typeof FlaskConical }[] = [
+    { kind: 'research', label: '科研', icon: FlaskConical },
+    { kind: 'admin', label: '事务', icon: Briefcase },
+  ]
 
   return (
     <aside className="sidebar">
@@ -214,88 +199,41 @@ export function Sidebar() {
             全部项目
           </button>
 
-          {/* 科研分组（含子分组） */}
-          <div className="sidebar-kind-group">
-            <button
-              type="button"
-              className="sidebar-kind-toggle"
-              onClick={() => toggleGroup('research')}
-              aria-expanded={expandedGroups['research'] === true}
-            >
-              {expandedGroups['research'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-              <FlaskConical size={14} />
-              <span>科研</span>
-              <span className="sidebar-kind-count">{researchProjects.length}</span>
-            </button>
-            {expandedGroups['research'] && researchProjects.length === 0 && (
-              <div className="sidebar-empty-group">暂无项目</div>
-            )}
-            {expandedGroups['research'] && researchSubGroups.map(subGroup => {
-              const subProjects = researchBySub(subGroup.sub)
-              const SubIcon = subGroup.icon
-              const isSubExpanded = expandedGroups[subGroup.sub]
-              return (
-                <div key={subGroup.sub} className="sidebar-sub-group">
+          {groupDefs.map(group => {
+            const groupProjects = activeProjects.filter(p => p.kind === group.kind)
+            const Icon = group.icon
+            const isExpanded = expandedGroups[group.kind] === true
+            return (
+              <div key={group.kind} className="sidebar-kind-group">
+                <button
+                  type="button"
+                  className="sidebar-kind-toggle"
+                  onClick={() => toggleGroup(group.kind)}
+                  aria-expanded={isExpanded}
+                >
+                  {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  <Icon size={14} />
+                  <span>{group.label}</span>
+                  <span className="sidebar-kind-count">{groupProjects.length}</span>
+                </button>
+                {isExpanded && groupProjects.length === 0 && (
+                  <div className="sidebar-empty-group">暂无项目</div>
+                )}
+                {isExpanded && groupProjects.map(project => (
                   <button
+                    key={project.id}
                     type="button"
-                    className="sidebar-sub-toggle"
-                    onClick={() => toggleGroup(subGroup.sub)}
-                    aria-expanded={isSubExpanded === true}
+                    className={`btn btn-ghost project-filter project-filter-nested ${projectFilterId === project.id ? 'active' : ''}`}
+                    onClick={() => openProject(project.id)}
                   >
-                    {isSubExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                    <SubIcon size={13} />
-                    <span>{subGroup.label}</span>
-                    <span className="sidebar-kind-count">{subProjects.length}</span>
+                    {/* eslint-disable-next-line react/forbid-dom-props */}
+                    <span className="dot" style={{ background: project.color }} />
+                    {project.name}
                   </button>
-                  {isSubExpanded && subProjects.length === 0 && (
-                    <div className="sidebar-empty-group sidebar-empty-sub">暂无项目</div>
-                  )}
-                  {isSubExpanded && subProjects.map(project => (
-                    <button
-                      key={project.id}
-                      type="button"
-                      className={`btn btn-ghost project-filter project-filter-deep ${projectFilterId === project.id ? 'active' : ''}`}
-                      onClick={() => openProject(project.id)}
-                      style={{ '--dot-color': project.color } as React.CSSProperties}
-                    >
-                      <span className="dot" />
-                      {project.name}
-                    </button>
-                  ))}
-                </div>
-              )
-            })}
-          </div>
-
-          {/* 事务分组（无子分组） */}
-          <div className="sidebar-kind-group">
-            <button
-              type="button"
-              className="sidebar-kind-toggle"
-              onClick={() => toggleGroup('admin')}
-              aria-expanded={expandedGroups['admin'] === true}
-            >
-              {expandedGroups['admin'] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-              <Briefcase size={14} />
-              <span>事务</span>
-              <span className="sidebar-kind-count">{adminProjects.length}</span>
-            </button>
-            {expandedGroups['admin'] && adminProjects.length === 0 && (
-              <div className="sidebar-empty-group">暂无项目</div>
-            )}
-            {expandedGroups['admin'] && adminProjects.map(project => (
-              <button
-                key={project.id}
-                type="button"
-                className={`btn btn-ghost project-filter project-filter-nested ${projectFilterId === project.id ? 'active' : ''}`}
-                onClick={() => openProject(project.id)}
-                style={{ '--dot-color': project.color } as React.CSSProperties}
-              >
-                <span className="dot" />
-                {project.name}
-              </button>
-            ))}
-          </div>
+                ))}
+              </div>
+            )
+          })}
 
           {archivedProjects.length > 0 && (
             <>
@@ -303,7 +241,7 @@ export function Sidebar() {
                 type="button"
                 className="sidebar-archive-toggle"
                 onClick={toggleArchived}
-                aria-expanded={showArchived ? 'true' : 'false'}
+                aria-expanded={showArchived}
               >
                 <Archive size={14} />
                 <span>已归档 ({archivedProjects.length})</span>
@@ -316,9 +254,9 @@ export function Sidebar() {
                     type="button"
                     className={`btn btn-ghost project-filter archived ${projectFilterId === project.id ? 'active' : ''}`}
                     onClick={() => openProject(project.id)}
-                    style={{ '--dot-color': project.color } as React.CSSProperties}
                   >
-                    <span className="dot" />
+                    {/* eslint-disable-next-line react/forbid-dom-props */}
+                    <span className="dot" style={{ background: project.color }} />
                     {project.name}
                   </button>
                 ))}

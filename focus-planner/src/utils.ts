@@ -68,6 +68,9 @@ export const durationText = (mins: number) => {
 }
 
 export const blockTitleText = (block: ScheduleBlock, task: Task | undefined) => {
+  if (block.blockType === 'diary') {
+    return block.title?.trim() || '日程'
+  }
   const title = task?.title.trim()
   if (title) return title
   const blockDay = fromDateKey(block.date)

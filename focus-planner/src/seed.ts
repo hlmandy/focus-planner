@@ -130,6 +130,8 @@ export const seedState = (): AppState => {
       {
         id: uid(),
         taskId: planTaskId,
+        blockType: 'task',
+        title: '',
         date: todayKey(),
         start: 9 * 60,
         end: 9 * 60 + 45,
@@ -251,6 +253,8 @@ export const normalizeState = (state: LegacyState): AppState => {
     return {
       id: block.id ?? uid(),
       taskId,
+      blockType: (block.blockType as string) ?? 'task',
+      title: block.title ?? '',
       date: block.date,
       start: block.start,
       end: block.end,

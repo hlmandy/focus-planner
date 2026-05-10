@@ -7,6 +7,8 @@ function toBlock(r: ScheduleBlockRow): ScheduleBlock {
   return {
     id: r.id,
     taskId: r.task_id,
+    blockType: (r.block_type ?? 'task') as ScheduleBlock['blockType'],
+    title: r.title ?? '',
     date: r.date,
     start: r.start_min,
     end: r.end_min,
@@ -51,13 +53,27 @@ export function blockRoutes(app: Hono, db: Database.Database) {
 
   app.post('/api/blocks', async c => {
     const body = await c.req.json()
-    const err = requireFields(body, ['id', 'taskId', 'date'])
+    const err = requireFields(body, ['id', 'date'])
     if (err) return c.json({ error: err }, 400)
+
+    const blockType = body.blockType ?? (body.taskId ? 'task' : 'diary')
+    const taskId = body.taskId ?? null
+    const title = body.title ?? ''
+
+    if (blockType === 'task' && !taskId) {
+      return c.json({ error: 'task block requires taskId' }, 400)
+    }
+    if (blockType === 'diary' && !title.trim()) {
+      return c.json({ error: 'diary block requires a title' }, 400)
+    }
+
     db.prepare(
-      `INSERT INTO schedule_blocks (id, task_id, date, start_min, end_min, note) VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO schedule_blocks (id, task_id, block_type, title, date, start_min, end_min, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       body.id,
-      body.taskId,
+      taskId,
+      blockType,
+      title,
       body.date,
       jsonNum(body, 'start'),
       jsonNum(body, 'end'),
@@ -78,9 +94,16 @@ export function blockRoutes(app: Hono, db: Database.Database) {
     const current = toBlock(row)
     const next = { ...current, ...body }
 
+    if (next.blockType === 'task' && !next.taskId) {
+      return c.json({ error: 'task block requires taskId' }, 400)
+    }
+    if (next.blockType === 'diary' && !next.title.trim()) {
+      return c.json({ error: 'diary block requires a title' }, 400)
+    }
+
     db.prepare(
-      `UPDATE schedule_blocks SET task_id = ?, date = ?, start_min = ?, end_min = ?, note = ? WHERE id = ?`,
-    ).run(next.taskId, next.date, next.start, next.end, next.note ?? '', id)
+      `UPDATE schedule_blocks SET task_id = ?, block_type = ?, title = ?, date = ?, start_min = ?, end_min = ?, note = ? WHERE id = ?`,
+    ).run(next.taskId ?? null, next.blockType, next.title, next.date, next.start, next.end, next.note ?? '', id)
     return c.json({ ok: true })
   })
 

@@ -393,7 +393,18 @@ export function initDatabase(): Database.Database {
   db.prepare('INSERT OR IGNORE INTO caldav_config (id) VALUES (1)').run()
   db.prepare('INSERT OR IGNORE INTO user_config (id) VALUES (1)').run()
 
-  // 4. Migrate old project kinds to new two-category system
+  // 4. Add block_type and title columns to schedule_blocks (if migrating from old schema)
+  //    Use PRAGMA table_info to check whether columns already exist
+  const blockCols = db.prepare("PRAGMA table_info(schedule_blocks)").all() as { name: string }[]
+  const blockColNames = new Set(blockCols.map(c => c.name))
+  if (!blockColNames.has('block_type')) {
+    db.exec(`ALTER TABLE schedule_blocks ADD COLUMN block_type TEXT NOT NULL DEFAULT 'task'`)
+  }
+  if (!blockColNames.has('title')) {
+    db.exec(`ALTER TABLE schedule_blocks ADD COLUMN title TEXT NOT NULL DEFAULT ''`)
+  }
+
+  // 5. Migrate old project kinds to new two-category system
   //    paper → research, student/admin → admin
   db.exec(`
     UPDATE projects SET kind = 'research' WHERE kind = 'paper';
@@ -558,8 +569,8 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
       db.prepare(`INSERT INTO tasks (id, title, project_id, parent_id, tags, done, created_at, source)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
     const insBlock =
-      db.prepare(`INSERT INTO schedule_blocks (id, task_id, date, start_min, end_min, note)
-      VALUES (?, ?, ?, ?, ?, ?)`)
+      db.prepare(`INSERT INTO schedule_blocks (id, task_id, block_type, title, date, start_min, end_min, note)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
     const insHabit = db.prepare(
       `INSERT INTO habits (id, title, color, created_at) VALUES (?, ?, ?, ?)`,
     )
@@ -592,7 +603,7 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
       )
     }
     for (const b of state.blocks ?? []) {
-      insBlock.run(b.id, b.taskId, b.date, b.start, b.end, b.note ?? '')
+      insBlock.run(b.id, b.taskId ?? null, b.blockType ?? 'task', b.title ?? '', b.date, b.start, b.end, b.note ?? '')
     }
     for (const h of state.habits ?? []) {
       insHabit.run(h.id, h.title, h.color, h.createdAt)

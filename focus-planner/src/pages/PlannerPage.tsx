@@ -147,6 +147,8 @@ export function PlannerPage() {
     const block: ScheduleBlock = {
       id: uid(),
       taskId: task.id,
+      blockType: 'task',
+      title: '',
       date: blockDate,
       start,
       end,
@@ -156,6 +158,23 @@ export function PlannerPage() {
     tasks.setItems(prev => [task, ...prev])
     blocks.setItems(prev => [...prev, block])
     tasks.create(task).catch(reportApiError)
+    blocks.create(block).catch(reportApiError)
+    setDate(blockDate)
+    return block.id
+  }
+
+  const createDiaryBlock = (blockDate: string, start: number, end: number, title: string): string => {
+    const block: ScheduleBlock = {
+      id: uid(),
+      taskId: null,
+      blockType: 'diary',
+      title,
+      date: blockDate,
+      start,
+      end,
+      note: '',
+    }
+    blocks.setItems(prev => [...prev, block])
     blocks.create(block).catch(reportApiError)
     setDate(blockDate)
     return block.id
@@ -304,6 +323,8 @@ export function PlannerPage() {
       const newBlock: ScheduleBlock = {
         id: uid(),
         taskId,
+        blockType: 'task',
+        title: '',
         date: blockDate,
         start: nextStart,
         end: nextEnd,
@@ -340,7 +361,7 @@ export function PlannerPage() {
         </button>
         <div className="planner-week-title">
           <strong>
-            {blockTitleText({ date, start: 0, end: 0, taskId: '', id: '', note: '' }, undefined)}
+            {blockTitleText({ date, start: 0, end: 0, taskId: '', id: '', note: '', blockType: 'task', title: '' }, undefined)}
           </strong>
           <span>
             {weekStart} - {weekEnd}
@@ -440,23 +461,30 @@ export function PlannerPage() {
                     </div>
                   )}
                   {dayBlocks.map(block => {
-                    const task = tasksById[block.taskId]
+                    const isDiary = block.blockType === 'diary'
+                    const task = !isDiary && block.taskId ? tasksById[block.taskId] : undefined
                     const project =
-                      projectsById[
-                        task?.projectId ??
-                          getFallbackProjectId(projects.items, defaultProjects[0].id)
-                      ]
+                      !isDiary
+                        ? projectsById[
+                            task?.projectId ??
+                              getFallbackProjectId(projects.items, defaultProjects[0].id)
+                          ]
+                        : undefined
                     const blockStatus = getBlockViewStatus(block, task, todayKey(), currentMinute)
                     const duration = block.end - block.start
+                    const blockColor = isDiary ? '#94a3b8' : project?.color ?? '#3a7afe'
+                    const blockTitle = isDiary
+                      ? block.title || '日程'
+                      : blockTitleText(block, task)
                     return (
                       <article
                         key={block.id}
-                        className={`time-block ${blockStatus} ${duration < 45 ? 'compact' : duration < 75 ? 'regular' : 'spacious'}`}
+                        className={`time-block ${blockStatus} ${isDiary ? 'diary-block' : ''} ${duration < 45 ? 'compact' : duration < 75 ? 'regular' : 'spacious'}`}
                         style={{
                           top: (block.start - DAY_START) * PIXELS_PER_MINUTE,
                           height: (block.end - block.start) * PIXELS_PER_MINUTE,
-                          borderColor: project?.color,
-                          background: `${project?.color ?? '#3a7afe'}18`,
+                          borderColor: blockColor,
+                          background: `${blockColor}18`,
                         }}
                       >
                         <button
@@ -464,15 +492,16 @@ export function PlannerPage() {
                           className="btn btn-ghost drag-area"
                           onPointerDown={event => startPointerAction(event, block, 'move')}
                         >
-                          <strong>{blockTitleText(block, task)}</strong>
+                          <strong>{blockTitle}</strong>
                           <span>
                             {timeText(block.start)} - {timeText(block.end)}
                           </span>
                           {duration >= 75 && (
                             <em>
                               <b>{blockStatusLabels[blockStatus]}</b>
-                              {project?.name ?? '工作项目'}{' '}
-                              {task?.tags.map(tag => `#${tag}`).join(' ')}
+                              {isDiary
+                                ? '普通日程'
+                                : `${project?.name ?? '工作项目'} ${task?.tags.map(tag => `#${tag}`).join(' ')}`}
                             </em>
                           )}
                         </button>
@@ -514,7 +543,7 @@ export function PlannerPage() {
             ? `收起深夜时段 ${settings.sleepStart} - ${settings.sleepEnd}`
             : `展开深夜时段 ${settings.sleepStart} - ${settings.sleepEnd}`}
       </button>
-      {editingBlock && editingTask && (
+      {editingBlock && (editingTask || editingBlock.blockType === 'diary') && (
         <aside
           className="block-editor"
           style={{ left: blockEditorPosition.x, top: blockEditorPosition.y }}
@@ -522,8 +551,8 @@ export function PlannerPage() {
           <div className="block-editor-head">
             <strong>
               编辑时间块
-              <span className={`source-badge ${editingTask.source}`}>
-                {editingTask.source === 'schedule' ? '日程占位' : '任务'}
+              <span className={`source-badge ${editingBlock.blockType === 'diary' ? 'diary' : editingTask?.source ?? 'task'}`}>
+                {editingBlock.blockType === 'diary' ? '普通日程' : editingTask?.source === 'schedule' ? '日程占位' : '任务'}
               </span>
             </strong>
             <button
@@ -538,23 +567,40 @@ export function PlannerPage() {
           <label>
             标题
             <input
-              value={editingTask.title}
+              value={editingBlock.blockType === 'diary' ? editingBlock.title : editingTask?.title ?? ''}
               onChange={event => {
                 const title = event.target.value
-                const promote = editingTask.source === 'schedule' && title.trim() !== ''
-                setTaskLocal(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) })
-                tasks
-                  .update(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) })
-                  .catch(reportApiError)
+                if (editingBlock.blockType === 'diary') {
+                  setBlockLocal(editingBlock.id, { title })
+                  blocks.update(editingBlock.id, { title }).catch(reportApiError)
+                } else if (editingTask) {
+                  const promote = editingTask.source === 'schedule' && title.trim() !== ''
+                  setTaskLocal(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) })
+                  tasks
+                    .update(editingTask.id, { title, ...(promote ? { source: 'task' } : {}) })
+                    .catch(reportApiError)
+                }
               }}
-              placeholder="可选"
+              placeholder={editingBlock.blockType === 'diary' ? '例如：午饭、带娃、通勤' : '可选'}
             />
           </label>
+          {editingBlock.blockType === 'diary' ? (
+            <label className="block-editor-check">
+              <input
+                type="checkbox"
+                checked={!!editingBlock.note}
+                onChange={() => {}}
+                disabled
+              />
+              普通日程 · 不关联项目
+            </label>
+          ) : (
           <label>
             项目
             <select
-              value={editingTask.projectId}
+              value={editingTask?.projectId ?? ''}
               onChange={event => {
+                if (!editingTask) return
                 setTaskLocal(editingTask.id, { projectId: event.target.value })
                 tasks
                   .update(editingTask.id, { projectId: event.target.value })
@@ -568,6 +614,7 @@ export function PlannerPage() {
               ))}
             </select>
           </label>
+          )}
           <label>
             日期
             <input
@@ -634,6 +681,7 @@ export function PlannerPage() {
               placeholder="读了哪篇文献、卡点、临时记录..."
             />
           </label>
+          {editingBlock.blockType !== 'diary' && editingTask && (
           <label className="block-editor-check">
             <input
               type="checkbox"
@@ -645,6 +693,7 @@ export function PlannerPage() {
             />
             标记完成
           </label>
+          )}
           <button
             type="button"
             className="btn btn-danger block-editor-delete"

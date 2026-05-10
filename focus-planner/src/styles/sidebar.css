@@ -224,10 +224,7 @@
   opacity: 1;
 }
 
-/* Dynamic dot colors via CSS variable set inline on the parent */
-.project-filter .dot {
-  background: var(--dot-color, var(--color-primary, #3c9638));
-}
+/* Dynamic dot colors — set via inline style on .dot span */
 
 /* Sidebar kind groups */
 .sidebar-kind-group {
