@@ -400,7 +400,7 @@ export function initDatabase(): Database.Database {
 
   // 4. Add block_type and title columns to schedule_blocks (if migrating from old schema)
   //    Use PRAGMA table_info to check whether columns already exist
-  const blockCols = db.prepare("PRAGMA table_info(schedule_blocks)").all() as { name: string }[]
+  const blockCols = db.prepare("PRAGMA table_info(schedule_blocks)").all() as { name: string; notnull: number }[]
   const blockColNames = new Set(blockCols.map(c => c.name))
   if (!blockColNames.has('block_type')) {
     db.exec(`ALTER TABLE schedule_blocks ADD COLUMN block_type TEXT NOT NULL DEFAULT 'task'`)
@@ -412,6 +412,35 @@ export function initDatabase(): Database.Database {
   // 5. Add category column to schedule_blocks (diary classification)
   if (!blockColNames.has('category')) {
     db.exec(`ALTER TABLE schedule_blocks ADD COLUMN category TEXT`)
+  }
+
+  // 6. Make task_id nullable for diary blocks (rebuild table if needed)
+  const taskIdCol = blockCols.find(c => c.name === 'task_id')
+  if (taskIdCol && (taskIdCol as { notnull: number }).notnull) {
+    db.exec(`
+      CREATE TABLE schedule_blocks_new (
+        id TEXT PRIMARY KEY,
+        task_id TEXT,
+        block_type TEXT NOT NULL DEFAULT 'task'
+          CHECK(block_type IN ('task','diary')),
+        title TEXT NOT NULL DEFAULT '',
+        date TEXT NOT NULL,
+        start_min INTEGER NOT NULL,
+        end_min INTEGER NOT NULL,
+        note TEXT NOT NULL DEFAULT '',
+        category TEXT,
+        FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+        CHECK(block_type != 'task' OR task_id IS NOT NULL)
+      );
+      INSERT INTO schedule_blocks_new SELECT * FROM schedule_blocks;
+      DROP TABLE schedule_blocks;
+      ALTER TABLE schedule_blocks_new RENAME TO schedule_blocks;
+    `)
+    // Recreate indexes and triggers lost in table rebuild
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_blocks_date ON schedule_blocks(date);
+      CREATE INDEX IF NOT EXISTS idx_blocks_task ON schedule_blocks(task_id);
+    `)
   }
 
   // 7. Migrate old project kinds to new two-category system
