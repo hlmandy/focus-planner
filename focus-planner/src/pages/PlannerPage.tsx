@@ -197,13 +197,17 @@ export function PlannerPage() {
       if (action === 'move' && !didDrag) {
         openBlockEditor(block.id, upEvent.clientX, upEvent.clientY)
       }
-      // Sync final position to API
+      // Sync final position to API — use localPatch (mutated by move) instead of
+      // reading from blocks.items, which is a stale closure snapshot.
       if (didDrag && dragStartRef.current) {
-        const currentBlock = blocks.items.find(b => b.id === block.id)
-        if (currentBlock) {
+        if (action === 'move') {
           scheduleActions.updateBlock(block.id, {
-            start: currentBlock.start,
-            end: currentBlock.end,
+            start: localPatch.start ?? block.start,
+            end: localPatch.end ?? block.end,
+          })
+        } else {
+          scheduleActions.updateBlock(block.id, {
+            end: localPatch.end ?? block.end,
           })
         }
       }
