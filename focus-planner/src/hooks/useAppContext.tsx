@@ -56,21 +56,6 @@ interface AppContextValue {
   setToolPanelWidth: (width: number) => void
   persistenceStatus: PersistenceStatus
 
-  // Pomodoro timer
-  mode: 'work' | 'break'
-  setMode: (mode: 'work' | 'break') => void
-  secondsLeft: number
-  setSecondsLeft: React.Dispatch<React.SetStateAction<number>>
-  isRunning: boolean
-  setIsRunning: (running: boolean) => void
-
-  // Stopwatch
-  stopwatchSeconds: number
-  setStopwatchSeconds: React.Dispatch<React.SetStateAction<number>>
-  stopwatchRunning: boolean
-  setStopwatchRunning: (running: boolean) => void
-  stopwatchProjectId: string
-  setStopwatchProjectId: (id: string) => void
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -93,12 +78,6 @@ export function AppProvider({
     | 'pomodoroSessions'
     | 'settings'
     | 'updateSettings'
-    | 'stopwatchSeconds'
-    | 'setStopwatchSeconds'
-    | 'stopwatchRunning'
-    | 'setStopwatchRunning'
-    | 'stopwatchProjectId'
-    | 'setStopwatchProjectId'
   >
   children: ReactNode
   initial: AppState
@@ -122,13 +101,6 @@ export function AppProvider({
     await settingsApi.update(next)
     setSettings(next)
   }, [])
-
-  // Stopwatch state
-  const [stopwatchSeconds, setStopwatchSeconds] = useState(0)
-  const [stopwatchRunning, setStopwatchRunning] = useState(false)
-  const [stopwatchProjectId, setStopwatchProjectId] = useState(
-    initial.projects[0]?.id ?? 'research-topic-a',
-  )
 
   // Backward-compat flat state — memoized but only exposed for legacy consumers.
   const state = useMemo<AppState>(
@@ -168,12 +140,6 @@ export function AppProvider({
         pomodoroSessions,
         settings,
         updateSettings,
-        stopwatchSeconds,
-        setStopwatchSeconds,
-        stopwatchRunning,
-        setStopwatchRunning,
-        stopwatchProjectId,
-        setStopwatchProjectId,
         ...value,
       }}
     >

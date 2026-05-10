@@ -94,8 +94,8 @@ export const seedState = (): AppState => {
       },
       {
         id: planTaskId,
-        title: '推进论文 B 的结果部分初稿 #写作',
-        projectId: 'paper-topic-b',
+        title: '推进课题 B 的结果部分初稿 #写作',
+        projectId: 'research-topic-b',
         tags: ['写作'],
         done: false,
         createdAt: todayKey(),
@@ -103,17 +103,8 @@ export const seedState = (): AppState => {
       },
       {
         id: uid(),
-        title: '检查论文 C 的模型假设与相关工作 #模型',
-        projectId: 'paper-topic-c',
-        tags: ['模型'],
-        done: false,
-        createdAt: todayKey(),
-        source: 'task',
-      },
-      {
-        id: uid(),
         title: '给本科论文开题提纲反馈 #指导',
-        projectId: 'student-supervision',
+        projectId: 'affairs-admin',
         tags: ['指导'],
         done: false,
         createdAt: todayKey(),
@@ -122,7 +113,7 @@ export const seedState = (): AppState => {
       {
         id: uid(),
         title: '整理会议报销与待回邮件 #行政',
-        projectId: 'academic-admin',
+        projectId: 'affairs-admin',
         tags: ['行政'],
         done: false,
         createdAt: todayKey(),
@@ -151,7 +142,7 @@ export const seedState = (): AppState => {
     thesisStudents: [
       {
         id: uid(),
-        projectId: 'student-supervision',
+        projectId: 'affairs-admin',
         name: '学生 A',
         topic: '待确定论文题目',
         stage: 'topic',
@@ -162,7 +153,7 @@ export const seedState = (): AppState => {
       },
       {
         id: uid(),
-        projectId: 'student-supervision',
+        projectId: 'affairs-admin',
         name: '学生 B',
         topic: '开题报告修改',
         stage: 'proposal',

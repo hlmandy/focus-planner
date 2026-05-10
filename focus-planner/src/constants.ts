@@ -20,9 +20,7 @@ export const colors = ['#3a7afe', '#00a884', '#f59e0b', '#ef4444', '#8b5cf6', '#
 
 export const projectKindLabels: Record<ProjectKind, string> = {
   research: '科研',
-  paper: '论文',
-  student: '指导',
-  admin: '事务',
+  affairs: '事务',
 }
 
 export const projectStatusLabels: Record<ProjectStatus, string> = {
@@ -48,9 +46,7 @@ export const blockStatusLabels: Record<BlockViewStatus, string> = {
 
 export const projectTemplateGoals: Record<ProjectKind, string> = {
   research: '推进研究问题、文献线索、实验/分析路径和阶段性结果。',
-  paper: '围绕一篇具体论文推进结构、分析、写作、投稿和返修。',
-  student: '把控多个本科论文学生的选题、开题、初稿、修改和定稿进度。',
-  admin: '集中处理会议、邮件、报销、材料、申请和其他支持性事务。',
+  affairs: '集中处理论文指导、会议、邮件、报销、材料、申请和其他事务性工作。',
 }
 
 export const projectTaskTemplates: Record<
@@ -63,19 +59,10 @@ export const projectTaskTemplates: Record<
     { title: '数据 / 实验 / 分析', children: ['准备数据或材料', '运行分析并记录结果'] },
     { title: '阶段性输出', children: ['整理图表', '形成阶段结论'] },
   ],
-  paper: [
-    { title: '论文结构', children: ['确定主线贡献', '搭建章节大纲'] },
-    { title: '结果与图表', children: ['确认核心结果', '整理图表和表格'] },
-    { title: '写作', children: ['引言与相关工作', '方法与结果', '讨论与结论'] },
-    { title: '投稿准备', children: ['检查格式', '准备 cover letter'] },
-  ],
-  student: [
-    { title: '学生名单与节点', children: ['确认每位学生题目', '设置下一次反馈节点'] },
-    { title: '过程材料', children: ['收集开题/初稿材料', '记录共性问题'] },
-  ],
-  admin: [
-    { title: '待处理事务', children: ['邮件和通知', '表格和材料'] },
-    { title: '会议与沟通', children: ['会前准备', '会后跟进'] },
+  affairs: [
+    { title: '学生指导', children: ['本科论文进度跟进', '开题/初稿反馈'] },
+    { title: '学术事务', children: ['论文投稿与返修', '会议准备与材料'] },
+    { title: '日常事务', children: ['邮件与通知', '报销与申请'] },
   ],
 }
 
@@ -90,53 +77,35 @@ export const defaultProjects: Project[] = [
     dueDate: '',
   },
   {
-    id: 'paper-topic-b',
-    name: '论文 B：数据分析稿',
+    id: 'research-topic-b',
+    name: '课题 B：数据分析方向',
     color: '#00a884',
-    kind: 'paper',
+    kind: 'research',
     status: 'active',
-    goal: '完成结果分析、图表和初稿修改。',
+    goal: '完成结果分析、图表和阶段性产出。',
     dueDate: '',
   },
   {
-    id: 'paper-topic-c',
-    name: '论文 C：方法与模型稿',
-    color: '#8b5cf6',
-    kind: 'paper',
-    status: 'active',
-    goal: '梳理模型假设、相关工作和方法部分。',
-    dueDate: '',
-  },
-  {
-    id: 'student-supervision',
-    name: '本科论文指导',
+    id: 'affairs-admin',
+    name: '事务管理',
     color: '#f59e0b',
-    kind: 'student',
+    kind: 'affairs',
     status: 'active',
-    goal: '把控多个本科论文学生的选题、开题、初稿和定稿进度。',
-    dueDate: '',
-  },
-  {
-    id: 'academic-admin',
-    name: '事务与行政',
-    color: '#ef4444',
-    kind: 'admin',
-    status: 'active',
-    goal: '处理会议、报销、邮件、材料和其他支持性事务。',
+    goal: '集中处理论文指导、会议、邮件、报销、材料等事务性工作。',
     dueDate: '',
   },
 ]
 
 export const legacyProjectIdMap: Record<string, string> = {
-  inbox: 'academic-admin',
-  life: 'student-supervision',
+  inbox: 'affairs-admin',
+  life: 'affairs-admin',
   work: 'research-topic-a',
   'client-delivery': 'research-topic-a',
-  'product-build': 'paper-topic-b',
-  'operations-improvement': 'academic-admin',
+  'product-build': 'research-topic-b',
+  'operations-improvement': 'affairs-admin',
   'research-main': 'research-topic-a',
-  'paper-manuscript': 'paper-topic-b',
-  'student-thesis': 'student-supervision',
+  'paper-manuscript': 'research-topic-b',
+  'student-thesis': 'affairs-admin',
 }
 
 export const legacyProjectIds = new Set(Object.keys(legacyProjectIdMap))
@@ -225,7 +194,7 @@ export const getCalendarDayInfo = (dateKey: string) => {
 export const pageLabels: Record<PageName, string> = {
   today: '今天',
   planner: '规划表',
-  projects: '科研工作台',
+  projects: '项目',
   'research-log': '研究日志',
   habits: '习惯',
   summary: '今日总结',

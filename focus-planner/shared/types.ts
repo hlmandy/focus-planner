@@ -2,7 +2,7 @@
 
 // ── Enum constants (runtime values derived from `as const` arrays) ──────────
 
-export const PROJECT_KINDS = ['research', 'paper', 'student', 'admin'] as const
+export const PROJECT_KINDS = ['research', 'affairs'] as const
 export const PROJECT_STATUSES = ['active', 'paused', 'done', 'archived'] as const
 export const THESIS_STAGES = ['topic', 'proposal', 'draft', 'revision', 'final'] as const
 export const RESEARCH_LOG_KINDS = [

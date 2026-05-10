@@ -296,7 +296,7 @@ export function ProjectsPage() {
   }
 
   const addThesisStudent = () => {
-    if (!activeProjectStats || activeProjectStats.kind !== 'student') return
+    if (!activeProjectStats || activeProjectStats.kind !== 'affairs') return
     const name = newStudentName.trim()
     if (!name) return
     const student: ThesisStudent = {
@@ -373,67 +373,67 @@ export function ProjectsPage() {
 
   return (
     <div className="projects-page">
-      <div className="project-management-bar">
-        <div>
-          <strong>项目管理</strong>
-          <span>
-            {managedProjectStats.length}/{projectStats.length} 个项目
-          </span>
-        </div>
-        <select
-          value={projectKindFilter}
-          onChange={e => {
-            const v = e.target.value as ProjectKind | 'all'
-            setProjectKindFilter(v)
-            localStorage.setItem(KIND_FILTER_KEY, v)
-          }}
-          aria-label="按类型筛选"
-        >
-          <option value="all">全部类型</option>
-          <option value="research">科研</option>
-          <option value="paper">论文</option>
-          <option value="student">指导</option>
-          <option value="admin">事务</option>
-        </select>
-        <select
-          value={projectStatusFilter}
-          onChange={e => {
-            const v = e.target.value as ProjectStatus | 'all'
-            setProjectStatusFilter(v)
-            localStorage.setItem(STATUS_FILTER_KEY, v)
-          }}
-          aria-label="按状态筛选"
-        >
-          <option value="all">全部状态</option>
-          <option value="active">进行中</option>
-          <option value="paused">暂停</option>
-          <option value="done">完成</option>
-          <option value="archived">归档</option>
-        </select>
-      </div>
-      <div className="project-composer">
-        <input
-          value={newProjectName}
-          onChange={e => setNewProjectName(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && addProject()}
-          placeholder="新课题 / 论文 / 指导事项 / 事务"
-        />
-        <select
-          className="project-kind-select"
-          value={newProjectKind}
-          onChange={e => setNewProjectKind(e.target.value as ProjectKind)}
-          aria-label="项目类型"
-        >
-          <option value="research">科研</option>
-          <option value="paper">论文</option>
-          <option value="student">指导</option>
-          <option value="admin">事务</option>
-        </select>
-        <button className="btn btn-primary" onClick={addProject}>
-          <Plus size={17} />
-          添加项目
-        </button>
-      </div>
+      {projectDetailId === null && (
+        <>
+          <div className="project-management-bar">
+            <div>
+              <strong>项目管理</strong>
+              <span>
+                {managedProjectStats.length}/{projectStats.length} 个项目
+              </span>
+            </div>
+            <select
+              value={projectKindFilter}
+              onChange={e => {
+                const v = e.target.value as ProjectKind | 'all'
+                setProjectKindFilter(v)
+                localStorage.setItem(KIND_FILTER_KEY, v)
+              }}
+              aria-label="按类型筛选"
+            >
+              <option value="all">全部类型</option>
+              <option value="research">科研</option>
+              <option value="affairs">事务</option>
+            </select>
+            <select
+              value={projectStatusFilter}
+              onChange={e => {
+                const v = e.target.value as ProjectStatus | 'all'
+                setProjectStatusFilter(v)
+                localStorage.setItem(STATUS_FILTER_KEY, v)
+              }}
+              aria-label="按状态筛选"
+            >
+              <option value="all">全部状态</option>
+              <option value="active">进行中</option>
+              <option value="paused">暂停</option>
+              <option value="done">完成</option>
+              <option value="archived">归档</option>
+            </select>
+          </div>
+          <div className="project-composer">
+            <input
+              value={newProjectName}
+              onChange={e => setNewProjectName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addProject()}
+              placeholder="新课题 / 论文 / 指导事项 / 事务"
+            />
+            <select
+              className="project-kind-select"
+              value={newProjectKind}
+              onChange={e => setNewProjectKind(e.target.value as ProjectKind)}
+              aria-label="项目类型"
+            >
+              <option value="research">科研</option>
+              <option value="affairs">事务</option>
+            </select>
+            <button className="btn btn-primary" onClick={addProject}>
+              <Plus size={17} />
+              添加项目
+            </button>
+          </div>
+        </>
+      )}
       {projectDetailId === null ? (
         <div className="project-grid">
           {managedProjectStats.map(project => (
@@ -479,7 +479,7 @@ export function ProjectsPage() {
                 </span>
               </div>
               <div className="project-card-stats research-stats">
-                {project.kind === 'student' ? (
+                {project.kind === 'affairs' ? (
                   <>
                     <span>
                       <strong>{project.studentCount}</strong>学生
@@ -488,7 +488,7 @@ export function ProjectsPage() {
                       <strong>{project.taskCount}</strong>待办
                     </span>
                     <span>
-                      <strong>{durationText(project.weekFocusMinutes)}</strong>指导时间
+                      <strong>{durationText(project.weekFocusMinutes)}</strong>投入时间
                     </span>
                   </>
                 ) : (
@@ -526,10 +526,10 @@ export function ProjectsPage() {
                     e.stopPropagation()
                     setProjectFilterId(project.id)
                     setProjectDetailId(project.id)
-                    setPage(project.kind === 'student' ? 'projects' : 'research-log')
+                    setPage(project.kind === 'affairs' ? 'projects' : 'research-log')
                   }}
                 >
-                  {project.kind === 'student' ? '学生进度' : '研究日志'}
+                  {project.kind === 'affairs' ? '事务详情' : '研究日志'}
                 </button>
               </div>
             </article>
@@ -542,8 +542,8 @@ export function ProjectsPage() {
             <div>
               <h2>{activeProjectStats.name}</h2>
               <p>
-                {activeProjectStats.kind === 'student'
-                  ? `${projectKindLabels[activeProjectStats.kind]} · ${activeProjectStats.studentCount} 名学生 · ${activeProjectStats.doneCount}/${activeProjectStats.taskCount} 个待办完成 · 本周指导专注 ${durationText(activeProjectStats.weekFocusMinutes)}`
+                {activeProjectStats.kind === 'affairs'
+                  ? `${projectKindLabels[activeProjectStats.kind]} · ${activeProjectStats.studentCount} 名学生 · ${activeProjectStats.doneCount}/${activeProjectStats.taskCount} 个待办完成 · 本周专注 ${durationText(activeProjectStats.weekFocusMinutes)}`
                   : `${projectKindLabels[activeProjectStats.kind]} · ${activeProjectStats.doneCount}/${activeProjectStats.taskCount} 完成 · 本周专注 ${durationText(activeProjectStats.weekFocusMinutes)} · ${activeProjectStats.logCount} 条记录 · ${activeProjectStats.literatureCount} 篇文献 · ${activeProjectStats.attachmentCount} 个附件`}
               </p>
             </div>
@@ -581,9 +581,7 @@ export function ProjectsPage() {
                   }
                 >
                   <option value="research">科研</option>
-                  <option value="paper">论文</option>
-                  <option value="student">指导</option>
-                  <option value="admin">事务</option>
+                  <option value="affairs">事务</option>
                 </select>
               </label>
               <label>
@@ -646,7 +644,7 @@ export function ProjectsPage() {
             <button className="btn btn-ghost" onClick={() => setPage('today')}>
               今日任务
             </button>
-            {activeProjectStats.kind !== 'student' && (
+            {activeProjectStats.kind !== 'affairs' && (
               <button
                 type="button"
                 className="btn btn-ghost"
@@ -665,41 +663,6 @@ export function ProjectsPage() {
             )}
           </div>
           <div className="project-detail-grid">
-            <section className={`project-panel template-panel ${activeProjectStats.kind}`}>
-              <h3>{projectKindLabels[activeProjectStats.kind]}模板</h3>
-              {activeProjectStats.kind === 'research' && (
-                <div className="template-notes">
-                  <span>研究问题</span>
-                  <span>文献基础</span>
-                  <span>实验/分析</span>
-                  <span>阶段结果</span>
-                </div>
-              )}
-              {activeProjectStats.kind === 'paper' && (
-                <div className="template-notes">
-                  <span>论文结构</span>
-                  <span>结果图表</span>
-                  <span>写作推进</span>
-                  <span>投稿准备</span>
-                </div>
-              )}
-              {activeProjectStats.kind === 'student' && (
-                <div className="template-notes">
-                  <span>多学生进度</span>
-                  <span>阶段节点</span>
-                  <span>反馈重点</span>
-                  <span>风险跟进</span>
-                </div>
-              )}
-              {activeProjectStats.kind === 'admin' && (
-                <div className="template-notes">
-                  <span>待处理事务</span>
-                  <span>会议沟通</span>
-                  <span>材料提交</span>
-                  <span>后续跟进</span>
-                </div>
-              )}
-            </section>
             <section className="project-panel">
               <h3>子任务树</h3>
               <div className="root-task-composer">
@@ -725,7 +688,7 @@ export function ProjectsPage() {
                 )}
               </div>
             </section>
-            {activeProjectStats.kind === 'student' && (
+            {activeProjectStats.kind === 'affairs' && (
               <section className="project-panel thesis-panel">
                 <h3>学生进度</h3>
                 <div className="thesis-composer">
@@ -836,7 +799,7 @@ export function ProjectsPage() {
                 </div>
               </section>
             )}
-            {activeProjectStats.kind !== 'student' && (
+            {activeProjectStats.kind !== 'affairs' && (
               <ProjectDetailSection
                 title="最近研究日志"
                 count={activeProjectLogs.length}
@@ -857,7 +820,7 @@ export function ProjectsPage() {
                 )}
               </ProjectDetailSection>
             )}
-            {activeProjectStats.kind !== 'student' && (
+            {activeProjectStats.kind !== 'affairs' && (
               <ProjectDetailSection title="文献" count={activeProjectLiterature.length} defaultOpen>
                 {activeProjectLiterature.length ? (
                   activeProjectLiterature.map(entry => (
@@ -872,7 +835,7 @@ export function ProjectsPage() {
                 )}
               </ProjectDetailSection>
             )}
-            {activeProjectStats.kind !== 'student' && (
+            {activeProjectStats.kind !== 'affairs' && (
               <ProjectDetailSection title="附件" count={activeProjectAttachments.length}>
                 {activeProjectAttachments.length ? (
                   <div className="project-attachment-list">

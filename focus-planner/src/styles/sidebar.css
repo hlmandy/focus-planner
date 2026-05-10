@@ -5,7 +5,6 @@
   flex-direction: column;
   gap: 8px;
   overflow: hidden;
-  border-right: 1px solid var(--line);
   background: #dff0d8;
   padding: 8px 8px 10px;
 }
@@ -228,4 +227,49 @@
 /* Dynamic dot colors via CSS variable set inline on the parent */
 .project-filter .dot {
   background: var(--dot-color, var(--color-primary, #3c9638));
+}
+
+/* Sidebar kind groups */
+.sidebar-kind-group {
+  display: grid;
+  gap: 1px;
+}
+
+.sidebar-kind-toggle {
+  width: 100%;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  padding: 0 6px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.sidebar-kind-toggle:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.sidebar-kind-toggle svg:first-child {
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+
+.sidebar-kind-count {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.project-filter-nested {
+  padding-left: 22px;
+  font-size: 13px;
 }

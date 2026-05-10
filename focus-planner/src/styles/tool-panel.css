@@ -208,6 +208,81 @@
   line-height: 1;
 }
 
+.pomodoro-duration-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pomodoro-duration-btn {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.pomodoro-duration-btn:hover:not(:disabled) {
+  border-color: var(--line-strong);
+  background: var(--surface-2);
+}
+
+.pomodoro-duration-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pomodoro-duration-input {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
+}
+
+.pomodoro-duration-input input {
+  width: 44px;
+  height: 28px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.pomodoro-duration-input input::-webkit-outer-spin-button,
+.pomodoro-duration-input input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.pomodoro-duration-input input:focus {
+  border-color: var(--line-strong);
+  outline: none;
+}
+
+.pomodoro-duration-input input:disabled {
+  opacity: 0.5;
+}
+
+.pomodoro-duration-input span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
 .pomodoro-mode-actions,
 .pomodoro-actions {
   display: grid;

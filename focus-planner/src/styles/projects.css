@@ -135,23 +135,17 @@
   background: var(--blue-soft);
 }
 
-.kind-pill.paper,
+.kind-pill.affairs,
 .kind-pill.writing,
 .status-pill.active {
   color: var(--teal);
   background: var(--teal-soft);
 }
 
-.kind-pill.student,
 .kind-pill.experiment,
 .status-pill.paused {
   color: var(--amber);
   background: var(--amber-soft);
-}
-
-.kind-pill.admin {
-  color: var(--coral);
-  background: var(--coral-soft);
 }
 
 .kind-pill.analysis {

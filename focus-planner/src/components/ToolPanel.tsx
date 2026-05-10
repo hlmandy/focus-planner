@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Check,
   FileText,
@@ -28,7 +28,7 @@ import {
   blockDateText,
 } from '../utils'
 import { DAY_START, DAY_END, getCalendarDayInfo } from '../constants'
-import type { ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
+import type { PomodoroSession, ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
 import { reportApiError } from '../api/client'
 
 type TabId = 'timer' | 'search' | 'quick-add' | 'quick-log'
@@ -55,21 +55,9 @@ export function ToolPanel() {
     setProjectDetailId,
     toolPanelWidth,
     setToolPanelWidth,
-    mode,
-    setMode,
-    secondsLeft,
-    setSecondsLeft,
-    isRunning,
-    setIsRunning,
     pomodoroProjectId,
     setPomodoroProjectId,
     settings,
-    stopwatchSeconds,
-    setStopwatchSeconds,
-    stopwatchRunning,
-    setStopwatchRunning,
-    stopwatchProjectId,
-    setStopwatchProjectId,
   } = useApp()
 
   const [activeTab, setActiveTab] = useState<TabId | null>('timer')
@@ -88,6 +76,78 @@ export function ToolPanel() {
     thesisStudents: unknown[]
   } | null>(null)
   const [isSearching, setIsSearching] = useState(false)
+
+  // ===== Notifications =====
+  function notify(title: string, body: string) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(title, { body, icon: '🍅' })
+    }
+  }
+
+  function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }
+
+  // Request notification permission on first user interaction
+  useEffect(() => {
+    const handler = () => requestNotificationPermission()
+    window.addEventListener('click', handler, { once: true })
+    return () => window.removeEventListener('click', handler)
+  }, [])
+
+  // ===== Pomodoro timer state (self-contained) =====
+  const [mode, setMode] = useState<'work' | 'break'>('work')
+  const [secondsLeft, setSecondsLeft] = useState(settings.workDuration * 60)
+  const [isRunning, setIsRunning] = useState(false)
+
+  // ===== Stopwatch state =====
+  const [stopwatchSeconds, setStopwatchSeconds] = useState(0)
+  const [stopwatchRunning, setStopwatchRunning] = useState(false)
+  const [stopwatchProjectId, setStopwatchProjectId] = useState(pomodoroProjectId)
+
+  const workSeconds = settings.workDuration * 60
+  const breakSeconds = settings.breakDuration * 60
+
+  // Pomodoro interval
+  useEffect(() => {
+    if (!isRunning) return
+    const timer = window.setInterval(() => {
+      setSecondsLeft(value => {
+        if (value > 1) return value - 1
+        setIsRunning(false)
+        if (mode === 'work') {
+          const session: PomodoroSession = {
+            id: uid(),
+            projectId: pomodoroProjectId,
+            date: todayKey(),
+            minutes: settings.workDuration,
+            createdAt: new Date().toISOString(),
+          }
+          pomodoroSessions.create(session).catch(reportApiError)
+          notify('🍅 专注完成！', `完成了 ${settings.workDuration} 分钟的专注，休息一下吧`)
+          requestNotificationPermission()
+          setMode('break')
+          return breakSeconds
+        }
+        notify('☕ 休息结束', '休息时间结束，准备开始下一轮专注')
+        requestNotificationPermission()
+        setMode('work')
+        return workSeconds
+      })
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [isRunning, mode, pomodoroProjectId, pomodoroSessions, workSeconds, breakSeconds, settings.workDuration])
+
+  // Stopwatch interval
+  useEffect(() => {
+    if (!stopwatchRunning) return
+    const timer = window.setInterval(() => {
+      setStopwatchSeconds(s => s + 1)
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [stopwatchRunning])
 
   const minutes = Math.floor(secondsLeft / 60)
   const seconds = secondsLeft % 60
@@ -310,6 +370,47 @@ export function ToolPanel() {
             </div>
             <div className="pomodoro-time">
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+            </div>
+            <div className="pomodoro-duration-row">
+              <button
+                type="button"
+                className="btn btn-ghost pomodoro-duration-btn"
+                onClick={() => {
+                  const next = Math.max(1, Math.floor(secondsLeft / 60) - 1)
+                  setSecondsLeft(next * 60)
+                }}
+                disabled={isRunning}
+                aria-label="减少1分钟"
+              >
+                −
+              </button>
+              <div className="pomodoro-duration-input">
+                <input
+                  type="number"
+                  min={1}
+                  max={120}
+                  value={Math.floor(secondsLeft / 60)}
+                  onChange={e => {
+                    const v = Math.max(1, Math.min(120, Number(e.target.value) || 1))
+                    setSecondsLeft(v * 60)
+                  }}
+                  disabled={isRunning}
+                  aria-label="番茄钟分钟数"
+                />
+                <span>分钟</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost pomodoro-duration-btn"
+                onClick={() => {
+                  const next = Math.min(120, Math.floor(secondsLeft / 60) + 1)
+                  setSecondsLeft(next * 60)
+                }}
+                disabled={isRunning}
+                aria-label="增加1分钟"
+              >
+                +
+              </button>
             </div>
             <label htmlFor="pomodoro-project-select">关联项目</label>
             <select

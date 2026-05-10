@@ -9,6 +9,10 @@ import {
   Flame,
   Save,
   FileText,
+  ChevronDown,
+  ChevronRight,
+  FlaskConical,
+  Briefcase,
 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { uid } from '../utils'
@@ -19,6 +23,11 @@ import type { ProjectKind } from '../../shared/types'
 
 const ARCHIVED_STORAGE_KEY = 'focus-planner-show-archived'
 
+const kindGroups: { kind: ProjectKind; label: string; icon: typeof FlaskConical }[] = [
+  { kind: 'research', label: '科研', icon: FlaskConical },
+  { kind: 'affairs', label: '事务', icon: Briefcase },
+]
+
 export function Sidebar() {
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectKind, setNewProjectKind] = useState<ProjectKind>('research')
@@ -26,6 +35,13 @@ export function Sidebar() {
   const [showArchived, setShowArchived] = useState(
     () => localStorage.getItem(ARCHIVED_STORAGE_KEY) === 'true',
   )
+  const [expandedGroups, setExpandedGroups] = useState<Record<ProjectKind, boolean>>(() => {
+    const saved = localStorage.getItem('focus-planner-sidebar-groups')
+    if (saved) {
+      try { return JSON.parse(saved) } catch { /* ignore */ }
+    }
+    return { research: true, affairs: true }
+  })
 
   const {
     projects,
@@ -44,6 +60,12 @@ export function Sidebar() {
     const next = !showArchived
     setShowArchived(next)
     localStorage.setItem(ARCHIVED_STORAGE_KEY, String(next))
+  }
+
+  const toggleGroup = (kind: ProjectKind) => {
+    const next = { ...expandedGroups, [kind]: !expandedGroups[kind] }
+    setExpandedGroups(next)
+    localStorage.setItem('focus-planner-sidebar-groups', JSON.stringify(next))
   }
 
   const openProject = (id: string) => {
@@ -88,6 +110,9 @@ export function Sidebar() {
 
   const activeProjects = projects.items.filter(p => p.status !== 'archived')
   const archivedProjects = projects.items.filter(p => p.status === 'archived')
+
+  const projectsByKind = (kind: ProjectKind) =>
+    activeProjects.filter(p => p.kind === kind)
 
   return (
     <aside className="sidebar">
@@ -176,18 +201,39 @@ export function Sidebar() {
             <span className="dot muted" />
             全部项目
           </button>
-          {activeProjects.map(project => (
-            <button
-              key={project.id}
-              type="button"
-              className={`btn btn-ghost project-filter ${projectFilterId === project.id ? 'active' : ''}`}
-              onClick={() => openProject(project.id)}
-              style={{ '--dot-color': project.color } as React.CSSProperties}
-            >
-              <span className="dot" />
-              {project.name}
-            </button>
-          ))}
+          {kindGroups.map(group => {
+            const groupProjects = projectsByKind(group.kind)
+            if (groupProjects.length === 0) return null
+            const Icon = group.icon
+            const isExpanded = expandedGroups[group.kind]
+            return (
+              <div key={group.kind} className="sidebar-kind-group">
+                <button
+                  type="button"
+                  className="sidebar-kind-toggle"
+                  onClick={() => toggleGroup(group.kind)}
+                  aria-expanded={isExpanded}
+                >
+                  {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  <Icon size={14} />
+                  <span>{group.label}</span>
+                  <span className="sidebar-kind-count">{groupProjects.length}</span>
+                </button>
+                {isExpanded && groupProjects.map(project => (
+                  <button
+                    key={project.id}
+                    type="button"
+                    className={`btn btn-ghost project-filter project-filter-nested ${projectFilterId === project.id ? 'active' : ''}`}
+                    onClick={() => openProject(project.id)}
+                    style={{ '--dot-color': project.color } as React.CSSProperties}
+                  >
+                    <span className="dot" />
+                    {project.name}
+                  </button>
+                ))}
+              </div>
+            )
+          })}
           {archivedProjects.length > 0 && (
             <>
               <button
@@ -232,9 +278,7 @@ export function Sidebar() {
                 aria-label="项目类型"
               >
                 <option value="research">科研</option>
-                <option value="paper">论文</option>
-                <option value="student">指导</option>
-                <option value="admin">事务</option>
+                <option value="affairs">事务</option>
               </select>
               <button type="button" className="btn btn-primary" onClick={addProject}>
                 <Plus size={15} />

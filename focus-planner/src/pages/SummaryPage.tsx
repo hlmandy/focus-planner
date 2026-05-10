@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Copy, RotateCcw, Save } from 'lucide-react'
+import { Copy, Save } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import {
   durationText,
@@ -12,10 +12,6 @@ import {
 export function SummaryPage() {
   const {
     date,
-    mode,
-    setMode,
-    setSecondsLeft,
-    setIsRunning,
     projects,
     tasks,
     blocks,
@@ -97,7 +93,7 @@ export function SummaryPage() {
         ? selectedDayBlocks.map(block => {
             const task = tasksById[block.taskId]
             const project =
-              projectsById[task?.projectId ?? projects.items[0]?.id ?? 'academic-admin']
+              projectsById[task?.projectId ?? projects.items[0]?.id ?? 'affairs-admin']
             const done = task?.done ? '[x]' : '[ ]'
             const tags = task?.tags.length ? ` ${task.tags.map(tag => `#${tag}`).join(' ')}` : ''
             const note = block.note.trim() ? `：${block.note.trim()}` : ''
@@ -168,7 +164,7 @@ export function SummaryPage() {
     const lines = [
       `# 项目报告：${project.name}`,
       '',
-      `> 类型：${project.kind === 'research' ? '科研' : project.kind === 'paper' ? '论文' : project.kind === 'student' ? '指导' : '事务'} · 状态：${project.status === 'active' ? '进行中' : project.status === 'paused' ? '暂停' : project.status === 'done' ? '完成' : '归档'}`,
+      `> 类型：${project.kind === 'research' ? '科研' : '事务'} · 状态：${project.status === 'active' ? '进行中' : project.status === 'paused' ? '暂停' : project.status === 'done' ? '完成' : '归档'}`,
       project.goal ? `> ${project.goal}` : '',
       '',
       `## 概览`,
@@ -217,12 +213,6 @@ export function SummaryPage() {
     pomodoroSessions.items,
     tasksById,
   ])
-
-  const resetPomodoro = (nextMode = mode) => {
-    setMode(nextMode)
-    setSecondsLeft(nextMode === 'work' ? 25 * 60 : 5 * 60)
-    setIsRunning(false)
-  }
 
   const copyToClipboard = (text: string) => navigator.clipboard.writeText(text)
 
@@ -287,10 +277,6 @@ export function SummaryPage() {
         >
           <Save size={16} />
           导出
-        </button>
-        <button className="btn btn-ghost" onClick={() => resetPomodoro()}>
-          <RotateCcw size={16} />
-          重置番茄钟
         </button>
       </div>
     </div>

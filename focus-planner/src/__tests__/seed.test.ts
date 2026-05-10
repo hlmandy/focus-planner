@@ -313,16 +313,16 @@ describe('resolveProjectId', () => {
         dueDate: '',
       },
       {
-        id: 'academic-admin',
+        id: 'affairs-admin',
         name: 'Admin',
         color: '#f00',
-        kind: 'admin' as const,
+        kind: 'affairs' as const,
         status: 'active' as const,
         goal: '',
         dueDate: '',
       },
     ]
-    expect(resolveProjectId('inbox', projects)).toBe('academic-admin')
+    expect(resolveProjectId('inbox', projects)).toBe('affairs-admin')
   })
 
   it('returns default for unknown projectId', () => {

@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS projects (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   color TEXT NOT NULL,
-  kind TEXT NOT NULL CHECK(kind IN ('research','paper','student','admin')),
+  kind TEXT NOT NULL CHECK(kind IN ('research','affairs')),
   status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','paused','done','archived')),
   goal TEXT NOT NULL DEFAULT '',
   due_date TEXT NOT NULL DEFAULT ''
@@ -209,7 +209,7 @@ function migrateFromJson(db: Database.Database): void {
         p.id,
         p.name,
         p.color,
-        p.kind ?? 'admin',
+        p.kind ?? 'affairs',
         p.status ?? 'active',
         p.goal ?? '',
         p.dueDate ?? '',
