@@ -65,14 +65,26 @@ Avoid adding these until the user explicitly asks for them:
 ### Data model rules
 
 - `ScheduleBlock.blockType`: determines block category — `'task'` (linked to a Task via `taskId`, for project work) or `'diary'` (no Task, `taskId: null`, for non-project activities like childcare/commute/rest). Diary blocks can be converted to task blocks via `useScheduleActions.convertDiaryToTask()`.
+- Drag-created planner blocks default to `blockType: 'diary'` and `taskId: null`. Only `task` blocks link to a `Task`. Do not create placeholder tasks for ordinary diary blocks.
 - `Task.source`: `"task"` for real project tasks, `"schedule"` for legacy placeholder tasks (from old migration). `source: 'schedule'` is only used in `normalizeState` for backward compatibility and in `useScheduleActions.deleteBlock` for orphan cleanup. Do not create new schedule placeholder tasks in page code.
 - `ScheduleBlock.note`: notes for a specific time window. Do not store in task title.
 - `Project.kind`: determines template and UI — `research` / `admin`. Old kinds (`paper`, `student`) are mapped to `research`/`admin` via `normalizeKind` in `seed.ts`.
 - `Task.parentId`: multi-level task trees. Deleting a parent deletes its entire subtree and related schedule blocks.
+- `ResearchLogEntry.kind` is limited to `literature`, `writing`, and `experiment`. Admin and student records must not be encoded as research kinds.
 - Literature records are `ResearchLogEntry` with `kind === "literature"`.
-- Pomodoro sessions are `PomodoroSession` linked to a project and date. Created automatically by `PomodoroTimerProvider` on work completion.
+- Pomodoro sessions are `PomodoroSession` linked to a project and date, with user-configurable duration (not fixed 25 min). They have `start`/`end` fields for actual time recording. Created automatically by `PomodoroTimerProvider` on work completion. May render as a done block in Planner/Daily views. `PomodoroSession` is not a `ScheduleBlock`.
 - HTTP/HTTPS attachments render as clickable links; other attachments are plain names/paths.
 - `seedState()` returns empty arrays (no demo projects). First launch has no pre-filled data.
+
+### Schedule and daily-view rules
+
+- `AppContext.date` / `setDate` is the selected date. It is not necessarily today.
+- Sidebar "Today" (route `/today`) is a shortcut: calls `setDate(todayKey())` and opens the daily view. The component file is `DailyPage.tsx`.
+- Daily view (`DailyPage.tsx`, route `/today`) displays the selected date, not a hard-coded "today".
+- Planner shows the week containing the selected date.
+- ToolPanel calendar changes `date` only via `setDate()`; it does not navigate to a different page.
+- Current-time indicators (e.g., planner "now" line) must use real today, not the selected date.
+- Cross-entity schedule operations must go through `useScheduleActions`.
 
 ### Layout rules
 

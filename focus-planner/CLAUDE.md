@@ -45,7 +45,7 @@ focus-planner/
 │   ├── pages/               # 页面组件（通过 useApp() 获取 entity hooks）
 │   │   ├── PlannerPage.tsx  # 周规划时间线（含时间块 CRUD、拖拽、编辑器）
 │   │   ├── ProjectsPage.tsx # 项目管理（路由 /projects 和 /projects/:projectId）
-│   │   ├── TodayPage.tsx    # 今日概览 + diary/task 双模式日程 + 项目记录
+│   │   ├── DailyPage.tsx    # selectedDate 日视图：diary/task 双模式日程 + 项目记录
 │   │   ├── ResearchLogPage.tsx # 研究日记 + 文献库（统一页面，支持编辑）
 │   │   ├── HabitsPage.tsx   # 习惯追踪（周视图）
 │   │   ├── SummaryPage.tsx  # Markdown 日总结 + 项目报告导出
@@ -178,9 +178,27 @@ stopwatch.start() / stopwatch.pause() / stopwatch.reset()
 - **配置表**：`caldav_config` 单行表存储 CalDAV 凭据（Settings 页面管理）
 - **时间转换**：ScheduleBlock 的 date + start/end (分钟) → iCalendar DTSTART/DTEND
 
-## TodayPage 双模式日程
+## 时间视图约定
 
-TodayPage 的"今天的安排"支持两种日程类型：
+- `AppContext.date` / `setDate` 是 selectedDate，不一定是今天
+- 侧栏 "今天"（路由 `/today`）是快捷操作：`setDate(todayKey())` + 打开 daily view
+- Daily view（`DailyPage.tsx`，路由 `/today`）显示 selectedDate 的日程，不是固定今天
+- Planner 显示包含 selectedDate 的那一周
+- Summary 根据 selectedDate 生成报告
+- ToolPanel 日历只调 `setDate()`，不导航
+- 当前时间状态（如 Planner 的 now 线）用真实今天，不用 selectedDate
+
+## Done Block 与 Pomodoro
+
+- `PomodoroSession` 代表实际完成的专注时间，含 `start`/`end` 字段
+- 它不是 `ScheduleBlock`，但可在 Planner/Daily 中作为只读的 done 层渲染
+- Daily view 应按项目汇总已完成番茄钟并列出具体完成时段
+- 番茄钟时长用户可配置（不固定 25 分钟）
+- 秒表完成的记录是否也成为 done block 待定
+
+## DailyPage 日视图
+
+DailyPage（路由 `/today`）是 selectedDate 日视图，不是固定的"今天"页。支持两种日程类型：
 
 - **普通日程**（`blockType: 'diary'`）：`taskId: null`，直接创建 `ScheduleBlock`，不关联 Task。用于带娃、吃饭、通勤、休息等非项目事务
 - **项目任务**（`blockType: 'task'`）：创建 Task + ScheduleBlock，关联项目。用于改论文、跑实验等项目工作
@@ -194,7 +212,7 @@ UI 上通过类型选择器切换，默认"普通日程"。diary block 不显示
 - **类型共享**：`shared/types.ts` 是前后端类型的单一数据源，修改实体类型只需改这里
 - **不重复定义**：types / constants / utils / seed 各有独立文件，不要在其他文件重新定义
 - **页面组件模式**：每个 page 通过 `useApp()` 获取 entity hooks，表单状态用本地 useState
-- **Schedule 业务边界**：ScheduleBlock + Task 的跨实体写操作走 `useScheduleActions`，PlannerPage / TodayPage 不直接实现联动逻辑
+- **Schedule 业务边界**：ScheduleBlock + Task 的跨实体写操作走 `useScheduleActions`，PlannerPage / DailyPage 不直接实现联动逻辑
 - **计时器状态**：番茄钟和秒表走 `PomodoroTimerProvider` / `StopwatchTimerProvider`，不放在页面组件里
 - **路由**：react-router 管理页面导航，`useParams` 获取 URL 参数（如 `projectId`），不再用 `page` state 切换
 - **Task.source** 区分真实任务 (`'task'`) 和日程占位 (`'schedule'`)

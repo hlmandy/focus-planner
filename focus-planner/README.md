@@ -47,14 +47,14 @@ The key objects are:
 
 - `Project`: a work object with type, status, goal/description, and optional due date. Research topics and papers are outcome-oriented research projects; undergraduate thesis supervision and academic/admin work are support workflows.
 - `ThesisStudent`: one supervised undergraduate thesis student, with topic, stage, next milestone, due date, and notes.
-- `PomodoroSession`: a completed focused work session linked to a work object and date. Editable after creation.
+- `PomodoroSession`: a completed focus interval linked to a project and date. Records actual focused time with `start`/`end` fields. Duration is user-configurable. Serves as a done block in Planner/Daily views showing what was actually accomplished.
 - `Task`: planned project work that can be scheduled on the weekly planner. Tasks support `parentId` so each work object can have a multi-level task tree. Task trees and completion stats ignore legacy schedule placeholders (`source: 'schedule'`).
-- `ScheduleBlock`: a dated time block. Two types: task blocks (`blockType: 'task'`, linked to a Task via `taskId`) for project work, and diary blocks (`blockType: 'diary'`, `taskId: null`) for non-project activities like childcare, commute, or rest. Each block has its own note field for what happened during that time.
-- `ResearchLogEntry`: a dated record of actual work, including literature, experiment, analysis, writing, meeting, or admin notes. Includes structured fields: reading status, key findings, next action.
+- `ScheduleBlock`: a dated time block. Two types: task blocks (`blockType: 'task'`, linked to a Task via `taskId`) for project work, and diary blocks (`blockType: 'diary'`, `taskId: null`) for non-project activities like childcare, commute, or rest. Drag-created planner blocks default to diary. Diary blocks can be converted to task blocks via `useScheduleActions`. Each block has its own note field.
+- `ResearchLogEntry`: a dated record of actual research work. Research kinds are limited to `literature`, `writing`, and `experiment`. Admin and student records must not be encoded as research kinds. Includes structured fields: reading status, key findings, next action.
 - `Habit`: lightweight recurring tracking with weekly grid view.
 - `UserSettings`: Pomodoro durations, sleep hours, default startup page, CalDAV auto-sync toggle.
 
-Research diary entries and literature records share the `ResearchLogEntry` structure. Literature records are entries where `kind === "literature"`.
+Research diary entries and literature records share the `ResearchLogEntry` structure. Literature records are entries where `kind === "literature"`. Admin and student workflows use their own record types, not research log kinds.
 
 ## Architecture
 
@@ -64,6 +64,17 @@ Research diary entries and literature records share the `ResearchLogEntry` struc
 - **Routing**: react-router (`BrowserRouter`) with `NavLink` / `navigate()`, URL-driven page and project detail (`/projects/:projectId`)
 - **State management**: Three-layer architecture — entity hooks for single-entity CRUD, `useScheduleActions` for ScheduleBlock + Task cross-entity logic, `usePomodoroTimer` / `useStopwatchTimer` for continuously running timer state
 - **API**: Per-entity REST endpoints (`/api/projects`, `/api/tasks`, etc.) plus `/api/state` for full sync, `/api/search` for global search, `/api/settings` for user preferences
+
+## Time View
+
+The app uses a `selectedDate` concept (`AppContext.date` / `setDate`). Views display data for the selected date, not necessarily today.
+
+- Sidebar "Today" (route `/today`) is a shortcut: sets `selectedDate` to today and opens the daily view. The component is `DailyPage.tsx`.
+- Daily view (`DailyPage`) displays the selected date, not a hard-coded "today".
+- Planner shows the week containing the selected date.
+- Summary page generates a report for the selected date.
+- ToolPanel calendar changes `selectedDate` only; it does not navigate to a different page.
+- Current-time indicators (e.g., planner "now" line) use the real current date, not `selectedDate`.
 
 ## Development
 
@@ -160,7 +171,7 @@ focus-planner/
 │   │   └── useAppContext.tsx     # React Context composing all entity hooks + settings + UI state
 │   ├── pages/
 │   │   ├── PlannerPage.tsx   # weekly planner timeline
-│   │   ├── TodayPage.tsx     # today's TODO list
+│   │   ├── DailyPage.tsx     # selected-date daily view (route: /today)
 │   │   ├── ProjectsPage.tsx  # project management
 │   │   ├── ResearchLogPage.tsx # research diary + literature (unified, editable)
 │   │   ├── HabitsPage.tsx    # habit tracker
