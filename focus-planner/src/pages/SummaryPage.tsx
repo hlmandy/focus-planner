@@ -1,12 +1,14 @@
 import { useMemo } from 'react'
 import { Copy, Save } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
+import { DateHeader } from '../components/DateHeader'
 import {
   durationText,
   timeText,
   blockTitleText,
-  researchLogKindLabels,
+  logKindLabels,
   isProjectTask,
+  getDateLabel,
 } from '../utils'
 
 export function SummaryPage() {
@@ -80,8 +82,9 @@ export function SummaryPage() {
       0,
     )
     const doneHabits = habits.items.filter(habit => habitEntryKeys.has(`${habit.id}:${date}`))
+    const dayLabel = getDateLabel(date)
     const lines = [
-      `# 今日总结 ${date}`,
+      `# ${dayLabel}总结 ${date}`,
       '',
       `- 计划时间：${durationText(selectedDayMinutes)}`,
       `- 完成时间：${durationText(completedMinutes)}`,
@@ -90,7 +93,7 @@ export function SummaryPage() {
       `- 研究日记：${selectedDayLogs.length}`,
       `- 完成习惯：${doneHabits.length}`,
       '',
-      '## 今日安排',
+      `## ${dayLabel}的安排`,
       ...(selectedDayBlocks.length
         ? selectedDayBlocks.map(block => {
             const task = block.taskId ? tasksById[block.taskId] : undefined
@@ -117,7 +120,7 @@ export function SummaryPage() {
             const note = entry.note ? `\n  - ${entry.note}` : ''
             const findings = entry.keyFindings ? `\n  - 关键结论：${entry.keyFindings}` : ''
             const next = entry.nextAction ? `\n  - 下一步：${entry.nextAction}` : ''
-            return `- ${researchLogKindLabels[entry.kind]}｜${entry.title}（${project?.name ?? '工作项目'}${source}${attachments}）${note}${findings}${next}`
+            return `- ${logKindLabels[entry.kind]}｜${entry.title}（${project?.name ?? '工作项目'}${source}${attachments}）${note}${findings}${next}`
           })
         : ['- 无']),
       '',
@@ -191,7 +194,7 @@ export function SummaryPage() {
             const findings = entry.keyFindings ? `\n  > 关键结论：${entry.keyFindings}` : ''
             const next = entry.nextAction ? `\n  > 下一步：${entry.nextAction}` : ''
             const status = ` [${entry.readingStatus === 'unread' ? '未读' : entry.readingStatus === 'reading' ? '阅读中' : entry.readingStatus === 'read' ? '已读' : '已复盘'}]`
-            return `- **${entry.title}** (${entry.date}) [${researchLogKindLabels[entry.kind]}]${status}${source}${attachments}${note}${findings}${next}`
+            return `- **${entry.title}** (${entry.date}) [${logKindLabels[entry.kind]}]${status}${source}${attachments}${note}${findings}${next}`
           })
         : ['- 暂无日记']),
       '',
@@ -230,6 +233,7 @@ export function SummaryPage() {
 
   return (
     <div className="summary-page">
+      <DateHeader />
       {/* Project selector */}
       <div className="summary-controls">
         <select
@@ -237,7 +241,7 @@ export function SummaryPage() {
           onChange={e => setProjectFilterId(e.target.value)}
           aria-label="选择项目"
         >
-          <option value="all">今日总结</option>
+          <option value="all">日总结</option>
           {projects.items
             .filter(p => p.status !== 'archived')
             .map(p => (
@@ -252,7 +256,7 @@ export function SummaryPage() {
             className="btn btn-ghost outline-action"
             onClick={() => setProjectFilterId('all')}
           >
-            回到今日总结
+            回到日总结
           </button>
         )}
       </div>

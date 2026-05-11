@@ -5,14 +5,17 @@
 export const PROJECT_KINDS = ['research', 'admin'] as const
 export const PROJECT_STATUSES = ['active', 'paused', 'done', 'archived'] as const
 export const THESIS_STAGES = ['topic', 'proposal', 'draft', 'revision', 'final'] as const
+export const LOG_TYPES = ['research', 'admin', 'student'] as const
+
 export const RESEARCH_LOG_KINDS = [
   'literature',
-  'experiment',
-  'analysis',
   'writing',
-  'meeting',
-  'admin',
+  'experiment',
 ] as const
+
+export const ADMIN_LOG_KINDS = ['admin'] as const
+
+export const STUDENT_LOG_KINDS = ['guidance'] as const
 export const TASK_SOURCES = ['task', 'schedule'] as const
 export const SCHEDULE_BLOCK_TYPES = ['task', 'diary'] as const
 export const DIARY_CATEGORIES = [
@@ -31,7 +34,11 @@ export const READING_STATUSES = ['unread', 'reading', 'read', 'reviewed'] as con
 export type ProjectKind = (typeof PROJECT_KINDS)[number]
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number]
 export type ThesisStage = (typeof THESIS_STAGES)[number]
+export type LogType = (typeof LOG_TYPES)[number]
 export type ResearchLogKind = (typeof RESEARCH_LOG_KINDS)[number]
+export type AdminLogKind = (typeof ADMIN_LOG_KINDS)[number]
+export type StudentLogKind = (typeof STUDENT_LOG_KINDS)[number]
+export type LogKind = ResearchLogKind | AdminLogKind | StudentLogKind
 export type TaskSource = (typeof TASK_SOURCES)[number]
 export type ScheduleBlockType = (typeof SCHEDULE_BLOCK_TYPES)[number]
 export type DiaryCategory = (typeof DIARY_CATEGORIES)[number]
@@ -101,7 +108,8 @@ export interface ResearchLogEntry {
   id: string
   date: string
   projectId: string
-  kind: ResearchLogKind
+  logType: LogType
+  kind: LogKind
   title: string
   source: string
   note: string

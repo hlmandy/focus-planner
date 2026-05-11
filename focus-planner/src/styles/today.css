@@ -701,3 +701,56 @@
   color: var(--muted);
   text-decoration: line-through;
 }
+
+/* ===== DateHeader ===== */
+.date-header {
+  width: min(600px, 100%);
+  display: grid;
+  gap: 8px;
+}
+
+.date-header-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.date-header-label {
+  font-size: 20px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.date-header-date {
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.date-header-marker {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 99px;
+}
+
+.date-header-marker.rest {
+  background: #fff4c7;
+  color: #b36b00;
+}
+
+.date-header-marker.work {
+  background: #eef3f6;
+  color: #7b8ca2;
+}
+
+.date-header-nav {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.date-header-nav .btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

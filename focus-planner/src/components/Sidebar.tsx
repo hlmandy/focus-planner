@@ -16,7 +16,7 @@ import {
   Briefcase,
 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
-import { uid } from '../utils'
+import { uid, todayKey } from '../utils'
 import { reportApiError } from '../api/client'
 import { colors, projectTemplateGoals } from '../constants'
 import { getProjectIcon } from '../utils/projectIcons'
@@ -52,6 +52,7 @@ export function Sidebar() {
     isSidebarOpen,
     setIsSidebarOpen,
     setPomodoroProjectId,
+    setDate,
   } = useApp()
 
   const navigate = useNavigate()
@@ -120,7 +121,7 @@ export function Sidebar() {
         {isSidebarOpen ? '‹' : '›'}
       </button>
       <nav className="nav-list">
-        <NavLink to="/today" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+        <NavLink to="/today" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} onClick={() => setDate(todayKey())}>
           <CalendarDays size={18} />
           <span>今天</span>
         </NavLink>

@@ -8,11 +8,8 @@ import type { ResearchLogKind, ReadingStatus } from '../../shared/types'
 const kindOptions: { value: ResearchLogKind | 'all'; label: string }[] = [
   { value: 'all', label: '全部' },
   { value: 'literature', label: '文献' },
-  { value: 'experiment', label: '实验' },
-  { value: 'analysis', label: '分析' },
   { value: 'writing', label: '写作' },
-  { value: 'meeting', label: '讨论' },
-  { value: 'admin', label: '事务' },
+  { value: 'experiment', label: '实验' },
 ]
 
 export function ResearchLogPage() {
@@ -41,6 +38,7 @@ export function ResearchLogPage() {
   const visibleLogs = useMemo(
     () =>
       researchLogs.items
+        .filter(entry => entry.logType === 'research')
         .filter(entry => kindFilter === 'all' || entry.kind === kindFilter)
         .filter(entry => projectFilterId === 'all' || entry.projectId === projectFilterId)
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
@@ -68,6 +66,7 @@ export function ResearchLogPage() {
         projectFilterId === 'all'
           ? projects.items[0]?.id ?? ''
           : projectFilterId,
+      logType: 'research' as const,
       kind: quickKind,
       title: title || researchLogKindLabels[quickKind],
       source: '',

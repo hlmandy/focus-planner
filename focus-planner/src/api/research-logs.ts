@@ -2,10 +2,11 @@ import { api } from './client'
 import type { ResearchLogEntry } from '../../shared/types'
 
 export const researchLogsApi = {
-  list: (params?: { projectId?: string; kind?: string; from?: string; to?: string }) => {
+  list: (params?: { projectId?: string; kind?: string; logType?: string; from?: string; to?: string }) => {
     const qs = new URLSearchParams()
     if (params?.projectId) qs.set('projectId', params.projectId)
     if (params?.kind) qs.set('kind', params.kind)
+    if (params?.logType) qs.set('logType', params.logType)
     if (params?.from) qs.set('from', params.from)
     if (params?.to) qs.set('to', params.to)
     const suffix = qs.toString() ? `?${qs}` : ''

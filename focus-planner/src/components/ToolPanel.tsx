@@ -191,6 +191,7 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
         id: uid(),
         date,
         projectId,
+        logType: 'research',
         kind: quickLogKind,
         title: text.length <= 60 ? text : '研究笔记',
         source: '',
@@ -770,11 +771,8 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
               aria-label="记录类型"
             >
               <option value="literature">文献</option>
-              <option value="experiment">实验</option>
-              <option value="analysis">分析</option>
               <option value="writing">写作</option>
-              <option value="meeting">讨论</option>
-              <option value="admin">事务</option>
+              <option value="experiment">实验</option>
             </select>
           </div>
         )}
@@ -828,7 +826,6 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
                   className={`${date === dayKey ? 'active' : ''} ${dayKey === todayKey() ? 'today' : ''} ${isCurrentMonth ? '' : 'outside'} ${dayInfo.isRestDay ? 'rest-day' : ''} ${dayInfo.isAdjustedWorkday ? 'workday-adjusted' : ''}`}
                   onClick={() => {
                     setDate(dayKey)
-                    navigate('/planner')
                   }}
                   title={dayInfo.label}
                 >

@@ -1,14 +1,17 @@
 import type { Hono } from 'hono'
 import type Database from 'better-sqlite3'
 import type { ResearchLogEntry, ResearchLogRow } from '../types.js'
-import { RESEARCH_LOG_KINDS } from '../types.js'
+import { LOG_TYPES, RESEARCH_LOG_KINDS, ADMIN_LOG_KINDS, STUDENT_LOG_KINDS } from '../types.js'
 import { requireFields, checkEnum, jsonStrArray, safeJsonParse } from '../validate.js'
+
+const ALL_KINDS = [...RESEARCH_LOG_KINDS, ...ADMIN_LOG_KINDS, ...STUDENT_LOG_KINDS]
 
 function toLog(r: ResearchLogRow): ResearchLogEntry {
   return {
     id: r.id,
     date: r.date,
     projectId: r.project_id,
+    logType: (r.log_type ?? 'research') as ResearchLogEntry['logType'],
     kind: r.kind as ResearchLogEntry['kind'],
     title: r.title,
     source: r.source,
@@ -35,6 +38,11 @@ export function researchLogRoutes(app: Hono, db: Database.Database) {
       sql += ' AND kind = ?'
       params.push(kind)
     }
+    const logType = c.req.query('logType')
+    if (logType) {
+      sql += ' AND log_type = ?'
+      params.push(logType)
+    }
     const from = c.req.query('from')
     const to = c.req.query('to')
     if (from) {
@@ -59,16 +67,19 @@ export function researchLogRoutes(app: Hono, db: Database.Database) {
 
   app.post('/api/research-logs', async c => {
     const body = await c.req.json()
+    const logType = body.logType ?? 'research'
     const err =
       requireFields(body, ['id', 'date', 'projectId', 'kind', 'title']) ||
-      checkEnum(body.kind, RESEARCH_LOG_KINDS, 'kind')
+      checkEnum(logType, LOG_TYPES, 'logType') ||
+      checkEnum(body.kind, ALL_KINDS, 'kind')
     if (err) return c.json({ error: err }, 400)
     db.prepare(
-      `INSERT INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO research_logs (id, date, project_id, log_type, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).run(
       body.id,
       body.date,
       body.projectId,
+      logType,
       body.kind,
       body.title,
       body.source ?? '',
@@ -94,14 +105,17 @@ export function researchLogRoutes(app: Hono, db: Database.Database) {
     const current = toLog(row)
     const next = { ...current, ...body }
 
-    const err = checkEnum(next.kind, RESEARCH_LOG_KINDS, 'kind')
-    if (err) return c.json({ error: err }, 400)
+    const kindErr = checkEnum(next.kind, ALL_KINDS, 'kind')
+    if (kindErr) return c.json({ error: kindErr }, 400)
+    const logTypeErr = checkEnum(next.logType, LOG_TYPES, 'logType')
+    if (logTypeErr) return c.json({ error: logTypeErr }, 400)
 
     db.prepare(
-      `UPDATE research_logs SET date = ?, project_id = ?, kind = ?, title = ?, source = ?, note = ?, attachments = ?, reading_status = ?, key_findings = ?, next_action = ? WHERE id = ?`,
+      `UPDATE research_logs SET date = ?, project_id = ?, log_type = ?, kind = ?, title = ?, source = ?, note = ?, attachments = ?, reading_status = ?, key_findings = ?, next_action = ? WHERE id = ?`,
     ).run(
       next.date,
       next.projectId,
+      next.logType,
       next.kind,
       next.title,
       next.source ?? '',

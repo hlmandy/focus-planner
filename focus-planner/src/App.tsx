@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router'
 import './App.css'
 import type { AppState, PersistenceStatus } from '../shared/types'
-import { todayKey } from './utils'
+import { todayKey, getDateLabel } from './utils'
 import { pageLabels } from './constants'
 import { loadState } from './seed'
 import { AppProvider, useApp } from './hooks/useAppContext'
@@ -78,7 +78,7 @@ function AppShell() {
 }
 
 function AppShellInner({ shellRef }: { shellRef: React.RefObject<HTMLElement | null> }) {
-  const { projects, isSidebarOpen, isToolPanelOpen, setIsToolPanelOpen } = useApp()
+  const { projects, isSidebarOpen, isToolPanelOpen, setIsToolPanelOpen, date } = useApp()
   const location = useLocation()
 
   // Derive page name from current path for header title and CSS class
@@ -105,8 +105,10 @@ function AppShellInner({ shellRef }: { shellRef: React.RefObject<HTMLElement | n
       const project = projects.items.find(p => p.id === projectIdFromUrl)
       if (project) return project.name
     }
+    if (page === 'today') return getDateLabel(date)
+    if (page === 'summary') return `${getDateLabel(date)}总结`
     return pageLabels[page] ?? ''
-  }, [page, projectIdFromUrl, projects.items])
+  }, [page, projectIdFromUrl, projects.items, date])
 
   // Auto-collapse tool panel when window drops below 1320px
   useEffect(() => {

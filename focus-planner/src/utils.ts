@@ -1,4 +1,4 @@
-import type { BlockViewStatus, Project, ResearchLogKind, ScheduleBlock, Task } from './types'
+import type { BlockViewStatus, LogKind, LogType, Project, ResearchLogKind, AdminLogKind, ScheduleBlock, StudentLogKind, Task } from './types'
 
 export const toDateKey = (date: Date) => {
   const y = date.getFullYear()
@@ -151,11 +151,51 @@ export const getTaskDescendantIds = (taskId: string, tasks: Task[]): string[] =>
   return childIds.flatMap(childId => [childId, ...getTaskDescendantIds(childId, tasks)])
 }
 
+export const logTypeLabels: Record<LogType, string> = {
+  research: '研究日志',
+  admin: '事务记录',
+  student: '学生指导',
+}
+
 export const researchLogKindLabels: Record<ResearchLogKind, string> = {
   literature: '文献',
-  experiment: '实验',
-  analysis: '分析',
   writing: '写作',
-  meeting: '讨论',
+  experiment: '实验',
+}
+
+export const adminLogKindLabels: Record<AdminLogKind, string> = {
   admin: '事务',
+}
+
+export const studentLogKindLabels: Record<StudentLogKind, string> = {
+  guidance: '指导',
+}
+
+export const logKindLabels: Record<LogKind, string> = {
+  ...researchLogKindLabels,
+  ...adminLogKindLabels,
+  ...studentLogKindLabels,
+}
+
+export type DateRelation = 'past' | 'today' | 'future'
+
+export const getDateRelation = (dateKey: string): DateRelation => {
+  const today = todayKey()
+  return dateKey < today ? 'past' : dateKey > today ? 'future' : 'today'
+}
+
+export const getDateLabel = (dateKey: string): string => {
+  const today = todayKey()
+  const relation = getDateRelation(dateKey)
+  if (relation === 'today') return '今天'
+  const d = fromDateKey(dateKey)
+  const diff = Math.round((fromDateKey(today).getTime() - d.getTime()) / 86400000)
+  if (diff === 1) return '昨天'
+  if (diff === -1) return '明天'
+  return `${d.getMonth() + 1}月${d.getDate()}日`
+}
+
+export const formatDateChinese = (dateKey: string): string => {
+  const d = fromDateKey(dateKey)
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
 }

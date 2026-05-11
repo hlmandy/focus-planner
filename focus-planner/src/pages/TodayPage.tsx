@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { useApp } from '../hooks/useAppContext'
 import { useScheduleActions } from '../hooks/useScheduleActions'
+import { DateHeader } from '../components/DateHeader'
 import {
   isProjectTask,
   getTaskDescendantIds,
@@ -27,10 +28,13 @@ import {
   clamp,
   snap,
   getFallbackProjectId,
+  todayKey,
+  getDateRelation,
+  getDateLabel,
 } from '../utils'
 import { DAY_START, DAY_END, MIN_BLOCK, diaryCategoryLabels } from '../constants'
-import { researchLogKindLabels } from '../utils'
-import type { DiaryCategory, ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
+import { researchLogKindLabels, logTypeLabels } from '../utils'
+import type { DiaryCategory, LogType, LogKind, ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
 
 interface BlockEditForm {
   title: string
@@ -56,6 +60,10 @@ export function TodayPage() {
 
   const navigate = useNavigate()
   const scheduleActions = useScheduleActions()
+
+  const relation = getDateRelation(date)
+  const dayLabel = getDateLabel(date)
+  const realToday = todayKey()
 
   // --- Quick-add state ---
   const [quickInput, setQuickInput] = useState('')
@@ -87,6 +95,7 @@ export function TodayPage() {
 
   // --- Quick-log state ---
   const [quickLogText, setQuickLogText] = useState('')
+  const [quickLogType, setQuickLogType] = useState<LogType>('research')
   const [quickLogKind, setQuickLogKind] = useState<ResearchLogKind>('writing')
   const [quickLogProject, setQuickLogProject] = useState('')
 
@@ -210,13 +219,21 @@ export function TodayPage() {
     setQuickInput('')
   }
 
-  const addQuickLog = (kind = quickLogKind) => {
+  const addQuickLog = (
+    logType: LogType = quickLogType,
+    kind: LogKind = logType === 'research'
+      ? quickLogKind
+      : logType === 'admin'
+        ? 'admin'
+        : 'guidance',
+  ) => {
     if (!quickLogText.trim()) return
     researchLogs
       .create({
         id: uid(),
         date,
         projectId: effectiveLogProject,
+        logType,
         kind,
         title: quickLogText.trim(),
         source: '',
@@ -393,6 +410,7 @@ export function TodayPage() {
         id: uid(),
         date,
         projectId: task.projectId,
+        logType: 'research',
         kind: 'writing',
         title: task.title,
         source: '',
@@ -406,37 +424,30 @@ export function TodayPage() {
       .catch(reportApiError)
   }
 
-  const todayDateText = (() => {
-    const d = new Date()
-    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
-  })()
-
   return (
     <div className="center-page">
-      {/* ===== 1. 今日概览 ===== */}
-      <div className="today-overview">
-        <div className="today-date">{todayDateText}</div>
-        <div className="today-stats-row">
-          <div className="today-stat-pill">
-            <Flame size={14} />
-            <span>专注 {todayPomodoroMinutes}m</span>
-          </div>
-          <div className="today-stat-pill">
-            <Check size={14} />
-            <span>完成 {completedTasksCount} 个任务</span>
-          </div>
-          <div className="today-stat-pill">
-            <BookOpen size={14} />
-            <span>{todayResearchLogCount} 条记录</span>
-          </div>
+      {/* ===== 1. 日概览 ===== */}
+      <DateHeader />
+      <div className="today-stats-row">
+        <div className="today-stat-pill">
+          <Flame size={14} />
+          <span>专注 {todayPomodoroMinutes}m</span>
+        </div>
+        <div className="today-stat-pill">
+          <Check size={14} />
+          <span>完成 {completedTasksCount} 个任务</span>
+        </div>
+        <div className="today-stat-pill">
+          <BookOpen size={14} />
+          <span>{todayResearchLogCount} 条记录</span>
         </div>
       </div>
 
-      {/* ===== 2. 今天的安排 ===== */}
+      {/* ===== 2. 当日安排 ===== */}
       <div className="today-section">
         <div className="today-section-header">
           <CalendarClock size={18} />
-          <span>今天的安排</span>
+          <span>{relation === 'today' ? '今天的安排' : '当日安排'}</span>
         </div>
 
         {/* Quick-add bar */}
@@ -445,7 +456,7 @@ export function TodayPage() {
             value={quickInput}
             onChange={e => setQuickInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addQuickItem()}
-            placeholder="添加日程... #标签 @09:00"
+            placeholder={relation === 'future' ? '添加计划... #标签 @09:00' : '添加日程... #标签 @09:00'}
           />
           <select
             value={quickBlockType}
@@ -496,7 +507,7 @@ export function TodayPage() {
         </div>
 
         {todayBlocks.length === 0 ? (
-          <div className="today-section-empty">今天还没有安排，在上方添加吧</div>
+          <div className="today-section-empty">{dayLabel}还没有安排，在上方添加吧</div>
         ) : (
           <div className="today-blocks">
             {todayBlocks.map(block => {
@@ -507,7 +518,7 @@ export function TodayPage() {
                 block.blockType === 'diary'
                   ? block.title || '普通日程'
                   : task?.title || block.title || '未命名任务'
-              const status = getBlockViewStatus(block, task, date, nowMinutes)
+              const status = getBlockViewStatus(block, task, realToday, nowMinutes)
               const isActive = status === 'now'
               const isDone = status === 'done'
               const isEditing = editingBlockId === block.id
@@ -703,7 +714,7 @@ export function TodayPage() {
           </small>
         </div>
         {todayPomodoros.length === 0 ? (
-          <div className="today-section-empty">今天还没有完成记录</div>
+          <div className="today-section-empty">{dayLabel}还没有完成记录</div>
         ) : (
           <>
             <div className="today-completed-summary">
@@ -755,19 +766,37 @@ export function TodayPage() {
             placeholder="我刚刚完成了什么？"
           />
           <select
-            value={quickLogKind}
-            onChange={e => setQuickLogKind(e.target.value as ResearchLogKind)}
-            className="today-quick-log-kind"
-            aria-label="记录类型"
+            value={quickLogType}
+            onChange={e => {
+              const next = e.target.value as LogType
+              setQuickLogType(next)
+              if (next === 'research') setQuickLogKind('writing')
+            }}
+            className="today-quick-log-type"
+            aria-label="记录大类"
           >
-            {(Object.entries(researchLogKindLabels) as [ResearchLogKind, string][]).map(
-              ([k, label]) => (
-                <option key={k} value={k}>
-                  {label}
-                </option>
-              ),
-            )}
+            {(Object.entries(logTypeLabels) as [LogType, string][]).map(([k, label]) => (
+              <option key={k} value={k}>
+                {label}
+              </option>
+            ))}
           </select>
+          {quickLogType === 'research' && (
+            <select
+              value={quickLogKind}
+              onChange={e => setQuickLogKind(e.target.value as ResearchLogKind)}
+              className="today-quick-log-kind"
+              aria-label="研究类型"
+            >
+              {(Object.entries(researchLogKindLabels) as [ResearchLogKind, string][]).map(
+                ([k, label]) => (
+                  <option key={k} value={k}>
+                    {label}
+                  </option>
+                ),
+              )}
+            </select>
+          )}
           <select
             value={quickLogProject}
             onChange={e => setQuickLogProject(e.target.value)}
@@ -795,30 +824,21 @@ export function TodayPage() {
           <button
             type="button"
             className="btn btn-ghost today-log-type-btn"
-            onClick={() => {
-              setQuickLogKind('writing')
-              addQuickLog('writing')
-            }}
+            onClick={() => addQuickLog('research', 'writing')}
           >
             研究日志
           </button>
           <button
             type="button"
             className="btn btn-ghost today-log-type-btn"
-            onClick={() => {
-              setQuickLogKind('admin')
-              addQuickLog('admin')
-            }}
+            onClick={() => addQuickLog('admin', 'admin')}
           >
             事务记录
           </button>
           <button
             type="button"
             className="btn btn-ghost today-log-type-btn"
-            onClick={() => {
-              setQuickLogKind('meeting')
-              addQuickLog('meeting')
-            }}
+            onClick={() => addQuickLog('student', 'guidance')}
           >
             学生指导
           </button>
@@ -933,7 +953,7 @@ export function TodayPage() {
                         type="button"
                         className="btn btn-ghost today-schedule-btn"
                         onClick={() => scheduleTaskQuick(task.id)}
-                        title="安排到今天"
+                        title={relation === 'today' ? '安排到今天' : '安排到这一天'}
                       >
                         <CalendarClock size={13} />
                       </button>

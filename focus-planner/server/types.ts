@@ -5,6 +5,10 @@ export type {
   ProjectStatus,
   ThesisStage,
   ResearchLogKind,
+  AdminLogKind,
+  StudentLogKind,
+  LogKind,
+  LogType,
   TaskSource,
   ScheduleBlockType,
   DiaryCategory,
@@ -51,7 +55,10 @@ export {
   PROJECT_KINDS,
   PROJECT_STATUSES,
   THESIS_STAGES,
+  LOG_TYPES,
   RESEARCH_LOG_KINDS,
+  ADMIN_LOG_KINDS,
+  STUDENT_LOG_KINDS,
   TASK_SOURCES,
   SCHEDULE_BLOCK_TYPES,
   DIARY_CATEGORIES,
@@ -124,6 +131,7 @@ export interface ResearchLogRow {
   id: string
   date: string
   project_id: string
+  log_type: string
   kind: string
   title: string
   source: string
@@ -185,6 +193,7 @@ export interface SearchResearchLogRow {
   id: string
   date: string
   project_id: string
+  log_type: string
   kind: string
   title: string
 }

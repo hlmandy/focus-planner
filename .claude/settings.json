@@ -1,5 +1,7 @@
 {
   "permissions": {
-    "allow": []
+    "allow": [
+      "Bash(./node_modules/.bin/tsc --noEmit)"
+    ]
   }
 }

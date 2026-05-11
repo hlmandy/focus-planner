@@ -107,7 +107,10 @@ CREATE TABLE IF NOT EXISTS research_logs (
   id TEXT PRIMARY KEY,
   date TEXT NOT NULL,
   project_id TEXT NOT NULL,
-  kind TEXT NOT NULL CHECK(kind IN ('literature','experiment','analysis','writing','meeting','admin')),
+  log_type TEXT NOT NULL DEFAULT 'research'
+    CHECK(log_type IN ('research','admin','student')),
+  kind TEXT NOT NULL
+    CHECK(kind IN ('literature','writing','experiment','admin','guidance')),
   title TEXT NOT NULL,
   source TEXT NOT NULL DEFAULT '',
   note TEXT NOT NULL DEFAULT '',
@@ -296,12 +299,13 @@ function migrateFromJson(db: Database.Database): void {
 
     for (const r of state.researchLogs ?? []) {
       db.prepare(
-        `INSERT OR IGNORE INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT OR IGNORE INTO research_logs (id, date, project_id, log_type, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
         r.id,
         r.date,
         r.projectId,
+        (r as { logType?: string }).logType ?? 'research',
         r.kind,
         r.title,
         r.source ?? '',
@@ -473,14 +477,76 @@ export function initDatabase(): Database.Database {
     UPDATE projects SET kind = 'admin' WHERE kind IN ('student');
   `)
 
-  // 8. Add icon column to projects (if migrating from old schema)
+  // 8. Migrate research_logs to two-layer type system (log_type + kind)
+  //    Rebuild table to update CHECK constraints on kind column
+  const logCols = db.prepare('PRAGMA table_info(research_logs)').all() as {
+    name: string
+  }[]
+  const logColNames = new Set(logCols.map(c => c.name))
+  if (!logColNames.has('log_type')) {
+    const hasReadingStatus = logColNames.has('reading_status')
+    const hasKeyFindings = logColNames.has('key_findings')
+    const hasNextAction = logColNames.has('next_action')
+    const trailingCols = [
+      hasReadingStatus ? 'reading_status' : "'unread'",
+      hasKeyFindings ? 'key_findings' : "''",
+      hasNextAction ? 'next_action' : "''",
+    ].join(', ')
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS research_logs_new (
+        id TEXT PRIMARY KEY,
+        date TEXT NOT NULL,
+        project_id TEXT NOT NULL,
+        log_type TEXT NOT NULL DEFAULT 'research'
+          CHECK(log_type IN ('research','admin','student')),
+        kind TEXT NOT NULL
+          CHECK(kind IN ('literature','writing','experiment','admin','guidance')),
+        title TEXT NOT NULL,
+        source TEXT NOT NULL DEFAULT '',
+        note TEXT NOT NULL DEFAULT '',
+        attachments TEXT NOT NULL DEFAULT '[]',
+        created_at TEXT NOT NULL,
+        reading_status TEXT NOT NULL DEFAULT 'unread',
+        key_findings TEXT NOT NULL DEFAULT '',
+        next_action TEXT NOT NULL DEFAULT '',
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+      );
+
+      INSERT INTO research_logs_new
+        (id, date, project_id, log_type, kind, title, source, note, attachments,
+         created_at, reading_status, key_findings, next_action)
+      SELECT
+        id, date, project_id,
+        CASE
+          WHEN kind = 'admin' THEN 'admin'
+          WHEN kind = 'meeting' THEN 'student'
+          ELSE 'research'
+        END,
+        CASE
+          WHEN kind = 'analysis' THEN 'writing'
+          WHEN kind = 'meeting' THEN 'guidance'
+          WHEN kind = 'admin' THEN 'admin'
+          ELSE kind
+        END,
+        title, source, note, attachments, created_at, ${trailingCols}
+      FROM research_logs;
+
+      DROP TABLE research_logs;
+      ALTER TABLE research_logs_new RENAME TO research_logs;
+
+      CREATE INDEX IF NOT EXISTS idx_research_logs_project_date
+        ON research_logs(project_id, date);
+    `)
+  }
+
+  // 9. Add icon column to projects (if migrating from old schema)
   const projectCols = db.prepare(`PRAGMA table_info(projects)`).all() as Array<{ name: string }>
   const hasIcon = projectCols.some(col => col.name === 'icon')
   if (!hasIcon) {
     db.exec(`ALTER TABLE projects ADD COLUMN icon TEXT NOT NULL DEFAULT 'flask'`)
   }
 
-  // 9. Add start_min/end_min columns to pomodoro_sessions (for done-block timeline)
+  // 10. Add start_min/end_min columns to pomodoro_sessions (for done-block timeline)
   const pomodoroCols = db.prepare('PRAGMA table_info(pomodoro_sessions)').all() as {
     name: string
   }[]
@@ -603,6 +669,7 @@ export function loadFullState(db: Database.Database): AppState {
       id: row.id,
       date: row.date,
       projectId: row.project_id,
+      logType: (row.log_type ?? 'research') as ResearchLogEntry['logType'],
       kind: row.kind as ResearchLogEntry['kind'],
       title: row.title,
       source: row.source,
@@ -672,8 +739,8 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
       db.prepare(`INSERT INTO thesis_students (id, project_id, name, topic, stage, next_milestone, due_date, notes, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     const insLog =
-      db.prepare(`INSERT INTO research_logs (id, date, project_id, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      db.prepare(`INSERT INTO research_logs (id, date, project_id, log_type, kind, title, source, note, attachments, created_at, reading_status, key_findings, next_action)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     const insPomodoro =
       db.prepare(`INSERT INTO pomodoro_sessions (id, project_id, date, minutes, start_min, end_min, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)`)
@@ -730,6 +797,7 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
         r.id,
         r.date,
         r.projectId,
+        (r as { logType?: string }).logType ?? 'research',
         r.kind,
         r.title,
         r.source,

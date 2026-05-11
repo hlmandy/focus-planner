@@ -39,13 +39,14 @@ export function searchRoutes(app: Hono, db: Database.Database) {
     const researchLogs = (
       db
         .prepare(
-          `SELECT id, date, project_id, kind, title FROM research_logs WHERE title LIKE ? OR note LIKE ?`,
+          `SELECT id, date, project_id, log_type, kind, title FROM research_logs WHERE title LIKE ? OR note LIKE ?`,
         )
         .all(pattern, pattern) as SearchResearchLogRow[]
     ).map(r => ({
       id: r.id,
       date: r.date,
       projectId: r.project_id,
+      logType: r.log_type ?? 'research',
       kind: r.kind,
       title: r.title,
     }))
