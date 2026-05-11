@@ -1,5 +1,5 @@
 import type { AppState, LegacyState, Project, ProjectKind, ScheduleBlock, Task } from './types'
-import { todayKey, uid } from './utils'
+import { todayKey, uid, plannerDateTimeOf } from './utils'
 import {
   STORAGE_KEY,
   legacyProjectIdMap,
@@ -188,15 +188,19 @@ export const normalizeState = (state: LegacyState): AppState => {
     })),
     pomodoroSessions: (state.pomodoroSessions ?? []).map(session => {
       const createdAt = session.createdAt ?? new Date().toISOString()
-      const createdDate = new Date(createdAt)
-      const endMin = createdDate.getHours() * 60 + createdDate.getMinutes()
+      const ts = new Date(createdAt).getTime()
+      const end = plannerDateTimeOf(ts, '07:00')
+      const start = plannerDateTimeOf(Math.max(0, ts - (session.minutes ?? 25) * 60000), '07:00')
+      const startMinute = start.date === end.date
+        ? start.minute
+        : Math.max(0, end.minute - (session.minutes ?? 25))
       return {
         ...session,
         projectId: resolveProjectId(session.projectId, projects),
-        date: session.date ?? todayKey(),
+        date: (session as { date?: string }).date ?? end.date,
         minutes: session.minutes ?? 25,
-        start: (session as { start?: number }).start ?? Math.max(0, endMin - (session.minutes ?? 25)),
-        end: (session as { end?: number }).end ?? endMin,
+        start: (session as { start?: number }).start ?? startMinute,
+        end: (session as { end?: number }).end ?? end.minute,
         createdAt,
       }
     }),

@@ -188,10 +188,10 @@ function timestamp(): string {
     .replace(/\.\d{3}Z$/, 'Z')
 }
 
-function minuteFromIso(iso: string): number {
+function minuteFromIso(iso: string, sleepEndHour = 7): number {
   const d = new Date(iso)
   const m = d.getHours() * 60 + d.getMinutes()
-  return d.getHours() < 3 ? m + 1440 : m
+  return d.getHours() < sleepEndHour ? m + 1440 : m
 }
 
 function migrateFromJson(db: Database.Database): void {
@@ -529,6 +529,9 @@ export function rotateBackups(maxBackups = 30): void {
 }
 
 export function loadFullState(db: Database.Database): AppState {
+  const userConfig = db.prepare('SELECT sleep_end FROM user_config WHERE id = 1').get() as { sleep_end: string } | undefined
+  const sleepEndHour = userConfig ? parseInt(userConfig.sleep_end.split(':')[0], 10) || 7 : 7
+
   const projects = (db.prepare('SELECT * FROM projects').all() as ProjectRow[]).map(row => ({
     id: row.id,
     name: row.name,
@@ -615,7 +618,7 @@ export function loadFullState(db: Database.Database): AppState {
   const pomodoroSessions = (
     db.prepare('SELECT * FROM pomodoro_sessions').all() as PomodoroSessionRow[]
   ).map(row => {
-    const endMin = row.end_min ?? minuteFromIso(row.created_at)
+    const endMin = row.end_min ?? minuteFromIso(row.created_at, sleepEndHour)
     return {
       id: row.id,
       projectId: row.project_id,

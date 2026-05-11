@@ -29,6 +29,7 @@ import {
   parseQuickInput,
   getFallbackProjectId,
   blockDateText,
+  plannerDateTimeOf,
 } from '../utils'
 import { DAY_START, DAY_END, getCalendarDayInfo } from '../constants'
 import type { ScheduleBlock, Task, ResearchLogKind } from '../../shared/types'
@@ -470,16 +471,20 @@ export function ToolPanel({ onCollapse }: ToolPanelProps) {
                 onClick={() => {
                   const mins = Math.max(1, Math.round(stopwatch.elapsedSeconds / 60))
                   const now = Date.now()
-                  const nowMin = new Date(now).getHours() * 60 + new Date(now).getMinutes()
-                  const startMin = new Date(now - stopwatch.elapsedSeconds * 1000).getHours() * 60 + new Date(now - stopwatch.elapsedSeconds * 1000).getMinutes()
+                  const end = plannerDateTimeOf(now, settings.sleepEnd)
+                  const start = plannerDateTimeOf(now - stopwatch.elapsedSeconds * 1000, settings.sleepEnd)
+                  const startMinute =
+                    start.date === end.date
+                      ? start.minute
+                      : Math.max(0, end.minute - mins)
                   pomodoroSessions
                     .create({
                       id: uid(),
                       projectId: stopwatchProjectId,
-                      date: todayKey(),
+                      date: end.date,
                       minutes: mins,
-                      start: startMin,
-                      end: nowMin,
+                      start: startMinute,
+                      end: end.minute,
                       createdAt: new Date(now).toISOString(),
                     })
                     .catch(reportApiError)

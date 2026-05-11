@@ -9,6 +9,28 @@ export const toDateKey = (date: Date) => {
 
 export const todayKey = () => toDateKey(new Date())
 
+export function clockToMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(':').map(Number)
+  return h * 60 + m
+}
+
+export function plannerDateTimeOf(
+  ts: number,
+  sleepEnd: string,
+): { date: string; minute: number } {
+  const d = new Date(ts)
+  const rawMinute = d.getHours() * 60 + d.getMinutes()
+  const sleepEndMinute = clockToMinutes(sleepEnd)
+
+  if (rawMinute < sleepEndMinute) {
+    const previous = new Date(d)
+    previous.setDate(previous.getDate() - 1)
+    return { date: toDateKey(previous), minute: rawMinute + 1440 }
+  }
+
+  return { date: toDateKey(d), minute: rawMinute }
+}
+
 export const fromDateKey = (key: string) => {
   const [y, m, d] = key.split('-').map(Number)
   return new Date(y, m - 1, d)

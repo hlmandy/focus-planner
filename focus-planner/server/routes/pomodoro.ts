@@ -3,14 +3,14 @@ import type Database from 'better-sqlite3'
 import type { PomodoroSession, PomodoroSessionRow } from '../types.js'
 import { requireFields } from '../validate.js'
 
-function minuteFromIso(iso: string): number {
+function minuteFromIso(iso: string, sleepEndHour = 7): number {
   const d = new Date(iso)
   const m = d.getHours() * 60 + d.getMinutes()
-  return d.getHours() < 3 ? m + 1440 : m
+  return d.getHours() < sleepEndHour ? m + 1440 : m
 }
 
-function toPomodoroSession(r: PomodoroSessionRow): PomodoroSession {
-  const end = r.end_min ?? minuteFromIso(r.created_at)
+function toPomodoroSession(r: PomodoroSessionRow, sleepEndHour: number): PomodoroSession {
+  const end = r.end_min ?? minuteFromIso(r.created_at, sleepEndHour)
   return {
     id: r.id,
     projectId: r.project_id,
@@ -23,7 +23,13 @@ function toPomodoroSession(r: PomodoroSessionRow): PomodoroSession {
 }
 
 export function pomodoroRoutes(app: Hono, db: Database.Database) {
+  const getSleepEndHour = (): number => {
+    const row = db.prepare('SELECT sleep_end FROM user_config WHERE id = 1').get() as { sleep_end: string } | undefined
+    return row ? parseInt(row.sleep_end.split(':')[0], 10) || 7 : 7
+  }
+
   app.get('/api/pomodoro-sessions', c => {
+    const sleepEndHour = getSleepEndHour()
     let sql = 'SELECT * FROM pomodoro_sessions WHERE 1=1'
     const params: string[] = []
 
@@ -47,7 +53,7 @@ export function pomodoroRoutes(app: Hono, db: Database.Database) {
     sql += ' ORDER BY date DESC, created_at DESC'
 
     return c.json({
-      items: (db.prepare(sql).all(...params) as PomodoroSessionRow[]).map(toPomodoroSession),
+      items: (db.prepare(sql).all(...params) as PomodoroSessionRow[]).map(r => toPomodoroSession(r, sleepEndHour)),
     })
   })
 

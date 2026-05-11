@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { reportApiError } from '../api/client'
-import { todayKey, uid } from '../utils'
+import { plannerDateTimeOf, uid } from '../utils'
 import { useApp } from './useAppContext'
 import type { PomodoroSession } from '../../shared/types'
 
@@ -43,6 +43,7 @@ interface PersistedPomodoroState {
   secondsLeft: number
   endsAt: number | null
   roundId: string
+  startedAt: number | null
 }
 
 const STORAGE_KEY = 'focus-planner:pomodoro-timer'
@@ -65,11 +66,6 @@ function writePersistedState(state: PersistedPomodoroState) {
 function clampRemaining(endsAt: number | null, fallback: number) {
   if (!endsAt) return fallback
   return Math.max(0, Math.ceil((endsAt - Date.now()) / 1000))
-}
-
-function minuteOfDay(ts: number): number {
-  const d = new Date(ts)
-  return d.getHours() * 60 + d.getMinutes()
 }
 
 async function requestNotificationPermission() {
@@ -118,7 +114,7 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const completingRef = useRef(false)
-  const startedAtRef = useRef<number | null>(null)
+  const startedAtRef = useRef<number | null>(initial?.startedAt ?? null)
 
   const totalSeconds = mode === 'work' ? workSeconds : breakSeconds
 
@@ -143,18 +139,25 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
     try {
       if (mode === 'work') {
         const now = Date.now()
-        const endMin = minuteOfDay(now)
+        const end = plannerDateTimeOf(now, settings.sleepEnd)
         const startedAt = startedAtRef.current
-        const startMin = startedAt != null ? minuteOfDay(startedAt) : Math.max(0, endMin - settings.workDuration)
+        const start = startedAt
+          ? plannerDateTimeOf(startedAt, settings.sleepEnd)
+          : { date: end.date, minute: Math.max(0, end.minute - settings.workDuration) }
         startedAtRef.current = null
+
+        const startMinute =
+          start.date === end.date
+            ? start.minute
+            : Math.max(0, end.minute - settings.workDuration)
 
         const session: PomodoroSession = {
           id: roundId,
           projectId: pomodoroProjectId,
-          date: todayKey(),
+          date: end.date,
           minutes: settings.workDuration,
-          start: startMin,
-          end: endMin,
+          start: startMinute,
+          end: end.minute,
           createdAt: new Date(now).toISOString(),
         }
         pomodoroSessions.create(session).catch(reportApiError)
@@ -178,6 +181,7 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
           secondsLeft: nextSeconds,
           endsAt: null,
           roundId: nextRoundId,
+          startedAt: null,
         })
       } else {
         emitReminder({
@@ -200,12 +204,13 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
           secondsLeft: nextSeconds,
           endsAt: null,
           roundId: nextRoundId,
+          startedAt: null,
         })
       }
     } finally {
       completingRef.current = false
     }
-  }, [mode, roundId, pomodoroProjectId, pomodoroSessions, settings.workDuration, workSeconds, breakSeconds, emitReminder])
+  }, [mode, roundId, pomodoroProjectId, pomodoroSessions, settings.workDuration, settings.sleepEnd, workSeconds, breakSeconds, emitReminder])
 
   const reset = useCallback(
     (nextMode: PomodoroMode = mode) => {
@@ -225,6 +230,7 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
         secondsLeft: nextSeconds,
         endsAt: null,
         roundId: nextRoundId,
+        startedAt: null,
       })
     },
     [mode, workSeconds, breakSeconds],
@@ -232,8 +238,12 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
 
   const start = useCallback(() => {
     void requestNotificationPermission()
-    const nextEndsAt = Date.now() + secondsLeft * 1000
-    startedAtRef.current = Date.now()
+    const now = Date.now()
+    const nextEndsAt = now + secondsLeft * 1000
+
+    if (!startedAtRef.current) {
+      startedAtRef.current = now
+    }
 
     setEndsAt(nextEndsAt)
     setIsRunning(true)
@@ -242,6 +252,7 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
       isRunning: true,
       endsAt: nextEndsAt,
       secondsLeft,
+      startedAt: startedAtRef.current,
     })
   }, [secondsLeft, persist])
 
@@ -256,6 +267,7 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
       isRunning: false,
       endsAt: null,
       secondsLeft: remaining,
+      startedAt: startedAtRef.current,
     })
   }, [endsAt, secondsLeft, persist])
 
