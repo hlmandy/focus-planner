@@ -10,7 +10,7 @@ import { PomodoroTimerProvider, StopwatchTimerProvider } from './hooks/usePomodo
 import { Sidebar } from './components/Sidebar'
 import { ToolPanel } from './components/ToolPanel'
 import { PlannerPage } from './pages/PlannerPage'
-import { TodayPage } from './pages/TodayPage'
+import { DailyPage } from './pages/DailyPage'
 import { ProjectsPage } from './pages/ProjectsPage'
 import { ResearchLogPage } from './pages/ResearchLogPage'
 import { HabitsPage } from './pages/HabitsPage'
@@ -140,7 +140,7 @@ function AppShellInner({ shellRef }: { shellRef: React.RefObject<HTMLElement | n
         <Routes>
           <Route path="/" element={<Navigate to="/planner" replace />} />
           <Route path="/planner" element={<PlannerPage />} />
-          <Route path="/today" element={<TodayPage />} />
+          <Route path="/today" element={<DailyPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/projects/:projectId" element={<ProjectsPage />} />
           <Route path="/research-log" element={<ResearchLogPage />} />

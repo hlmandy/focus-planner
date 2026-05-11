@@ -54,7 +54,7 @@ interface TaskEditForm {
   tags: string
 }
 
-export function TodayPage() {
+export function DailyPage() {
   const { tasks, blocks, projects, researchLogs, date, projectFilterId, pomodoroSessions } =
     useApp()
 
@@ -105,7 +105,7 @@ export function TodayPage() {
       isProjectTask(task) && (projectFilterId === 'all' || task.projectId === projectFilterId),
   )
 
-  const todayBlocks = useMemo(() => {
+  const dayBlocks = useMemo(() => {
     return blocks.items
       .filter(b => b.date === date)
       .filter(b => {
@@ -131,20 +131,20 @@ export function TodayPage() {
     return now.getHours() * 60 + now.getMinutes()
   })()
 
-  const scheduledTaskIds = useMemo(() => new Set(todayBlocks.map(b => b.taskId)), [todayBlocks])
+  const scheduledTaskIds = useMemo(() => new Set(dayBlocks.map(b => b.taskId)), [dayBlocks])
 
   // --- Today's stats ---
   const completedTasksCount = useMemo(() => {
-    const todayTaskIds = new Set(todayBlocks.map(b => b.taskId))
-    return tasks.items.filter(t => todayTaskIds.has(t.id) && t.done).length
-  }, [tasks.items, todayBlocks])
+    const dayTaskIds = new Set(dayBlocks.map(b => b.taskId))
+    return tasks.items.filter(t => dayTaskIds.has(t.id) && t.done).length
+  }, [tasks.items, dayBlocks])
 
-  const todayPomodoroMinutes = useMemo(() => {
-    const today = pomodoroSessions.items.filter(s => s.date === date)
-    return today.reduce((sum, s) => sum + s.minutes, 0)
+  const dayPomodoroMinutes = useMemo(() => {
+    const daySessions = pomodoroSessions.items.filter(s => s.date === date)
+    return daySessions.reduce((sum, s) => sum + s.minutes, 0)
   }, [pomodoroSessions.items, date])
 
-  const todayPomodoros = useMemo(
+  const dayPomodoros = useMemo(
     () =>
       pomodoroSessions.items
         .filter(s => s.date === date)
@@ -154,7 +154,7 @@ export function TodayPage() {
 
   const pomodorosByProject = useMemo(() => {
     const map = new Map<string, { name: string; minutes: number; count: number }>()
-    for (const session of todayPomodoros) {
+    for (const session of dayPomodoros) {
       const project = projectsById[session.projectId]
       const key = session.projectId
       const current = map.get(key) ?? { name: project?.name ?? '未知项目', minutes: 0, count: 0 }
@@ -163,9 +163,9 @@ export function TodayPage() {
       map.set(key, current)
     }
     return [...map.values()].sort((a, b) => b.minutes - a.minutes)
-  }, [todayPomodoros, projectsById])
+  }, [dayPomodoros, projectsById])
 
-  const todayResearchLogCount = useMemo(
+  const dayResearchLogCount = useMemo(
     () => researchLogs.items.filter(l => l.date === date).length,
     [researchLogs.items, date],
   )
@@ -392,7 +392,7 @@ export function TodayPage() {
   // --- Schedule an unscheduled task ---
 
   const scheduleTaskQuick = (taskId: string) => {
-    const lastEnd = todayBlocks.length > 0 ? Math.max(...todayBlocks.map(b => b.end)) : nowMinutes
+    const lastEnd = dayBlocks.length > 0 ? Math.max(...dayBlocks.map(b => b.end)) : nowMinutes
     const start = clamp(snap(lastEnd + 30), DAY_START, DAY_END - 30)
     scheduleActions.scheduleExistingTask({
       taskId,
@@ -431,7 +431,7 @@ export function TodayPage() {
       <div className="today-stats-row">
         <div className="today-stat-pill">
           <Flame size={14} />
-          <span>专注 {todayPomodoroMinutes}m</span>
+          <span>专注 {dayPomodoroMinutes}m</span>
         </div>
         <div className="today-stat-pill">
           <Check size={14} />
@@ -439,7 +439,7 @@ export function TodayPage() {
         </div>
         <div className="today-stat-pill">
           <BookOpen size={14} />
-          <span>{todayResearchLogCount} 条记录</span>
+          <span>{dayResearchLogCount} 条记录</span>
         </div>
       </div>
 
@@ -506,11 +506,11 @@ export function TodayPage() {
           </button>
         </div>
 
-        {todayBlocks.length === 0 ? (
+        {dayBlocks.length === 0 ? (
           <div className="today-section-empty">{dayLabel}还没有安排，在上方添加吧</div>
         ) : (
           <div className="today-blocks">
-            {todayBlocks.map(block => {
+            {dayBlocks.map(block => {
               const task = block.taskId ? tasksById[block.taskId] : undefined
               const project =
                 block.blockType === 'task' ? projectsById[task?.projectId ?? ''] : undefined
@@ -710,10 +710,10 @@ export function TodayPage() {
           <Flame size={18} />
           <span>已完成</span>
           <small>
-            {todayPomodoros.length} 个番茄钟 · {durationText(todayPomodoroMinutes)}
+            {dayPomodoros.length} 个番茄钟 · {durationText(dayPomodoroMinutes)}
           </small>
         </div>
-        {todayPomodoros.length === 0 ? (
+        {dayPomodoros.length === 0 ? (
           <div className="today-section-empty">{dayLabel}还没有完成记录</div>
         ) : (
           <>
@@ -727,7 +727,7 @@ export function TodayPage() {
               ))}
             </div>
             <div className="today-completed-list">
-              {todayPomodoros.map(session => {
+              {dayPomodoros.map(session => {
                 const project = projectsById[session.projectId]
                 return (
                   <div key={session.id} className="today-completed-item">
