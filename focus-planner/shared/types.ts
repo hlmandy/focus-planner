@@ -117,8 +117,8 @@ export interface PomodoroSession {
   projectId: string
   date: string
   minutes: number
-  start: number | null
-  end: number | null
+  start: number
+  end: number
   createdAt: string
 }
 

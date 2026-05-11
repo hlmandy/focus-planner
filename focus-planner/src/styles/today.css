@@ -302,6 +302,108 @@
   color: var(--teal);
 }
 
+/* ===== Completed pomodoro summary ===== */
+.today-section-header small {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.today-completed-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.today-completed-project {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 12px;
+}
+
+.today-completed-project span {
+  color: var(--ink-soft);
+}
+
+.today-completed-project strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.today-completed-project small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.today-completed-list {
+  display: grid;
+  gap: 4px;
+}
+
+.today-completed-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  border-radius: var(--radius-sm);
+}
+
+.today-completed-item:hover {
+  background: var(--surface);
+}
+
+.today-completed-item strong {
+  color: var(--ink);
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.today-completed-time {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.today-completed-duration {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.today-completed-delete {
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--muted);
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.today-completed-item:hover .today-completed-delete {
+  opacity: 1;
+}
+
+.today-completed-delete:hover {
+  color: var(--coral);
+}
+
 /* ===== Block action button (pen icon) ===== */
 .today-block-action {
   display: grid;

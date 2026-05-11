@@ -86,14 +86,14 @@ export function PlannerPage() {
   const doneBlocks = useMemo(
     () =>
       pomodoroSessions.items
-        .filter(s => s.start != null && s.end != null && weekKeys.includes(s.date))
+        .filter(s => weekKeys.includes(s.date))
         .filter(s => projectFilterId === 'all' || s.projectId === projectFilterId)
-        .sort((a, b) => a.date.localeCompare(b.date) || (a.start ?? 0) - (b.start ?? 0)),
+        .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start),
     [pomodoroSessions.items, weekKeys, projectFilterId],
   )
 
   const totalMinutes = visibleBlocks.reduce((sum, block) => sum + block.end - block.start, 0)
-    + doneBlocks.reduce((sum, s) => sum + (s.start != null && s.end != null ? s.end - s.start : 0), 0)
+    + doneBlocks.reduce((sum, s) => sum + (s.end - s.start), 0)
 
   // Compute night window from user's sleep settings (in minutes from midnight)
   const toMins = (hhmm: string) => {
@@ -501,14 +501,14 @@ export function PlannerPage() {
                   })}
                   {dayDoneBlocks.map(session => {
                     const project = projectsById[session.projectId]
-                    const duration = (session.end ?? 0) - (session.start ?? 0)
+                    const duration = session.end - session.start
                     const blockColor = project?.color ?? '#3a7afe'
                     return (
                       <article
                         key={session.id}
                         className={`time-block done done-block ${duration < 45 ? 'compact' : duration < 75 ? 'regular' : 'spacious'}`}
                         style={{
-                          top: ((session.start ?? 0) - DAY_START) * PIXELS_PER_MINUTE,
+                          top: (session.start - DAY_START) * PIXELS_PER_MINUTE,
                           height: duration * PIXELS_PER_MINUTE,
                           borderColor: blockColor,
                           background: `${blockColor}10`,
@@ -521,7 +521,7 @@ export function PlannerPage() {
                         >
                           <strong>番茄钟 · {project?.name ?? '未知项目'}</strong>
                           <span>
-                            {session.start != null ? timeText(session.start) : ''} - {session.end != null ? timeText(session.end) : ''}
+                            {timeText(session.start)} - {timeText(session.end)}
                           </span>
                           {duration >= 75 && (
                             <em>

@@ -145,7 +145,7 @@ export function PomodoroTimerProvider({ children }: { children: ReactNode }) {
         const now = Date.now()
         const endMin = minuteOfDay(now)
         const startedAt = startedAtRef.current
-        const startMin = startedAt != null ? minuteOfDay(startedAt) : null
+        const startMin = startedAt != null ? minuteOfDay(startedAt) : Math.max(0, endMin - settings.workDuration)
         startedAtRef.current = null
 
         const session: PomodoroSession = {

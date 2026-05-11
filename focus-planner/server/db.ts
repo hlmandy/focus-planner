@@ -188,6 +188,12 @@ function timestamp(): string {
     .replace(/\.\d{3}Z$/, 'Z')
 }
 
+function minuteFromIso(iso: string): number {
+  const d = new Date(iso)
+  const m = d.getHours() * 60 + d.getMinutes()
+  return d.getHours() < 3 ? m + 1440 : m
+}
+
 function migrateFromJson(db: Database.Database): void {
   if (!existsSync(jsonPath)) return
 
@@ -608,15 +614,18 @@ export function loadFullState(db: Database.Database): AppState {
 
   const pomodoroSessions = (
     db.prepare('SELECT * FROM pomodoro_sessions').all() as PomodoroSessionRow[]
-  ).map(row => ({
-    id: row.id,
-    projectId: row.project_id,
-    date: row.date,
-    minutes: row.minutes,
-    start: row.start_min ?? null,
-    end: row.end_min ?? null,
-    createdAt: row.created_at,
-  }))
+  ).map(row => {
+    const endMin = row.end_min ?? minuteFromIso(row.created_at)
+    return {
+      id: row.id,
+      projectId: row.project_id,
+      date: row.date,
+      minutes: row.minutes,
+      start: row.start_min ?? Math.max(0, endMin - row.minutes),
+      end: endMin,
+      createdAt: row.created_at,
+    }
+  })
 
   return {
     projects,
@@ -730,7 +739,7 @@ export function replaceFullState(db: Database.Database, state: AppState): void {
       )
     }
     for (const ps of state.pomodoroSessions ?? []) {
-      insPomodoro.run(ps.id, ps.projectId, ps.date, ps.minutes, ps.start ?? null, ps.end ?? null, ps.createdAt)
+      insPomodoro.run(ps.id, ps.projectId, ps.date, ps.minutes, ps.start, ps.end, ps.createdAt)
     }
   })
   tx()

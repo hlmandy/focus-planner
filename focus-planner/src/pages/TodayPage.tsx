@@ -135,6 +135,27 @@ export function TodayPage() {
     return today.reduce((sum, s) => sum + s.minutes, 0)
   }, [pomodoroSessions.items, date])
 
+  const todayPomodoros = useMemo(
+    () =>
+      pomodoroSessions.items
+        .filter(s => s.date === date)
+        .sort((a, b) => a.start - b.start),
+    [pomodoroSessions.items, date],
+  )
+
+  const pomodorosByProject = useMemo(() => {
+    const map = new Map<string, { name: string; minutes: number; count: number }>()
+    for (const session of todayPomodoros) {
+      const project = projectsById[session.projectId]
+      const key = session.projectId
+      const current = map.get(key) ?? { name: project?.name ?? '未知项目', minutes: 0, count: 0 }
+      current.minutes += session.minutes
+      current.count += 1
+      map.set(key, current)
+    }
+    return [...map.values()].sort((a, b) => b.minutes - a.minutes)
+  }, [todayPomodoros, projectsById])
+
   const todayResearchLogCount = useMemo(
     () => researchLogs.items.filter(l => l.date === date).length,
     [researchLogs.items, date],
@@ -670,6 +691,54 @@ export function TodayPage() {
           <CalendarClock size={15} />
           去规划表
         </button>
+      </div>
+
+      {/* ===== 3. 已完成 ===== */}
+      <div className="today-section">
+        <div className="today-section-header">
+          <Flame size={18} />
+          <span>已完成</span>
+          <small>
+            {todayPomodoros.length} 个番茄钟 · {durationText(todayPomodoroMinutes)}
+          </small>
+        </div>
+        {todayPomodoros.length === 0 ? (
+          <div className="today-section-empty">今天还没有完成记录</div>
+        ) : (
+          <>
+            <div className="today-completed-summary">
+              {pomodorosByProject.map(item => (
+                <div key={item.name} className="today-completed-project">
+                  <span>{item.name}</span>
+                  <strong>{durationText(item.minutes)}</strong>
+                  <small>{item.count} 个番茄钟</small>
+                </div>
+              ))}
+            </div>
+            <div className="today-completed-list">
+              {todayPomodoros.map(session => {
+                const project = projectsById[session.projectId]
+                return (
+                  <div key={session.id} className="today-completed-item">
+                    <span className="today-completed-time">
+                      {timeText(session.start)}–{timeText(session.end)}
+                    </span>
+                    <strong>番茄钟 · {project?.name ?? '未知项目'}</strong>
+                    <span className="today-completed-duration">{durationText(session.minutes)}</span>
+                    <button
+                      type="button"
+                      className="btn btn-ghost today-completed-delete"
+                      onClick={() => pomodoroSessions.remove(session.id).catch(reportApiError)}
+                      aria-label="删除专注记录"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {/* ===== 4. 项目记录 ===== */}

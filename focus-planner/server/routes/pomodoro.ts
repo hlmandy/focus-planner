@@ -3,14 +3,21 @@ import type Database from 'better-sqlite3'
 import type { PomodoroSession, PomodoroSessionRow } from '../types.js'
 import { requireFields } from '../validate.js'
 
+function minuteFromIso(iso: string): number {
+  const d = new Date(iso)
+  const m = d.getHours() * 60 + d.getMinutes()
+  return d.getHours() < 3 ? m + 1440 : m
+}
+
 function toPomodoroSession(r: PomodoroSessionRow): PomodoroSession {
+  const end = r.end_min ?? minuteFromIso(r.created_at)
   return {
     id: r.id,
     projectId: r.project_id,
     date: r.date,
     minutes: r.minutes,
-    start: r.start_min ?? null,
-    end: r.end_min ?? null,
+    start: r.start_min ?? Math.max(0, end - r.minutes),
+    end,
     createdAt: r.created_at,
   }
 }

@@ -186,15 +186,20 @@ export const normalizeState = (state: LegacyState): AppState => {
       keyFindings: entry.keyFindings ?? '',
       nextAction: entry.nextAction ?? '',
     })),
-    pomodoroSessions: (state.pomodoroSessions ?? []).map(session => ({
-      ...session,
-      projectId: resolveProjectId(session.projectId, projects),
-      date: session.date ?? todayKey(),
-      minutes: session.minutes ?? 25,
-      start: (session as { start?: number | null }).start ?? null,
-      end: (session as { end?: number | null }).end ?? null,
-      createdAt: session.createdAt ?? new Date().toISOString(),
-    })),
+    pomodoroSessions: (state.pomodoroSessions ?? []).map(session => {
+      const createdAt = session.createdAt ?? new Date().toISOString()
+      const createdDate = new Date(createdAt)
+      const endMin = createdDate.getHours() * 60 + createdDate.getMinutes()
+      return {
+        ...session,
+        projectId: resolveProjectId(session.projectId, projects),
+        date: session.date ?? todayKey(),
+        minutes: session.minutes ?? 25,
+        start: (session as { start?: number }).start ?? Math.max(0, endMin - (session.minutes ?? 25)),
+        end: (session as { end?: number }).end ?? endMin,
+        createdAt,
+      }
+    }),
   }
 }
 
