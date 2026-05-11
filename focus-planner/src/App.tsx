@@ -78,7 +78,7 @@ function AppShell() {
 }
 
 function AppShellInner({ shellRef }: { shellRef: React.RefObject<HTMLElement | null> }) {
-  const { projects, isSidebarOpen, isToolPanelOpen, setIsToolPanelOpen, date } = useApp()
+  const { projects, isSidebarOpen, isToolPanelOpen, setIsToolPanelOpen, setIsSidebarOpen, date } = useApp()
   const location = useLocation()
 
   // Derive page name from current path for header title and CSS class
@@ -116,6 +116,18 @@ function AppShellInner({ shellRef }: { shellRef: React.RefObject<HTMLElement | n
     const sync = (event?: MediaQueryListEvent) => {
       const matches = event ? event.matches : media.matches
       if (matches) setIsToolPanelOpen(false)
+    }
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
+
+  // Auto-collapse sidebar when window drops below 1180px
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1180px)')
+    const sync = (event?: MediaQueryListEvent) => {
+      const matches = event ? event.matches : media.matches
+      if (matches) setIsSidebarOpen(false)
     }
     sync()
     media.addEventListener('change', sync)

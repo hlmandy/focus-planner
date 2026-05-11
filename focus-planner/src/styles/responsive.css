@@ -4,6 +4,17 @@
   }
 }
 
+@media (max-width: 1180px) and (min-width: 921px) {
+  .app-shell,
+  .app-shell.tool-panel-open,
+  .app-shell.tool-panel-collapsed,
+  .app-shell.sidebar-collapsed,
+  .app-shell.sidebar-collapsed.tool-panel-open,
+  .app-shell.sidebar-collapsed.tool-panel-collapsed {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 920px) {
   .app-shell,
   .app-shell.tool-panel-open,
@@ -11,23 +22,21 @@
   .app-shell.sidebar-collapsed,
   .app-shell.sidebar-collapsed.tool-panel-open,
   .app-shell.sidebar-collapsed.tool-panel-collapsed {
-    height: auto;
+    height: 100vh;
     min-height: 100vh;
-    grid-template-columns: 1fr;
-    overflow: visible;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: hidden;
   }
 
   .sidebar {
-    height: auto;
-    min-height: auto;
-    padding-top: 12px;
+    display: none;
   }
 
   .workspace,
   .workspace.planner-workspace {
-    height: auto;
+    height: 100vh;
     min-height: 100vh;
-    overflow: visible;
+    overflow: auto;
     padding: 18px 14px 36px;
   }
 
@@ -46,9 +55,15 @@
   }
 
   .tool-panel {
-    height: auto;
-    border-left: 0;
-    border-top: 1px solid var(--line);
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 30;
+    width: min(var(--tool-panel-width, 248px), calc(100vw - 24px));
+    height: 100vh;
+    border-left: 1px solid var(--line);
+    border-top: 0;
+    box-shadow: var(--shadow-md);
   }
 
   .tool-panel-resizer {
