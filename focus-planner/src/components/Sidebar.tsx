@@ -123,11 +123,11 @@ export function Sidebar() {
       <nav className="nav-list">
         <NavLink to="/today" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} onClick={() => setDate(todayKey())}>
           <CalendarDays size={18} />
-          <span>今天</span>
+          <span className="nav-label">今天</span>
         </NavLink>
         <NavLink to="/planner" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
           <TimerReset size={18} />
-          <span>规划表</span>
+          <span className="nav-label">规划表</span>
         </NavLink>
         <NavLink
           to="/projects"
@@ -135,22 +135,22 @@ export function Sidebar() {
           className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
         >
           <FolderKanban size={18} />
-          <span>项目</span>
+          <span className="nav-label">项目</span>
         </NavLink>
         <NavLink
           to="/research-log"
           className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
         >
           <FileText size={18} />
-          <span>研究日志</span>
+          <span className="nav-label">研究日志</span>
         </NavLink>
         <NavLink to="/habits" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
           <Flame size={18} />
-          <span>习惯</span>
+          <span className="nav-label">习惯</span>
         </NavLink>
         <NavLink to="/summary" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
           <Save size={18} />
-          <span>今日总结</span>
+          <span className="nav-label">今日总结</span>
         </NavLink>
       </nav>
       {isSidebarOpen && (
@@ -284,7 +284,7 @@ export function Sidebar() {
           className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
         >
           <Settings size={18} />
-          <span>设置</span>
+          <span className="nav-label">设置</span>
         </NavLink>
       </div>
     </aside>
