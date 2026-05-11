@@ -6,118 +6,133 @@
 
 /* ── Narrow-layout (≤1180px): sidebar is drawer overlay, never a grid column ── */
 
-.app-shell.narrow-layout,
-.app-shell.narrow-layout.sidebar-open,
-.app-shell.narrow-layout.sidebar-collapsed,
-.app-shell.narrow-layout.tool-panel-open,
-.app-shell.narrow-layout.tool-panel-collapsed,
-.app-shell.narrow-layout.sidebar-open.tool-panel-open,
-.app-shell.narrow-layout.sidebar-open.tool-panel-collapsed,
-.app-shell.narrow-layout.sidebar-collapsed.tool-panel-open,
-.app-shell.narrow-layout.sidebar-collapsed.tool-panel-collapsed {
-  grid-template-columns: 56px minmax(0, 1fr);
-}
+@media (max-width: 1180px) {
+  .app-shell.narrow-layout,
+  .app-shell.narrow-layout.sidebar-open,
+  .app-shell.narrow-layout.sidebar-collapsed,
+  .app-shell.narrow-layout.tool-panel-open,
+  .app-shell.narrow-layout.tool-panel-collapsed,
+  .app-shell.narrow-layout.sidebar-open.tool-panel-open,
+  .app-shell.narrow-layout.sidebar-open.tool-panel-collapsed,
+  .app-shell.narrow-layout.sidebar-collapsed.tool-panel-open,
+  .app-shell.narrow-layout.sidebar-collapsed.tool-panel-collapsed {
+    height: 100vh;
+    min-height: 100vh;
+    overflow: hidden;
+  }
 
-/* Sidebar open → fixed drawer overlay */
-.app-shell.narrow-layout.sidebar-open .sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 70;
-  width: min(272px, calc(100vw - 48px));
-  height: 100vh;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--shadow-md);
-  background: #dff0d8;
-  padding: 8px 8px 10px;
-}
+  /* sidebar-collapsed: sidebar is in-flow 56px rail, workspace takes rest */
+  .app-shell.narrow-layout.sidebar-collapsed,
+  .app-shell.narrow-layout.sidebar-collapsed.tool-panel-open,
+  .app-shell.narrow-layout.sidebar-collapsed.tool-panel-collapsed {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
 
-.app-shell.narrow-layout.sidebar-open .nav-item,
-.app-shell.narrow-layout.sidebar-open .sidebar-footer .nav-item {
-  width: auto;
-  justify-content: flex-start;
-  padding: 0 8px;
-}
+  /* sidebar-open: sidebar is fixed overlay, workspace gets full width */
+  .app-shell.narrow-layout.sidebar-open,
+  .app-shell.narrow-layout.sidebar-open.tool-panel-open,
+  .app-shell.narrow-layout.sidebar-open.tool-panel-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-/* Sidebar collapsed → 56px icon-only rail */
-.app-shell.narrow-layout.sidebar-collapsed .sidebar {
-  width: 56px;
-}
+  .app-shell.narrow-layout.sidebar-open .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 70;
+    width: min(272px, calc(100vw - 48px));
+    height: 100vh;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-md);
+    background: #dff0d8;
+    padding: 8px 8px 10px;
+  }
 
-.app-shell.narrow-layout.sidebar-collapsed .nav-label,
-.app-shell.narrow-layout.sidebar-collapsed .sidebar-section,
-.app-shell.narrow-layout.sidebar-collapsed .sidebar-kind-count {
-  display: none;
-}
+  .app-shell.narrow-layout.sidebar-open .nav-item,
+  .app-shell.narrow-layout.sidebar-open .sidebar-footer .nav-item {
+    width: auto;
+    justify-content: flex-start;
+    padding: 0 8px;
+  }
 
-.app-shell.narrow-layout.sidebar-collapsed .nav-item,
-.app-shell.narrow-layout.sidebar-collapsed .sidebar-footer .nav-item {
-  width: 32px;
-  justify-content: center;
-  padding: 0;
-}
+  .app-shell.narrow-layout.sidebar-collapsed .sidebar {
+    width: 56px;
+  }
 
-/* Backdrop behind sidebar drawer */
-.sidebar-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  border: 0;
-  background: rgba(15, 23, 42, 0.12);
-}
+  .app-shell.narrow-layout.sidebar-collapsed .nav-label,
+  .app-shell.narrow-layout.sidebar-collapsed .sidebar-section,
+  .app-shell.narrow-layout.sidebar-collapsed .sidebar-kind-count {
+    display: none;
+  }
 
-/* Hide tool-panel-rail when sidebar drawer is open */
-.app-shell.narrow-layout.sidebar-open .tool-panel-rail {
-  display: none;
-}
+  .app-shell.narrow-layout.sidebar-collapsed .nav-item,
+  .app-shell.narrow-layout.sidebar-collapsed .sidebar-footer .nav-item {
+    width: 32px;
+    justify-content: center;
+    padding: 0;
+  }
 
-/* Tool-panel-rail: always a floating FAB on narrow layout */
-.app-shell.narrow-layout .tool-panel-rail {
-  position: fixed;
-  right: 14px;
-  bottom: 14px;
-  z-index: 45;
-  width: 48px;
-  height: 48px;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  box-shadow: var(--shadow-md);
-  writing-mode: horizontal-tb;
-  letter-spacing: 0;
-  font-size: 11px;
-  background: var(--surface);
-}
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    border: 0;
+    background: rgba(15, 23, 42, 0.12);
+  }
 
-/* Tool panel drawer: fixed overlay on narrow layout */
-.app-shell.narrow-layout .tool-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  z-index: 80;
-  width: min(var(--tool-panel-width, 248px), calc(100vw - 24px));
-  height: 100vh;
-  border-left: 1px solid var(--line);
-  border-top: 0;
-  box-shadow: var(--shadow-md);
+  .tool-panel-rail {
+    flex-shrink: 0;
+  }
+
+  .app-shell.narrow-layout.sidebar-open .tool-panel-rail {
+    display: none;
+  }
+
+  .app-shell.narrow-layout .tool-panel-rail {
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    z-index: 45;
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    box-shadow: var(--shadow-md);
+    writing-mode: horizontal-tb;
+    letter-spacing: 0;
+    font-size: 11px;
+    background: var(--surface);
+  }
+
+  .app-shell.narrow-layout .tool-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 80;
+    width: min(var(--tool-panel-width, 248px), calc(100vw - 24px));
+    height: 100vh;
+    border-left: 1px solid var(--line);
+    border-top: 0;
+    box-shadow: var(--shadow-md);
+  }
 }
 
 /* ── Small screen (≤920px): no sidebar rail, full-width workspace ── */
 
 @media (max-width: 920px) {
-  .app-shell,
-  .app-shell.sidebar-open,
-  .app-shell.sidebar-collapsed,
-  .app-shell.tool-panel-open,
-  .app-shell.tool-panel-collapsed,
   .app-shell.narrow-layout,
   .app-shell.narrow-layout.sidebar-open,
   .app-shell.narrow-layout.sidebar-collapsed,
   .app-shell.narrow-layout.tool-panel-open,
-  .app-shell.narrow-layout.tool-panel-collapsed {
+  .app-shell.narrow-layout.tool-panel-collapsed,
+  .app-shell.narrow-layout.sidebar-open.tool-panel-open,
+  .app-shell.narrow-layout.sidebar-open.tool-panel-collapsed,
+  .app-shell.narrow-layout.sidebar-collapsed.tool-panel-open,
+  .app-shell.narrow-layout.sidebar-collapsed.tool-panel-collapsed {
     height: 100vh;
     min-height: 100vh;
     grid-template-columns: minmax(0, 1fr);

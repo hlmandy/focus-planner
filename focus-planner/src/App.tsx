@@ -121,7 +121,7 @@ function AppShellInner({ shellRef }: { shellRef: React.RefObject<HTMLElement | n
     sync()
     media.addEventListener('change', sync)
     return () => media.removeEventListener('change', sync)
-  }, [])
+  }, [setIsToolPanelOpen])
 
   // Track narrow layout and auto-collapse sidebar below 1180px
   useEffect(() => {
@@ -147,6 +147,7 @@ function AppShellInner({ shellRef }: { shellRef: React.RefObject<HTMLElement | n
 
   return (
     <main ref={shellRef} className={shellClassName}>
+      <Sidebar />
       {isNarrowLayout && isSidebarOpen && (
         <button
           type="button"
@@ -155,7 +156,6 @@ function AppShellInner({ shellRef }: { shellRef: React.RefObject<HTMLElement | n
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
-      <Sidebar />
       <section className={`workspace ${page === 'planner' ? 'planner-workspace' : ''}`}>
         <header className="app-header">
           <h1>{headerTitle}</h1>
