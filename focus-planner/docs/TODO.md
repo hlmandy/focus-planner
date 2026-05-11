@@ -1,33 +1,42 @@
 # Focus Planner — 待办事项
 
-基于 2026-05-10 文档同步后的当前状态。
+基于 2026-05-11 文档同步后的当前状态。
 
 ---
 
-## P0：当前已知问题
+## P0：模型一致性
 
-- [ ] **seedState 首屏闪烁**：`loadState()` 无 localStorage 时返回 `seedState()`（空数组），但 entity hooks mount 前可能有短暂的空状态渲染
+- [ ] **DailyPage 标签统一**：确认所有 daily view 相关标签使用 selectedDate 语义（侧栏 "今天" 已是快捷操作，非固定页面）
 - [ ] **pomodoroProjectId 硬编码**：`App.tsx` 中 `useState('research-topic-a')` 是旧种子数据的 ID，新用户首次启动时番茄钟关联不到有效项目
-- [ ] **useScheduleActions 跨实体失败处理**：`createTaskBlock` 中 Task 创建成功但 Block 创建失败时回滚 Task，但 `convertDiaryToTask` 没有类似回滚
+- [ ] **useScheduleActions 跨实体失败处理**：`convertDiaryToTask` 没有 `createTaskBlock` 那样的回滚机制
+- [ ] **当前时间 vs selectedDate**：确保 Planner now 线等当前时间指示器用真实今天，不用 selectedDate
 
-## P1：体验优化
+## P1：日程与完成流程
 
-- [ ] **毕业论文指导增强**：ThesisStudent 基础 CRUD 已有，缺少进度筛选、逾期高亮、关联任务
-- [ ] **任务树拖拽排序**：当前拖拽仅用于 TodayPage→PlannerPage 排期，无 reorder/reparent 能力
-- [ ] **自定义项目模板**：`projectTaskTemplates` 硬编码在 constants.ts，用户无法自定义
-- [ ] **PomodoroSession 在 SummaryPage 展示**：日总结的 Markdown 目前不统计 pomodoroSessions，项目报告才统计专注时长
-- [ ] **PomodoroSession 在 Planner 时间线渲染**：已完成的番茄钟不显示为 Planner 时间线上的 done block
-- [ ] **页面内计时提醒**：`PomodoroTimerProvider` 已有 Notification API + 音频提醒，但页面内无 visual alert（只在 ToolPanel 里有 timer alert）
+- [ ] **PomodoroSession 作为 Planner done block 渲染**：已完成的番茄钟应显示在 Planner 时间线上（只读 done 层）
+- [ ] **Daily view 已完成汇总**：按项目汇总已完成番茄钟 + 具体完成时段列表
+- [ ] **seedState 首屏闪烁**：`loadState()` 无 localStorage 时返回 `seedState()`（空数组），但 entity hooks mount 前可能有短暂的空状态渲染
+- [ ] **秒表完成记录**：决定秒表完成的记录是否也成为 done block
 
-## P2：搜索与导出
+## P2：研究/事务/指导记录分层
 
-- [ ] **搜索结果筛选**：按类型、项目、日期范围
-- [ ] **附件索引页**：跨项目汇总所有已记录附件
+- [ ] **ResearchLogKind 迁移**：代码已限制为 `literature`/`writing`/`experiment`，需安全迁移旧 `analysis`/`meeting`/`admin` 数据
+- [ ] **logType 分层**：为 research/admin/student 记录类型确定最终方案
+- [ ] **ResearchLogPage 旧 kind 兼容**：编辑旧记录时如果 kind 不在新枚举内，如何处理
 
-## P3：基础设施
+## P3：布局
 
-- [ ] **安装 @testing-library/react**：当前只有 vitest 纯函数测试（36 个），无组件/集成测试
-- [ ] **组件测试**：覆盖 PlannerPage（block 创建/编辑/删除/转换）、TodayPage（diary/task 双模式）等关键交互
+- [ ] **侧栏响应式行为**：宽屏 docked → 中屏 rail → 窄屏展开时 overlay drawer
+- [ ] **右侧 ToolPanel 行为**：中/窄屏改为 overlay drawer，不挤压 workspace
+- [ ] **Planner 弹窗定位**：ToolPanel 打开时 popover 不超出 workspace 区域
+
+## P4：测试
+
+- [ ] **@testing-library/react 安装**：当前只有 vitest 纯函数测试（36 个），无组件/集成测试
+- [ ] **DailyPage 集成测试**：selectedDate 日视图、diary/task 双模式创建/编辑/删除
+- [ ] **useScheduleActions 测试**：跨实体 block 创建/转换/删除联动
+- [ ] **PomodoroSession done block 测试**：验证渲染和汇总逻辑
+- [ ] **diary vs task ScheduleBlock 测试**：类型转换、项目关联、独立删除行为
 
 ## Later（用户明确要求时再做）
 
@@ -36,7 +45,7 @@
 - [ ] 应用内 JSON 备份导入导出
 - [ ] Zotero 集成 / DOI 自动补全 / PDF 元数据提取
 
-## Done（2026-05-10 文档同步确认）
+## Done（2026-05-11 文档同步确认）
 
 - [x] 前后端类型共享（`shared/types.ts` 单一数据源）
 - [x] 清理 lint errors（零错误）
@@ -53,3 +62,8 @@
 - [x] 番茄钟计时逻辑从 App.tsx 下沉到 PomodoroTimerProvider
 - [x] seedState 返回空数组（无 demo 数据）
 - [x] Project.kind 统一为 research / admin
+- [x] TodayPage 重命名为 DailyPage（路由仍为 `/today`）
+- [x] ResearchLogKind 限制为 literature / writing / experiment
+- [x] 文档四件套同步（README / CLAUDE.md / AGENTS.md / TODO.md）
+- [x] ToolPanel 日历仅调 setDate 不导航
+- [x] 侧栏 "今天" 改为 selectedDate 快捷操作
