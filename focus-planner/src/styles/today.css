@@ -504,21 +504,15 @@
 }
 
 /* ===== Block editing ===== */
-.today-block.editing {
-  border-color: var(--teal);
-  background: rgba(56, 150, 100, 0.04);
-  cursor: default;
-}
-
 .today-block-editor {
   border: 1px solid var(--teal);
-  border-top: none;
-  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  border-radius: var(--radius-sm);
   background: var(--surface);
   padding: 10px 12px;
   display: grid;
   gap: 8px;
-  margin-top: -1px;
+  box-sizing: border-box;
+  max-width: 680px;
 }
 
 .editor-row {
@@ -526,6 +520,7 @@
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
+  max-width: 520px;
 }
 
 .editor-title {
@@ -564,6 +559,7 @@
 }
 
 .editor-time-label input[type='time'] {
+  width: 96px;
   height: 32px;
   padding: 0 6px;
   border: 1px solid var(--line);
@@ -603,6 +599,7 @@
 .editor-actions {
   display: flex;
   gap: 6px;
+  max-width: 520px;
 }
 
 .editor-save {

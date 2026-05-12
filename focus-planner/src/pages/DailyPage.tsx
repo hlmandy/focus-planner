@@ -564,68 +564,7 @@ export function DailyPage() {
 
               return (
                 <div key={block.id}>
-                  <div
-                    className={`today-block ${isActive ? 'active' : ''} ${isDone ? 'done' : ''} ${isEditing ? 'editing' : ''}`}
-                    onClick={() => !isEditing && startEditBlock(block)}
-                  >
-                    <div className="today-block-time">
-                      <span>{timeText(block.start)}</span>
-                      <span className="today-block-time-sep">–</span>
-                      <span>{timeText(block.end)}</span>
-                      <em>{durationText(block.end - block.start)}</em>
-                    </div>
-                    {block.blockType === 'task' && (
-                      <button
-                        type="button"
-                        className="btn btn-ghost today-block-status"
-                        onClick={e => {
-                          e.stopPropagation()
-                          toggleBlockTask(block.id)
-                        }}
-                        aria-label="切换完成状态"
-                      >
-                        {isDone ? <Check size={17} /> : <Circle size={17} />}
-                      </button>
-                    )}
-                    <span className="today-block-title">{blockTitle}</span>
-                    {project && (
-                      <span
-                        className="today-block-project"
-                        style={{ '--project-color': project.color } as React.CSSProperties}
-                      >
-                        {project.name}
-                      </span>
-                    )}
-                    {block.blockType === 'diary' && (
-                      <span className="today-block-project today-block-diary">普通日程</span>
-                    )}
-                    {block.blockType === 'task' && (
-                      <button
-                        type="button"
-                        className="btn btn-ghost today-block-action"
-                        onClick={e => {
-                          e.stopPropagation()
-                          blockToResearchLog(block)
-                        }}
-                        title="转为研究日志"
-                      >
-                        <PenLine size={13} />
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="btn btn-danger today-block-delete"
-                      onClick={e => {
-                        e.stopPropagation()
-                        deleteBlock(block.id)
-                      }}
-                      aria-label="删除时间块"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-
-                  {isEditing && (
+                  {isEditing ? (
                     <div className="today-block-editor">
                       <div className="editor-row">
                         <input
@@ -726,6 +665,67 @@ export function DailyPage() {
                           <Trash2 size={14} /> 删除
                         </button>
                       </div>
+                    </div>
+                  ) : (
+                    <div
+                      className={`today-block ${isActive ? 'active' : ''} ${isDone ? 'done' : ''}`}
+                      onDoubleClick={() => startEditBlock(block)}
+                    >
+                      <div className="today-block-time">
+                        <span>{timeText(block.start)}</span>
+                        <span className="today-block-time-sep">–</span>
+                        <span>{timeText(block.end)}</span>
+                        <em>{durationText(block.end - block.start)}</em>
+                      </div>
+                      {block.blockType === 'task' && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost today-block-status"
+                          onClick={e => {
+                            e.stopPropagation()
+                            toggleBlockTask(block.id)
+                          }}
+                          aria-label="切换完成状态"
+                        >
+                          {isDone ? <Check size={17} /> : <Circle size={17} />}
+                        </button>
+                      )}
+                      <span className="today-block-title">{blockTitle}</span>
+                      {project && (
+                        <span
+                          className="today-block-project"
+                          style={{ '--project-color': project.color } as React.CSSProperties}
+                        >
+                          {project.name}
+                        </span>
+                      )}
+                      {block.blockType === 'diary' && (
+                        <span className="today-block-project today-block-diary">普通日程</span>
+                      )}
+                      {block.blockType === 'task' && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost today-block-action"
+                          onClick={e => {
+                            e.stopPropagation()
+                            blockToResearchLog(block)
+                          }}
+                          title="转为研究日志"
+                        >
+                          <PenLine size={13} />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="btn btn-danger today-block-delete"
+                        onClick={e => {
+                          e.stopPropagation()
+                          deleteBlock(block.id)
+                        }}
+                        aria-label="删除时间块"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   )}
                 </div>

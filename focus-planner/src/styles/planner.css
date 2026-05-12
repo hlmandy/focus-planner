@@ -295,9 +295,7 @@
   left: 5px;
   right: 5px;
   min-height: 24px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 24px;
-  align-items: start;
+  display: block;
   overflow: hidden;
   border-left: 4px solid;
   border-radius: var(--radius-sm);
@@ -376,7 +374,7 @@
   display: grid;
   align-content: center;
   gap: 1px;
-  padding: 5px 6px 5px 10px;
+  padding: 5px 28px 8px 10px;
   background: transparent;
   color: var(--ink);
   text-align: left;
@@ -453,12 +451,31 @@
 
 .resize-handle {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  right: 4px;
+  bottom: 3px;
+  left: auto;
+  width: 22px;
   height: 5px;
-  background: rgba(32, 34, 38, 0.06);
+  border-radius: 999px;
+  background: rgba(32, 34, 38, 0.18);
   cursor: ns-resize;
+  opacity: 0;
+}
+
+.time-block:hover .resize-handle,
+.time-block:focus-within .resize-handle {
+  opacity: 1;
+}
+
+.time-block.placeholder {
+  border-style: dashed;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: none;
+}
+
+.time-block.placeholder .drag-area strong {
+  color: var(--ink-soft);
+  font-weight: 500;
 }
 
 .block-editor {
