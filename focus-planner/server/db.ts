@@ -375,8 +375,8 @@ export function initDatabase(): Database.Database {
 
     CREATE TRIGGER trg_blocks_end_min_check
     BEFORE INSERT ON schedule_blocks
-    FOR EACH ROW WHEN NEW.end_min <= NEW.start_min OR NEW.end_min > 1620
-    BEGIN SELECT RAISE(ABORT, 'end_min must be > start_min and <= 1620'); END;
+    FOR EACH ROW WHEN NEW.end_min < NEW.start_min OR (NEW.end_min = NEW.start_min AND NEW.start_min != 0) OR NEW.end_min > 1620
+    BEGIN SELECT RAISE(ABORT, 'end_min must be > start_min (or both 0 for all-day) and <= 1620'); END;
 
     CREATE TRIGGER trg_blocks_start_min_update_check
     BEFORE UPDATE ON schedule_blocks
@@ -385,8 +385,8 @@ export function initDatabase(): Database.Database {
 
     CREATE TRIGGER trg_blocks_end_min_update_check
     BEFORE UPDATE ON schedule_blocks
-    FOR EACH ROW WHEN NEW.end_min <= NEW.start_min OR NEW.end_min > 1620
-    BEGIN SELECT RAISE(ABORT, 'end_min must be > start_min and <= 1620'); END;
+    FOR EACH ROW WHEN NEW.end_min < NEW.start_min OR (NEW.end_min = NEW.start_min AND NEW.start_min != 0) OR NEW.end_min > 1620
+    BEGIN SELECT RAISE(ABORT, 'end_min must be > start_min (or both 0 for all-day) and <= 1620'); END;
   `)
 
   // 2. Add UNIQUE constraint to habit_entries (habit_id, date)
@@ -557,6 +557,21 @@ export function initDatabase(): Database.Database {
   if (!pomodoroColNames.has('end_min')) {
     db.exec(`ALTER TABLE pomodoro_sessions ADD COLUMN end_min INTEGER`)
   }
+
+  // 11. Relax end_min trigger to allow all-day events (start_min=0, end_min=0)
+  db.exec(`
+    DROP TRIGGER IF EXISTS trg_blocks_end_min_check;
+    DROP TRIGGER IF EXISTS trg_blocks_end_min_update_check;
+    CREATE TRIGGER trg_blocks_end_min_check
+    BEFORE INSERT ON schedule_blocks
+    FOR EACH ROW WHEN NEW.end_min < NEW.start_min OR (NEW.end_min = NEW.start_min AND NEW.start_min != 0) OR NEW.end_min > 1620
+    BEGIN SELECT RAISE(ABORT, 'end_min must be > start_min (or both 0 for all-day) and <= 1620'); END;
+
+    CREATE TRIGGER trg_blocks_end_min_update_check
+    BEFORE UPDATE ON schedule_blocks
+    FOR EACH ROW WHEN NEW.end_min < NEW.start_min OR (NEW.end_min = NEW.start_min AND NEW.start_min != 0) OR NEW.end_min > 1620
+    BEGIN SELECT RAISE(ABORT, 'end_min must be > start_min (or both 0 for all-day) and <= 1620'); END;
+  `)
 
   const hasData = db.prepare('SELECT COUNT(*) as c FROM projects').get() as { c: number }
   if (hasData.c === 0) {

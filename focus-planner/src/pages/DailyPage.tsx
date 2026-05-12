@@ -105,9 +105,19 @@ export function DailyPage() {
       isProjectTask(task) && (projectFilterId === 'all' || task.projectId === projectFilterId),
   )
 
+  const allDayBlocks = useMemo(() => {
+    return blocks.items
+      .filter(b => b.date === date && b.start === 0 && b.end === 0)
+      .filter(b => {
+        if (b.blockType === 'diary') return true
+        const task = tasks.items.find(t => t.id === b.taskId)
+        return projectFilterId === 'all' || task?.projectId === projectFilterId
+      })
+  }, [blocks.items, date, tasks.items, projectFilterId])
+
   const dayBlocks = useMemo(() => {
     return blocks.items
-      .filter(b => b.date === date)
+      .filter(b => b.date === date && !(b.start === 0 && b.end === 0))
       .filter(b => {
         if (b.blockType === 'diary') return true
         const task = tasks.items.find(t => t.id === b.taskId)
@@ -444,6 +454,35 @@ export function DailyPage() {
       </div>
 
       {/* ===== 2. 当日安排 ===== */}
+      {/* All-day events */}
+      {allDayBlocks.length > 0 && (
+        <div className="today-allday-bar">
+          {allDayBlocks.map(block => {
+            const task = block.taskId ? tasksById[block.taskId] : undefined
+            const project =
+              block.blockType === 'task' ? projectsById[task?.projectId ?? ''] : undefined
+            const blockTitle =
+              block.blockType === 'diary'
+                ? block.title || '普通日程'
+                : task?.title || block.title || '未命名任务'
+            return (
+              <span
+                key={block.id}
+                className="today-allday-chip"
+                style={
+                  project
+                    ? ({ '--project-color': project.color } as React.CSSProperties)
+                    : undefined
+                }
+                title={block.note || blockTitle}
+              >
+                {blockTitle}
+              </span>
+            )
+          })}
+        </div>
+      )}
+
       <div className="today-section">
         <div className="today-section-header">
           <CalendarClock size={18} />

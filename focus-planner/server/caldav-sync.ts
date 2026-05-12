@@ -4,8 +4,10 @@ import {
   createRemoteEvent,
   updateRemoteEvent,
   deleteRemoteEvent,
+  listRemoteEvents,
+  parseIcsEvent,
 } from './caldav-client.js'
-import type { CalDAVConfig } from './caldav-client.js'
+import type { CalDAVConfig, ParsedIcsEvent } from './caldav-client.js'
 import type { CaldavConfigRow, CaldavSyncMapRow } from './types.js'
 
 interface BlockWithTaskRow {
@@ -69,7 +71,7 @@ function getBlocksWithTasks(db: Database.Database): BlockWithTask[] {
     db
       .prepare(
         `
-    SELECT b.id as block_id, b.task_id, b.block_type, b.block_title, b.date,
+    SELECT b.id as block_id, b.task_id, b.block_type, b.title as block_title, b.date,
            b.start_min, b.end_min, b.note,
            t.title, t.done, t.project_id
     FROM schedule_blocks b
@@ -110,15 +112,44 @@ function getSyncMap(db: Database.Database): Map<string, SyncMapRow> {
   return map
 }
 
+function getSyncMapByUid(db: Database.Database): Map<string, SyncMapRow> {
+  const rows = db.prepare('SELECT * FROM caldav_sync_map').all() as CaldavSyncMapRow[]
+  const map = new Map<string, SyncMapRow>()
+  for (const r of rows) {
+    if (r.event_uid) {
+      map.set(r.event_uid, {
+        blockId: r.block_id,
+        eventUrl: r.event_url,
+        eventUid: r.event_uid,
+        etag: r.etag,
+        contentHash: r.content_hash,
+        syncStatus: r.sync_status,
+        lastSyncedAt: r.last_synced_at,
+        errorMessage: r.error_message,
+      })
+    }
+  }
+  return map
+}
+
+function buildNoteFromEvent(evt: ParsedIcsEvent): string {
+  const parts: string[] = []
+  if (evt.location) parts.push(evt.location)
+  if (evt.description) parts.push(evt.description)
+  return parts.join(' | ')
+}
+
 export async function runSync(db: Database.Database): Promise<{
   created: number
   updated: number
   deleted: number
   errors: number
+  pulled: number
+  remoteUpdated: number
 }> {
   const row = getConfig(db)
   if (!row || !row.sync_enabled || !row.calendar_url || !row.username) {
-    return { created: 0, updated: 0, deleted: 0, errors: 0 }
+    return { created: 0, updated: 0, deleted: 0, errors: 0, pulled: 0, remoteUpdated: 0 }
   }
 
   const config: CalDAVConfig = {
@@ -263,11 +294,80 @@ export async function runSync(db: Database.Database): Promise<{
     }
   }
 
+  // Phase 4: Pull remote events
+  let pulled = 0
+  let remoteUpdated = 0
+
+  try {
+    const remoteEvents = await listRemoteEvents(config)
+    const uidToSync = getSyncMapByUid(db)
+
+    const insertBlock = db.prepare(`
+      INSERT INTO schedule_blocks (id, task_id, block_type, title, date, start_min, end_min, note, category)
+      VALUES (?, null, 'diary', ?, ?, ?, ?, ?, null)
+    `)
+    const updateBlock = db.prepare(`
+      UPDATE schedule_blocks SET title = ?, date = ?, start_min = ?, end_min = ?, note = ?
+      WHERE id = ?
+    `)
+
+    for (const item of remoteEvents) {
+      if (!item.icalendar) continue
+      const evt = parseIcsEvent(item.icalendar)
+      if (!evt.uid) continue
+
+      // Skip events pushed by Focus Planner (handled in Phase 2)
+      if (evt.uid.endsWith('@focus-planner-caldav')) continue
+
+      const existingSync = uidToSync.get(evt.uid)
+      const note = buildNoteFromEvent(evt)
+
+      if (existingSync) {
+        // Check if remote changed (etag differs)
+        if (existingSync.etag !== item.etag) {
+          updateBlock.run(evt.summary, evt.date, evt.startMin, evt.endMin, note, existingSync.blockId)
+          upsertMap.run(
+            existingSync.blockId,
+            existingSync.eventUrl || item.href,
+            evt.uid,
+            item.etag,
+            existingSync.contentHash,
+            'synced',
+            now,
+            '',
+          )
+          remoteUpdated++
+        }
+      } else {
+        // New remote event → create diary block
+        const blockId = `caldav-${evt.uid}`
+        try {
+          insertBlock.run(blockId, evt.summary, evt.date, evt.startMin, evt.endMin, note)
+          upsertMap.run(blockId, item.href, evt.uid, item.etag, '', 'synced', now, '')
+          pulled++
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err)
+          upsertMap.run(blockId, item.href, evt.uid, item.etag, '', 'error', now, msg)
+          errors++
+        }
+      }
+    }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    errors++
+    const errorMsg = `Pull failed: ${msg}`
+    db.prepare('UPDATE caldav_config SET last_sync_at = ?, last_sync_error = ? WHERE id = 1').run(
+      now,
+      errorMsg,
+    )
+    return { created, updated, deleted, errors, pulled, remoteUpdated }
+  }
+
   const errorMsg = errors > 0 ? `${errors} items failed` : ''
   db.prepare('UPDATE caldav_config SET last_sync_at = ?, last_sync_error = ? WHERE id = 1').run(
     now,
     errorMsg,
   )
 
-  return { created, updated, deleted, errors }
+  return { created, updated, deleted, errors, pulled, remoteUpdated }
 }

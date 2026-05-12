@@ -117,6 +117,79 @@ export function parseMultistatusXml(xml: string): MultistatusItem[] {
   return results
 }
 
+export interface ParsedIcsEvent {
+  uid: string
+  summary: string
+  date: string
+  startMin: number
+  endMin: number
+  location: string
+  description: string
+}
+
+function unescapeIcs(text: string): string {
+  return String(text || '')
+    .replace(/\\n/gi, '\n')
+    .replace(/\\,/g, ',')
+    .replace(/\\;/g, ';')
+    .replace(/\\\\/g, '\\')
+}
+
+export function parseIcsEvent(ics: string): ParsedIcsEvent {
+  const lines = ics.split(/\r?\n/)
+  const props: Record<string, string> = {}
+  let lastKey = ''
+  for (const raw of lines) {
+    if (raw.match(/^\s/) && lastKey) {
+      props[lastKey] += raw.slice(1)
+    } else {
+      const m = raw.match(/^([A-Z_-]+;?.*?):(.*)$/)
+      if (m) {
+        lastKey = m[1]
+        props[lastKey] = m[2]
+      }
+    }
+  }
+
+  const uid = props['UID'] || ''
+  const summary = unescapeIcs(props['SUMMARY'] || '')
+  const location = unescapeIcs(props['LOCATION'] || '')
+  const description = unescapeIcs(props['DESCRIPTION'] || '')
+
+  const dtstartRaw = props['DTSTART'] || props['DTSTART;VALUE=DATE'] || ''
+  const dtendRaw = props['DTEND'] || props['DTEND;VALUE=DATE'] || ''
+  const isAllDay = 'DTSTART;VALUE=DATE' in props || dtstartRaw.length === 8
+
+  let date = ''
+  let startMin = 0
+  let endMin = 0
+
+  if (isAllDay) {
+    const d = dtstartRaw.length === 8 ? dtstartRaw : dtstartRaw.slice(0, 8)
+    date = `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`
+    startMin = 0
+    endMin = 0
+  } else {
+    const timeVal = dtstartRaw.replace(/.*T/, '')
+    date = dtstartRaw.slice(0, 4) + '-' + dtstartRaw.slice(4, 6) + '-' + dtstartRaw.slice(6, 8)
+    const h = parseInt(timeVal.slice(0, 2), 10) || 0
+    const m = parseInt(timeVal.slice(2, 4), 10) || 0
+    startMin = h * 60 + m
+
+    if (dtendRaw) {
+      const etRaw = dtendRaw.replace(/.*T/, '')
+      const eh = parseInt(etRaw.slice(0, 2), 10) || 0
+      const em = parseInt(etRaw.slice(2, 4), 10) || 0
+      endMin = eh * 60 + em
+      if (endMin <= startMin) endMin = startMin + 60
+    } else {
+      endMin = startMin + 60
+    }
+  }
+
+  return { uid, summary, date, startMin, endMin, location, description }
+}
+
 async function caldavRequest(
   config: CalDAVConfig,
   method: string,
@@ -175,7 +248,29 @@ export async function listRemoteEvents(config: CalDAVConfig): Promise<Multistatu
   if (resp.status < 200 || resp.status >= 300) {
     throw new Error(`PROPFIND failed: HTTP ${resp.status}`)
   }
-  return parseMultistatusXml(resp.body)
+  const items = parseMultistatusXml(resp.body)
+  // iCloud returns empty calendar-data in PROPFIND; fetch ICS via GET for each event
+  const calendarBase = config.calendarUrl.replace(/\/+$/, '')
+  const serverBase = config.serverUrl.replace(/\/+$/, '')
+  await Promise.all(
+    items.map(async (item) => {
+      if (item.icalendar || !item.href.endsWith('.ics')) return
+      try {
+        const href = item.href.startsWith('/')
+          ? `${serverBase}${item.href}`
+          : item.href
+        const evResp = await caldavRequest(config, 'GET', href, {
+          Accept: 'text/calendar',
+        })
+        if (evResp.status >= 200 && evResp.status < 300) {
+          item.icalendar = evResp.body
+        }
+      } catch {
+        // skip events we can't fetch
+      }
+    }),
+  )
+  return items
 }
 
 export async function createRemoteEvent(

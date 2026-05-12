@@ -8,9 +8,33 @@
 
 .today-overview,
 .today-section,
-.today-quick-add {
+.today-quick-add,
+.today-allday-bar {
   width: 100%;
   max-width: 860px;
+}
+
+/* ===== All-day events bar ===== */
+.today-allday-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.today-allday-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 500;
+  background: color-mix(in srgb, var(--project-color, var(--accent)) 12%, transparent);
+  color: var(--project-color, var(--accent));
+  cursor: default;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ===== Today overview (date + stats) ===== */

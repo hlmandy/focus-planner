@@ -18,7 +18,14 @@
       "Bash(node -e *)",
       "Read(//c/Users/mandy/**)",
       "Read(//Users/mandy/hl_Documents/Time_manager/focus-planner/server/**)",
-      "Read(//c/Users/mandy/hl_Documents/Time_manager/focus-planner/server/**)"
+      "Read(//c/Users/mandy/hl_Documents/Time_manager/focus-planner/server/**)",
+      "Bash(curl -s -X PUT http://localhost:8787/api/caldav/config -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl -s -X POST http://localhost:8787/api/caldav/test-connection)",
+      "Bash(curl -s -X POST http://localhost:8787/api/caldav/sync)",
+      "Bash(sqlite3 data/focus-planner-state.db \".schema schedule_blocks\")",
+      "Bash(curl -s -X PUT http://localhost:8787/api/caldav/config -H \"Content-Type: application/json\" -d '{\"serverUrl\":\"https://caldav.icloud.com\",\"username\":\"277206840@qq.com\",\"password\":\"qbvf-ypyb-eifo-mgbl\",\"calendarUrl\":\"https://p142-caldav.icloud.com:443/22634315249/calendars/0DDD1B1C-F4A1-4D69-92D5-D24128E69E0F/\",\"syncEnabled\":true}')",
+      "Bash(rm -f /c/Users/mandy/hl_Documents/Time_manager/focus-planner/test-caldav-debug.mts /c/Users/mandy/hl_Documents/Time_manager/focus-planner/test-caldav-xml.mts)",
+      "Bash(rm -f /tmp/test-caldav.mjs /tmp/test-caldav-xml2.mts)"
     ],
     "additionalDirectories": [
       "C:\\Users\\lss\\.claude\\skills\\playwright-skill"
