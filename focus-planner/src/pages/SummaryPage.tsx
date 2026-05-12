@@ -7,9 +7,15 @@ import {
   timeText,
   blockTitleText,
   logKindLabels,
+  researchLogKindLabels,
   isProjectTask,
   getDateLabel,
 } from '../utils'
+import { diaryCategoryLabels } from '../constants'
+
+function addHierTag(tags: Set<string>, ...parts: string[]) {
+  tags.add('#' + parts.join('/'))
+}
 
 export function SummaryPage() {
   const {
@@ -63,7 +69,103 @@ export function SummaryPage() {
     [researchLogs.items, date],
   )
 
+  const selectedDayPomodoros = useMemo(
+    () =>
+      pomodoroSessions.items
+        .filter(session => session.date === date)
+        .sort((a, b) => a.start - b.start),
+    [pomodoroSessions.items, date],
+  )
+
+  const selectedDayPomodoroMinutes = selectedDayPomodoros.reduce(
+    (sum, session) => sum + session.minutes,
+    0,
+  )
+
+  const selectedDayPomodorosByProject = useMemo(() => {
+    const map = new Map<
+      string,
+      { projectName: string; minutes: number; count: number }
+    >()
+
+    for (const session of selectedDayPomodoros) {
+      const project = projectsById[session.projectId]
+      const key = session.projectId || 'none'
+
+      const current = map.get(key) ?? {
+        projectName: project?.name ?? '未归属项目',
+        minutes: 0,
+        count: 0,
+      }
+
+      current.minutes += session.minutes
+      current.count += 1
+      map.set(key, current)
+    }
+
+    return [...map.values()].sort((a, b) => b.minutes - a.minutes)
+  }, [selectedDayPomodoros, projectsById])
+
   const visibleTasks = useMemo(() => tasks.items.filter(task => isProjectTask(task)), [tasks.items])
+
+  const selectedDaySummaryTags = useMemo(() => {
+    const tags = new Set<string>()
+
+    for (const block of selectedDayBlocks) {
+      if (block.blockType === 'diary') {
+        if (block.category) {
+          addHierTag(tags, '日程', diaryCategoryLabels[block.category] ?? block.category)
+        } else {
+          addHierTag(tags, '日程', '普通日程')
+        }
+      }
+
+      if (block.blockType === 'task' && block.taskId) {
+        const task = tasksById[block.taskId]
+        const project = task ? projectsById[task.projectId] : undefined
+
+        if (project) {
+          addHierTag(tags, '项目', project.name)
+        }
+
+        if (task?.done) {
+          addHierTag(tags, '任务', '完成')
+        }
+      }
+    }
+
+    for (const session of selectedDayPomodoros) {
+      tags.add('#番茄钟')
+
+      const project = session.projectId ? projectsById[session.projectId] : undefined
+
+      if (project) {
+        addHierTag(tags, '项目', project.name)
+      }
+    }
+
+    for (const log of selectedDayLogs) {
+      const project = projectsById[log.projectId]
+
+      if (project) {
+        addHierTag(tags, '项目', project.name)
+      }
+
+      if (log.logType === 'research') {
+        addHierTag(tags, '研究', researchLogKindLabels[log.kind] ?? log.kind)
+      }
+
+      if (log.logType === 'admin') {
+        tags.add('#事务')
+      }
+
+      if (log.logType === 'student') {
+        tags.add('#学生指导')
+      }
+    }
+
+    return Array.from(tags).sort()
+  }, [selectedDayBlocks, selectedDayPomodoros, selectedDayLogs, tasksById, projectsById])
 
   // Daily summary markdown
   const markdown = useMemo(() => {
@@ -87,11 +189,15 @@ export function SummaryPage() {
       `# ${dayLabel}总结 ${date}`,
       '',
       `- 计划时间：${durationText(selectedDayMinutes)}`,
-      `- 完成时间：${durationText(completedMinutes)}`,
+      `- 任务完成时间：${durationText(completedMinutes)}`,
+      `- 番茄钟专注：${durationText(selectedDayPomodoroMinutes)}（${selectedDayPomodoros.length} 个）`,
       `- 安排数量：${selectedDayBlocks.length}`,
       `- 完成 TODO：${doneTasks.length}`,
       `- 研究日记：${selectedDayLogs.length}`,
       `- 完成习惯：${doneHabits.length}`,
+      '',
+      '## 标签',
+      selectedDaySummaryTags.length ? selectedDaySummaryTags.join(' ') : '无',
       '',
       `## ${dayLabel}的安排`,
       ...(selectedDayBlocks.length
@@ -108,6 +214,21 @@ export function SummaryPage() {
       '',
       '## 已完成',
       ...(doneTasks.length ? doneTasks.map(task => `- [x] ${task.title}`) : ['- 无']),
+      '',
+      '## 专注完成记录',
+      ...(selectedDayPomodoros.length
+        ? [
+            ...selectedDayPomodorosByProject.map(
+              item =>
+                `- ${item.projectName}：${durationText(item.minutes)}（${item.count} 个番茄钟）`,
+            ),
+            '',
+            ...selectedDayPomodoros.map(session => {
+              const project = projectsById[session.projectId]
+              return `- ${timeText(session.start)}-${timeText(session.end)} 番茄钟｜${project?.name ?? '未归属项目'}（${durationText(session.minutes)}）`
+            }),
+          ]
+        : ['- 无']),
       '',
       '## 研究日记',
       ...(selectedDayLogs.length
@@ -142,9 +263,13 @@ export function SummaryPage() {
     selectedDayBlocks,
     selectedDayMinutes,
     selectedDayLogs,
+    selectedDayPomodoros,
+    selectedDayPomodoroMinutes,
+    selectedDayPomodorosByProject,
     tasksById,
     projectsById,
     habitEntryKeys,
+    selectedDaySummaryTags,
   ])
 
   // Project export markdown
