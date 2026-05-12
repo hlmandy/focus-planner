@@ -412,19 +412,49 @@ export function PlannerPage() {
                   onDragOver={event => event.preventDefault()}
                   onDrop={event => scheduleTodoFromDrop(event, dayKey)}
                 >
-                  <button
-                    type="button"
-                    className={`btn btn-ghost day-header ${dayInfo.isRestDay ? 'rest-day' : ''} ${dayInfo.isAdjustedWorkday ? 'workday-adjusted' : ''}`}
-                    onClick={() => setDate(dayKey)}
-                    title={dayInfo.label}
+                  <div
+                    className={`day-header ${dayInfo.isRestDay ? 'rest-day' : ''} ${dayInfo.isAdjustedWorkday ? 'workday-adjusted' : ''}`}
                   >
-                    <strong>{weekDayText(weekDate)}</strong>
-                    <span>
-                      {String(weekDate.getMonth() + 1).padStart(2, '0')}/
-                      {String(weekDate.getDate()).padStart(2, '0')}
-                    </span>
-                    {dayInfo.marker && <em>{dayInfo.marker}</em>}
-                  </button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost day-title"
+                      onClick={() => setDate(dayKey)}
+                      title={dayInfo.label}
+                    >
+                      <strong>{weekDayText(weekDate)}</strong>
+                      <span>
+                        {String(weekDate.getMonth() + 1).padStart(2, '0')}/
+                        {String(weekDate.getDate()).padStart(2, '0')}
+                      </span>
+                      {dayInfo.marker && <em>{dayInfo.marker}</em>}
+                    </button>
+                    {allDayBlocks.length > 0 && (
+                      <div className="all-day-row">
+                        {allDayBlocks.map(block => {
+                          const isDiary = block.blockType === 'diary'
+                          const task = !isDiary && block.taskId ? tasksById[block.taskId] : undefined
+                          const project = !isDiary
+                            ? projectsById[task?.projectId ?? projects.items[0]?.id ?? '']
+                            : undefined
+                          const blockColor = isDiary ? '#94a3b8' : (project?.color ?? '#3a7afe')
+                          const blockTitle = isDiary ? block.title || '日程' : blockTitleText(block, task)
+                          return (
+                            <button
+                              key={block.id}
+                              type="button"
+                              className="all-day-block"
+                              style={{ borderLeftColor: blockColor }}
+                              onClick={event => openBlockEditor(block.id, event.clientX, event.clientY)}
+                              onContextMenu={event => openBlockContextMenu(event, block.id)}
+                              title={blockTitle}
+                            >
+                              {blockTitle}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                   {dayKey === todayKey() && isCurrentTimeInRange && (
                     <div
                       className="now-line"
@@ -442,32 +472,6 @@ export function PlannerPage() {
                       }}
                     >
                       {timeText(dragCreate.start)} - {timeText(dragCreate.end)}
-                    </div>
-                  )}
-                  {allDayBlocks.length > 0 && (
-                    <div className="all-day-row">
-                      {allDayBlocks.map(block => {
-                        const isDiary = block.blockType === 'diary'
-                        const task = !isDiary && block.taskId ? tasksById[block.taskId] : undefined
-                        const project = !isDiary
-                          ? projectsById[task?.projectId ?? projects.items[0]?.id ?? '']
-                          : undefined
-                        const blockColor = isDiary ? '#94a3b8' : (project?.color ?? '#3a7afe')
-                        const blockTitle = isDiary ? block.title || '日程' : blockTitleText(block, task)
-                        return (
-                          <button
-                            key={block.id}
-                            type="button"
-                            className="all-day-block"
-                            style={{ borderLeftColor: blockColor }}
-                            onClick={event => openBlockEditor(block.id, event.clientX, event.clientY)}
-                            onContextMenu={event => openBlockContextMenu(event, block.id)}
-                            title={blockTitle}
-                          >
-                            {blockTitle}
-                          </button>
-                        )
-                      })}
                     </div>
                   )}
                   {timedBlocks.map(block => {

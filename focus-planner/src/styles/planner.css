@@ -217,14 +217,18 @@
   left: 0;
   right: 0;
   height: var(--planner-header-height);
-  display: grid;
-  align-content: start;
-  gap: 2px;
-  padding: 6px 4px 4px;
   border-bottom: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.98);
   color: var(--ink);
   text-align: center;
+  box-sizing: border-box;
+}
+
+.day-title {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  padding: 4px 4px 0;
 }
 
 .day-header strong {
