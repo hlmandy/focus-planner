@@ -15,7 +15,7 @@ export const LATE_NIGHT_END = 27 * 60
 export const DAY_END = LATE_NIGHT_END
 export const MIN_BLOCK = 15
 export const PIXELS_PER_MINUTE = 0.58
-export const TIMELINE_HEADER_HEIGHT = 52
+export const TIMELINE_HEADER_HEIGHT = 78
 
 export const colors = ['#3a7afe', '#00a884', '#f59e0b', '#ef4444', '#8b5cf6', '#0ea5e9']
 
