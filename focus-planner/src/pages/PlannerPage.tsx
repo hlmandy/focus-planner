@@ -398,6 +398,8 @@ export function PlannerPage() {
             {weekDays.map(weekDate => {
               const dayKey = toDateKey(weekDate)
               const dayBlocks = visibleBlocks.filter(block => block.date === dayKey)
+              const allDayBlocks = dayBlocks.filter(b => b.start === 0 && b.end === 0)
+              const timedBlocks = dayBlocks.filter(b => !(b.start === 0 && b.end === 0))
               const dayDoneBlocks = doneBlocks.filter(s => s.date === dayKey)
               const dayInfo = getCalendarDayInfo(dayKey)
               return (
@@ -442,7 +444,33 @@ export function PlannerPage() {
                       {timeText(dragCreate.start)} - {timeText(dragCreate.end)}
                     </div>
                   )}
-                  {dayBlocks.map(block => {
+                  {allDayBlocks.length > 0 && (
+                    <div className="all-day-row">
+                      {allDayBlocks.map(block => {
+                        const isDiary = block.blockType === 'diary'
+                        const task = !isDiary && block.taskId ? tasksById[block.taskId] : undefined
+                        const project = !isDiary
+                          ? projectsById[task?.projectId ?? projects.items[0]?.id ?? '']
+                          : undefined
+                        const blockColor = isDiary ? '#94a3b8' : (project?.color ?? '#3a7afe')
+                        const blockTitle = isDiary ? block.title || '日程' : blockTitleText(block, task)
+                        return (
+                          <button
+                            key={block.id}
+                            type="button"
+                            className="all-day-block"
+                            style={{ borderLeftColor: blockColor }}
+                            onClick={event => openBlockEditor(block.id, event.clientX, event.clientY)}
+                            onContextMenu={event => openBlockContextMenu(event, block.id)}
+                            title={blockTitle}
+                          >
+                            {blockTitle}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                  {timedBlocks.map(block => {
                     const isDiary = block.blockType === 'diary'
                     const task = !isDiary && block.taskId ? tasksById[block.taskId] : undefined
                     const project = !isDiary
@@ -457,7 +485,7 @@ export function PlannerPage() {
                     return (
                       <article
                         key={block.id}
-                        className={`time-block ${blockStatus} ${isDiary ? 'diary-block' : ''} ${duration < 45 ? 'compact' : duration < 75 ? 'regular' : 'spacious'}`}
+                        className={`time-block ${blockStatus} ${isDiary ? 'diary-block' : ''} ${duration < 45 ? 'compact' : duration < 75 ? 'regular' : 'spacious'} ${!isDiary && task?.source === 'schedule' ? 'placeholder' : ''}`}
                         style={{
                           top: (block.start - DAY_START) * PIXELS_PER_MINUTE,
                           height: (block.end - block.start) * PIXELS_PER_MINUTE,
@@ -487,14 +515,13 @@ export function PlannerPage() {
                             </em>
                           )}
                         </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost resize-handle"
+                        <div
+                          className="resize-handle"
                           onPointerDown={event => {
                             if (event.button !== 0) return
                             startPointerAction(event, block, 'resize')
                           }}
-                          aria-label="调整时长"
+                          aria-hidden="true"
                         />
                       </article>
                     )
