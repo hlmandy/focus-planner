@@ -251,8 +251,8 @@
   box-shadow: 0 0 0 3px rgba(56, 150, 100, 0.12);
 }
 
-.today-quick-type,
-.today-quick-project {
+.today-quick-add select,
+.today-quick-log select {
   height: 36px;
   padding: 0 8px;
   border: 1px solid var(--line);
@@ -452,16 +452,6 @@
   box-shadow: 0 0 0 3px rgba(56, 150, 100, 0.12);
 }
 
-.today-quick-log-kind {
-  height: 36px;
-  padding: 0 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--ink-soft);
-  font-size: 12px;
-  cursor: pointer;
-}
 
 .today-quick-log-hint {
   display: flex;
